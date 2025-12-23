@@ -124,6 +124,9 @@ export default function SpeedMap() {
     };
   }, []);
 
+  // Get auth context
+  const { isAuthenticated } = useAuth();
+
   // Load Google Maps
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
