@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """
 Backend API Testing for Speed Alert App
-Tests the /api/speed-limit endpoint and trip history functionality
+Tests all endpoints including the 4 differentiation features:
+1. Gamification (stats, badges)
+2. Export Reports 
+3. Family Mode
+4. Crowdsourced Speed Traps
 """
 
 import requests
 import sys
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class SpeedAlertAPITester:
     def __init__(self, base_url="https://speedsentry-3.preview.emergentagent.com"):
@@ -17,6 +21,10 @@ class SpeedAlertAPITester:
         self.tests_passed = 0
         self.test_results = []
         self.created_trip_ids = []
+        self.auth_token = None
+        self.user_email = None
+        self.family_id = None
+        self.created_trap_ids = []
 
     def log_test(self, name, success, details=""):
         """Log test result"""
