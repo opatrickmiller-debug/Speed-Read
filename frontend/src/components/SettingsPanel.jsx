@@ -291,47 +291,159 @@ export const SettingsPanel = ({
               {useDynamicThreshold ? (
                 <>
                   <p className="text-xs text-zinc-500 font-mono">
-                    Stricter in slow zones, lenient on highways
+                    Customize speed zones and tolerances
                   </p>
                   
-                  {/* Dynamic Threshold Ranges Display */}
-                  <div className="bg-zinc-900/50 border border-zinc-800 rounded p-3 space-y-2">
+                  {/* Dynamic Threshold Ranges - Fully Editable */}
+                  <div className="bg-zinc-900/50 border border-zinc-800 rounded p-3 space-y-3">
                     {thresholdRanges.map((range, idx) => (
-                      <div key={idx} className="flex items-center justify-between text-xs font-mono">
-                        <span className="text-zinc-400">
-                          {range.minLimit === 0 ? '0' : range.minLimit}-{range.maxLimit === 999 ? '∞' : range.maxLimit} {speedUnit}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              const newRanges = [...thresholdRanges];
-                              newRanges[idx].offset = Math.max(0, newRanges[idx].offset - 1);
-                              setThresholdRanges(newRanges);
-                            }}
-                            className="w-6 h-6 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-400"
-                          >
-                            -
-                          </button>
+                      <div key={idx} className="space-y-2">
+                        {/* Zone Label */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-zinc-500 font-mono">Zone {idx + 1}</span>
                           <span className={cn(
-                            "w-12 text-center",
-                            range.offset === 0 ? "text-red-400" : range.offset <= 5 ? "text-yellow-400" : "text-green-400"
+                            "text-xs font-mono px-2 py-0.5 rounded",
+                            range.offset === 0 ? "bg-red-500/20 text-red-400" : 
+                            range.offset <= 5 ? "bg-yellow-500/20 text-yellow-400" : 
+                            "bg-green-500/20 text-green-400"
                           )}>
-                            +{range.offset}
+                            +{range.offset} {speedUnit} tolerance
                           </span>
-                          <button
-                            onClick={() => {
-                              const newRanges = [...thresholdRanges];
-                              newRanges[idx].offset = Math.min(20, newRanges[idx].offset + 1);
-                              setThresholdRanges(newRanges);
-                            }}
-                            className="w-6 h-6 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-400"
-                          >
-                            +
-                          </button>
+                        </div>
+                        
+                        {/* Speed Range Inputs */}
+                        <div className="flex items-center gap-2 text-xs font-mono">
+                          {/* Min Limit */}
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => {
+                                const newRanges = [...thresholdRanges];
+                                const newMin = Math.max(0, range.minLimit - 5);
+                                // Don't go below previous range's max
+                                if (idx > 0 && newMin < newRanges[idx - 1].maxLimit) return;
+                                newRanges[idx].minLimit = newMin;
+                                setThresholdRanges(newRanges);
+                              }}
+                              disabled={idx === 0}
+                              className="w-5 h-5 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-400 disabled:opacity-30 disabled:cursor-not-allowed text-xs"
+                            >
+                              -
+                            </button>
+                            <span className="w-8 text-center text-sky-400">
+                              {range.minLimit}
+                            </span>
+                            <button
+                              onClick={() => {
+                                const newRanges = [...thresholdRanges];
+                                const newMin = range.minLimit + 5;
+                                // Don't exceed this range's max
+                                if (newMin >= range.maxLimit) return;
+                                newRanges[idx].minLimit = newMin;
+                                // Also update previous range's max
+                                if (idx > 0) {
+                                  newRanges[idx - 1].maxLimit = newMin;
+                                }
+                                setThresholdRanges(newRanges);
+                              }}
+                              disabled={idx === 0}
+                              className="w-5 h-5 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-400 disabled:opacity-30 disabled:cursor-not-allowed text-xs"
+                            >
+                              +
+                            </button>
+                          </div>
+                          
+                          <span className="text-zinc-600">to</span>
+                          
+                          {/* Max Limit */}
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => {
+                                if (idx === thresholdRanges.length - 1) return; // Can't change last range's max
+                                const newRanges = [...thresholdRanges];
+                                const newMax = Math.max(range.minLimit + 5, range.maxLimit - 5);
+                                newRanges[idx].maxLimit = newMax;
+                                // Update next range's min
+                                if (idx < thresholdRanges.length - 1) {
+                                  newRanges[idx + 1].minLimit = newMax;
+                                }
+                                setThresholdRanges(newRanges);
+                              }}
+                              disabled={idx === thresholdRanges.length - 1}
+                              className="w-5 h-5 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-400 disabled:opacity-30 disabled:cursor-not-allowed text-xs"
+                            >
+                              -
+                            </button>
+                            <span className="w-8 text-center text-sky-400">
+                              {range.maxLimit === 999 ? '∞' : range.maxLimit}
+                            </span>
+                            <button
+                              onClick={() => {
+                                if (idx === thresholdRanges.length - 1) return; // Can't change last range's max
+                                const newRanges = [...thresholdRanges];
+                                const newMax = range.maxLimit + 5;
+                                newRanges[idx].maxLimit = newMax;
+                                // Update next range's min
+                                if (idx < thresholdRanges.length - 1) {
+                                  newRanges[idx + 1].minLimit = newMax;
+                                }
+                                setThresholdRanges(newRanges);
+                              }}
+                              disabled={idx === thresholdRanges.length - 1}
+                              className="w-5 h-5 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-400 disabled:opacity-30 disabled:cursor-not-allowed text-xs"
+                            >
+                              +
+                            </button>
+                          </div>
+                          
+                          <span className="text-zinc-600 ml-1">{speedUnit}</span>
+                          
+                          {/* Offset Controls */}
+                          <div className="flex items-center gap-1 ml-auto">
+                            <button
+                              onClick={() => {
+                                const newRanges = [...thresholdRanges];
+                                newRanges[idx].offset = Math.max(0, newRanges[idx].offset - 1);
+                                setThresholdRanges(newRanges);
+                              }}
+                              className="w-5 h-5 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-400 text-xs"
+                            >
+                              -
+                            </button>
+                            <span className={cn(
+                              "w-6 text-center",
+                              range.offset === 0 ? "text-red-400" : range.offset <= 5 ? "text-yellow-400" : "text-green-400"
+                            )}>
+                              +{range.offset}
+                            </span>
+                            <button
+                              onClick={() => {
+                                const newRanges = [...thresholdRanges];
+                                newRanges[idx].offset = Math.min(20, newRanges[idx].offset + 1);
+                                setThresholdRanges(newRanges);
+                              }}
+                              className="w-5 h-5 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-400 text-xs"
+                            >
+                              +
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
+                  
+                  {/* Reset to Defaults */}
+                  <button
+                    onClick={() => {
+                      setThresholdRanges([
+                        { minLimit: 0, maxLimit: 50, offset: 0 },
+                        { minLimit: 50, maxLimit: 65, offset: 5 },
+                        { minLimit: 65, maxLimit: 999, offset: 10 },
+                      ]);
+                    }}
+                    className="w-full text-xs font-mono text-zinc-500 hover:text-zinc-300 py-1"
+                  >
+                    Reset to defaults
+                  </button>
                   
                   {/* Current Status */}
                   {currentSpeedLimit && (
