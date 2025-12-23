@@ -1,0 +1,46 @@
+{
+  "summary": {
+    "total_tests": 6,
+    "passed_tests": 6,
+    "success_rate": 100.0,
+    "timestamp": "2025-12-23T16:35:11.433684"
+  },
+  "test_results": [
+    {
+      "test": "API Root Endpoint",
+      "success": true,
+      "details": "Status: 200, Response: {'message': 'Speed Alert API'}",
+      "timestamp": "2025-12-23T16:35:01.547802"
+    },
+    {
+      "test": "Speed Limit - Valid Location",
+      "success": true,
+      "details": "Status: 200, Speed Limit: None, Unit: mph, Road: None, Source: error",
+      "timestamp": "2025-12-23T16:35:05.585857"
+    },
+    {
+      "test": "Speed Limit - Invalid Parameters",
+      "success": true,
+      "details": "Status: 422 (expected 422 for invalid params)",
+      "timestamp": "2025-12-23T16:35:05.627110"
+    },
+    {
+      "test": "Speed Limit - Missing Parameters",
+      "success": true,
+      "details": "Status: 422 (expected 422 for missing params)",
+      "timestamp": "2025-12-23T16:35:05.669142"
+    },
+    {
+      "test": "Speed Limit - Remote Location",
+      "success": true,
+      "details": "Status: 200, Speed Limit: None (should be null), Source: error",
+      "timestamp": "2025-12-23T16:35:10.716575"
+    },
+    {
+      "test": "API Response Time",
+      "success": true,
+      "details": "Response time: 0.72s, Status: 200",
+      "timestamp": "2025-12-23T16:35:11.432799"
+    }
+  ]
+}
