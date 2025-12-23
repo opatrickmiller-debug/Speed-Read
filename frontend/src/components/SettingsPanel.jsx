@@ -1,4 +1,4 @@
-import { Settings, Volume2, VolumeX, Gauge, Navigation, Mic, MicOff, Globe } from "lucide-react";
+import { Settings, Volume2, VolumeX, Gauge, Navigation, Mic, MicOff, Globe, Database, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { AVAILABLE_LANGUAGES } from "@/components/AlertOverlay";
+import { getCacheStats, clearCache } from "@/utils/speedLimitCache";
+import { useState } from "react";
 
 // Test messages for each language
 const TEST_MESSAGES = {
