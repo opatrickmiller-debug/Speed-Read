@@ -384,25 +384,39 @@ class SpeedAlertAPITester:
         print(f"Testing against: {self.base_url}")
         print("=" * 60)
         
-        # Test API availability first
-        if not self.test_api_root():
-            print("❌ API root endpoint failed - stopping tests")
+        try:
+            # Test API availability first
+            if not self.test_api_root():
+                print("❌ API root endpoint failed - stopping tests")
+                return False
+            
+            # Run all speed limit tests
+            print("\n📡 Testing Speed Limit API...")
+            self.test_speed_limit_valid_location()
+            self.test_speed_limit_invalid_params()
+            self.test_speed_limit_missing_params()
+            self.test_speed_limit_remote_location()
+            self.test_api_response_time()
+            
+            # Run trip history tests
+            print("\n🛣️  Testing Trip History API...")
+            self.test_trip_workflow()
+            self.test_trip_edge_cases()
+            
+            # Print summary
+            print("=" * 60)
+            print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} passed")
+            success_rate = (self.tests_passed / self.tests_run) * 100 if self.tests_run > 0 else 0
+            print(f"📈 Success Rate: {success_rate:.1f}%")
+            
+            return self.tests_passed == self.tests_run
+            
+        except Exception as e:
+            print(f"💥 Unexpected error during testing: {str(e)}")
             return False
-        
-        # Run all speed limit tests
-        self.test_speed_limit_valid_location()
-        self.test_speed_limit_invalid_params()
-        self.test_speed_limit_missing_params()
-        self.test_speed_limit_remote_location()
-        self.test_api_response_time()
-        
-        # Print summary
-        print("=" * 60)
-        print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} passed")
-        success_rate = (self.tests_passed / self.tests_run) * 100 if self.tests_run > 0 else 0
-        print(f"📈 Success Rate: {success_rate:.1f}%")
-        
-        return self.tests_passed == self.tests_run
+        finally:
+            # Always cleanup created trips
+            self.cleanup_trips()
 
 def main():
     tester = SpeedAlertAPITester()
