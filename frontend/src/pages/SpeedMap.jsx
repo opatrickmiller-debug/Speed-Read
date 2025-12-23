@@ -565,7 +565,7 @@ export default function SpeedMap() {
           <AuthPanel />
         </div>
         
-        {/* Center on location button + Trip History */}
+        {/* Center on location button + Trip History + Features */}
         <div className="absolute top-4 left-4 pointer-events-auto flex gap-2">
           <Button
             data-testid="center-location-btn"
@@ -590,6 +590,21 @@ export default function SpeedMap() {
             onStopRecording={handleStopRecording}
             currentTripStats={currentTripStats}
           />
+          
+          <Button
+            data-testid="features-btn"
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowFeaturesPanel(true)}
+            className={cn(
+              "backdrop-blur-xl bg-black/50 border border-white/10",
+              "hover:bg-black/70 hover:border-yellow-500/50",
+              "rounded-none w-12 h-12",
+              "transition-colors duration-200"
+            )}
+          >
+            <Trophy className="w-5 h-5 text-yellow-400" />
+          </Button>
         </div>
         
         {/* Speed HUD */}
