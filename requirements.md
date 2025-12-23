@@ -13,9 +13,25 @@ Build an app that overlays on Google Maps that allows user to set an alarm to go
 ## Architecture
 
 ### Backend (FastAPI)
-- **server.py**: Main API server
-  - `GET /api/` - Health check
-  - `GET /api/speed-limit?lat={lat}&lon={lon}` - Fetches speed limit from OpenStreetMap
+- **server.py**: Main API server with security features
+  - `POST /api/auth/register` - User registration (rate limited: 5/min)
+  - `POST /api/auth/login` - User login with JWT (rate limited: 10/min)
+  - `GET /api/auth/me` - Get current user info (requires auth)
+  - `GET /api/speed-limit` - Fetch speed limit from OpenStreetMap (rate limited: 30/min)
+  - `POST /api/trips/start` - Start trip recording (requires auth)
+  - `POST /api/trips/data-point` - Record data point (requires auth)
+  - `POST /api/trips/end` - End trip (requires auth)
+  - `GET /api/trips` - List user's trips (requires auth)
+  - `DELETE /api/trips/{id}` - Delete trip (requires auth, owner only)
+
+### Security Features
+- **JWT Authentication**: Secure token-based auth with 7-day expiry
+- **Password Hashing**: bcrypt with automatic salting
+- **Rate Limiting**: SlowAPI middleware protects all endpoints
+- **CORS Restrictions**: Limited to specific allowed origins
+- **Input Validation**: Pydantic validators for all inputs
+- **User Isolation**: Users can only access their own trip data
+- **Sanitization**: Road names sanitized to prevent XSS
 
 ### Frontend (React)
 - **pages/SpeedMap.jsx**: Main page with Google Maps overlay
