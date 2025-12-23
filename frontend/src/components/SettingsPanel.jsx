@@ -264,7 +264,7 @@ export const SettingsPanel = ({
             </div>
           </div>
           
-          {/* Threshold Offset Slider */}
+          {/* Threshold Settings */}
           <div className="space-y-3 pt-4 border-t border-zinc-800">
             <div className="flex items-center gap-3">
               <Navigation className="w-5 h-5 text-orange-500" />
@@ -272,25 +272,98 @@ export const SettingsPanel = ({
                 Alert Threshold
               </span>
             </div>
+            
+            {/* Dynamic Threshold Toggle */}
             <div className="pl-8 space-y-3">
-              <div className="flex justify-between text-xs text-zinc-500 font-mono">
-                <span>At Limit</span>
-                <span data-testid="threshold-value" className="text-orange-400">
-                  +{thresholdOffset} {speedUnit}
-                </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Zap className={cn("w-4 h-4", useDynamicThreshold ? "text-yellow-400" : "text-zinc-500")} />
+                  <span className="text-xs font-mono text-zinc-300">Smart Thresholds</span>
+                </div>
+                <Switch
+                  data-testid="dynamic-threshold-toggle"
+                  checked={useDynamicThreshold}
+                  onCheckedChange={setUseDynamicThreshold}
+                  className="data-[state=checked]:bg-yellow-500"
+                />
               </div>
-              <Slider
-                data-testid="threshold-slider"
-                value={[thresholdOffset]}
-                onValueChange={(value) => setThresholdOffset(value[0])}
-                max={15}
-                min={0}
-                step={1}
-                className="[&_[role=slider]]:bg-orange-500 [&_[role=slider]]:border-orange-400"
-              />
-              <p className="text-xs text-zinc-500 font-mono">
-                Alert triggers when exceeding limit by this amount
-              </p>
+              
+              {useDynamicThreshold ? (
+                <>
+                  <p className="text-xs text-zinc-500 font-mono">
+                    Stricter in slow zones, lenient on highways
+                  </p>
+                  
+                  {/* Dynamic Threshold Ranges Display */}
+                  <div className="bg-zinc-900/50 border border-zinc-800 rounded p-3 space-y-2">
+                    {thresholdRanges.map((range, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-xs font-mono">
+                        <span className="text-zinc-400">
+                          {range.minLimit === 0 ? '0' : range.minLimit}-{range.maxLimit === 999 ? '∞' : range.maxLimit} {speedUnit}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              const newRanges = [...thresholdRanges];
+                              newRanges[idx].offset = Math.max(0, newRanges[idx].offset - 1);
+                              setThresholdRanges(newRanges);
+                            }}
+                            className="w-6 h-6 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-400"
+                          >
+                            -
+                          </button>
+                          <span className={cn(
+                            "w-12 text-center",
+                            range.offset === 0 ? "text-red-400" : range.offset <= 5 ? "text-yellow-400" : "text-green-400"
+                          )}>
+                            +{range.offset}
+                          </span>
+                          <button
+                            onClick={() => {
+                              const newRanges = [...thresholdRanges];
+                              newRanges[idx].offset = Math.min(20, newRanges[idx].offset + 1);
+                              setThresholdRanges(newRanges);
+                            }}
+                            className="w-6 h-6 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-400"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Current Status */}
+                  {currentSpeedLimit && (
+                    <div className="bg-sky-500/10 border border-sky-500/30 rounded p-2">
+                      <p className="text-xs text-sky-300 font-mono text-center">
+                        Current: {currentSpeedLimit} {speedUnit} zone → Alert at +{currentThreshold} {speedUnit}
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between text-xs text-zinc-500 font-mono">
+                    <span>At Limit</span>
+                    <span data-testid="threshold-value" className="text-orange-400">
+                      +{thresholdOffset} {speedUnit}
+                    </span>
+                  </div>
+                  <Slider
+                    data-testid="threshold-slider"
+                    value={[thresholdOffset]}
+                    onValueChange={(value) => setThresholdOffset(value[0])}
+                    max={15}
+                    min={0}
+                    step={1}
+                    className="[&_[role=slider]]:bg-orange-500 [&_[role=slider]]:border-orange-400"
+                  />
+                  <p className="text-xs text-zinc-500 font-mono">
+                    Fixed threshold for all speed zones
+                  </p>
+                </>
+              )}
             </div>
           </div>
           
