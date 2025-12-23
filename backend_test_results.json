@@ -1,46 +1,106 @@
 {
   "summary": {
-    "total_tests": 6,
-    "passed_tests": 6,
+    "total_tests": 16,
+    "passed_tests": 16,
     "success_rate": 100.0,
-    "timestamp": "2025-12-23T17:16:36.351215"
+    "timestamp": "2025-12-23T17:27:25.656249"
   },
   "test_results": [
     {
       "test": "API Root Endpoint",
       "success": true,
       "details": "Status: 200, Response: {'message': 'Speed Alert API'}",
-      "timestamp": "2025-12-23T17:16:17.732555"
+      "timestamp": "2025-12-23T17:27:03.606470"
     },
     {
       "test": "Speed Limit - Valid Location",
       "success": true,
       "details": "Status: 200, Speed Limit: None, Unit: mph, Road: None, Source: error",
-      "timestamp": "2025-12-23T17:16:30.671046"
+      "timestamp": "2025-12-23T17:27:12.664407"
     },
     {
       "test": "Speed Limit - Invalid Parameters",
       "success": true,
       "details": "Status: 422 (expected 422 for invalid params)",
-      "timestamp": "2025-12-23T17:16:30.726934"
+      "timestamp": "2025-12-23T17:27:12.721692"
     },
     {
       "test": "Speed Limit - Missing Parameters",
       "success": true,
       "details": "Status: 422 (expected 422 for missing params)",
-      "timestamp": "2025-12-23T17:16:30.766178"
+      "timestamp": "2025-12-23T17:27:12.757340"
     },
     {
       "test": "Speed Limit - Remote Location",
       "success": true,
-      "details": "Status: 200, Speed Limit: None (should be null), Source: openstreetmap",
-      "timestamp": "2025-12-23T17:16:31.433594"
+      "details": "Status: 200, Speed Limit: None (should be null), Source: error",
+      "timestamp": "2025-12-23T17:27:22.676946"
     },
     {
       "test": "API Response Time",
       "success": true,
-      "details": "Response time: 4.92s, Status: 200",
-      "timestamp": "2025-12-23T17:16:36.350302"
+      "details": "Response time: 1.09s, Status: 200",
+      "timestamp": "2025-12-23T17:27:23.771309"
+    },
+    {
+      "test": "Start Trip",
+      "success": true,
+      "details": "Status: 200, Trip ID: 694ad0fb027c302f07d599ef",
+      "timestamp": "2025-12-23T17:27:23.809905"
+    },
+    {
+      "test": "Add Data Point",
+      "success": true,
+      "details": "Status: 200, Response: {'message': 'Data point added'}",
+      "timestamp": "2025-12-23T17:27:23.849518"
+    },
+    {
+      "test": "Add Data Point",
+      "success": true,
+      "details": "Status: 200, Response: {'message': 'Data point added'}",
+      "timestamp": "2025-12-23T17:27:24.391452"
+    },
+    {
+      "test": "Add Data Point",
+      "success": true,
+      "details": "Status: 200, Response: {'message': 'Data point added'}",
+      "timestamp": "2025-12-23T17:27:24.931745"
+    },
+    {
+      "test": "End Trip",
+      "success": true,
+      "details": "Status: 200, Max Speed: 45.5, Alerts: 3",
+      "timestamp": "2025-12-23T17:27:25.475074"
+    },
+    {
+      "test": "Get Trips List",
+      "success": true,
+      "details": "Status: 200, Trip count: 2, Total: 2",
+      "timestamp": "2025-12-23T17:27:25.513679"
+    },
+    {
+      "test": "Get Trip Detail",
+      "success": true,
+      "details": "Status: 200, Data points: 3, Max speed: 45.5",
+      "timestamp": "2025-12-23T17:27:25.550835"
+    },
+    {
+      "test": "Invalid Trip ID (Add Data Point)",
+      "success": true,
+      "details": "Status: 400 (expected 400)",
+      "timestamp": "2025-12-23T17:27:25.586079"
+    },
+    {
+      "test": "Non-existent Trip Detail",
+      "success": true,
+      "details": "Status: 404 (expected 404)",
+      "timestamp": "2025-12-23T17:27:25.621229"
+    },
+    {
+      "test": "Delete Trip",
+      "success": true,
+      "details": "Status: 200, Response: {'message': 'Trip deleted'}",
+      "timestamp": "2025-12-23T17:27:25.655408"
     }
   ]
 }
