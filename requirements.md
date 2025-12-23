@@ -59,6 +59,6 @@ Build an app that overlays on Google Maps that allows user to set an alarm to go
 
 ## Next Tasks / Enhancements
 1. Upgrade Google Maps Marker to AdvancedMarkerElement (deprecation warning)
-2. Add speed history/trip logging feature
-3. Add customizable alarm sounds
-4. Add different voice styles/personalities
+2. Add customizable alarm sounds
+3. Add different voice styles/personalities
+4. Add trip route visualization on map
