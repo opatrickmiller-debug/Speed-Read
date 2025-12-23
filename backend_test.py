@@ -570,12 +570,13 @@ class SpeedAlertAPITester:
     def test_start_trip(self):
         """Test starting a new trip"""
         try:
+            headers = self.get_auth_headers()
             data = {
                 "start_lat": 37.7749,
                 "start_lon": -122.4194,
                 "speed_unit": "mph"
             }
-            response = requests.post(f"{self.base_url}/api/trips/start", json=data, timeout=10)
+            response = requests.post(f"{self.base_url}/api/trips/start", json=data, headers=headers, timeout=10)
             
             success = response.status_code == 200
             details = f"Status: {response.status_code}"
@@ -600,6 +601,7 @@ class SpeedAlertAPITester:
     def test_add_data_point(self, trip_id):
         """Test adding data point to trip"""
         try:
+            headers = self.get_auth_headers()
             data = {
                 "trip_id": trip_id,
                 "data_point": {
@@ -611,7 +613,7 @@ class SpeedAlertAPITester:
                     "is_speeding": True
                 }
             }
-            response = requests.post(f"{self.base_url}/api/trips/data-point", json=data, timeout=10)
+            response = requests.post(f"{self.base_url}/api/trips/data-point", json=data, headers=headers, timeout=10)
             
             success = response.status_code == 200
             details = f"Status: {response.status_code}"
@@ -629,12 +631,13 @@ class SpeedAlertAPITester:
     def test_end_trip(self, trip_id):
         """Test ending a trip"""
         try:
+            headers = self.get_auth_headers()
             data = {
                 "trip_id": trip_id,
                 "end_lat": 37.7751,
                 "end_lon": -122.4196
             }
-            response = requests.post(f"{self.base_url}/api/trips/end", json=data, timeout=10)
+            response = requests.post(f"{self.base_url}/api/trips/end", json=data, headers=headers, timeout=10)
             
             success = response.status_code == 200
             details = f"Status: {response.status_code}"
@@ -652,8 +655,9 @@ class SpeedAlertAPITester:
     def test_get_trips(self):
         """Test getting trip list"""
         try:
+            headers = self.get_auth_headers()
             params = {"limit": 10}
-            response = requests.get(f"{self.base_url}/api/trips", params=params, timeout=10)
+            response = requests.get(f"{self.base_url}/api/trips", params=params, headers=headers, timeout=10)
             
             success = response.status_code == 200
             details = f"Status: {response.status_code}"
@@ -672,7 +676,8 @@ class SpeedAlertAPITester:
     def test_get_trip_detail(self, trip_id):
         """Test getting trip detail"""
         try:
-            response = requests.get(f"{self.base_url}/api/trips/{trip_id}", timeout=10)
+            headers = self.get_auth_headers()
+            response = requests.get(f"{self.base_url}/api/trips/{trip_id}", headers=headers, timeout=10)
             
             success = response.status_code == 200
             details = f"Status: {response.status_code}"
@@ -691,7 +696,8 @@ class SpeedAlertAPITester:
     def test_delete_trip(self, trip_id):
         """Test deleting a trip"""
         try:
-            response = requests.delete(f"{self.base_url}/api/trips/{trip_id}", timeout=10)
+            headers = self.get_auth_headers()
+            response = requests.delete(f"{self.base_url}/api/trips/{trip_id}", headers=headers, timeout=10)
             
             success = response.status_code == 200
             details = f"Status: {response.status_code}"
