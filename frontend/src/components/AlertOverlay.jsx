@@ -160,18 +160,33 @@ export const AlertOverlay = ({
         oscillator.frequency.value = oscillator.frequency.value === 800 ? 600 : 800;
       }, 300);
       
-      audioRef.current = { oscillator, audioContext, interval };
+      audioRef.current = { oscillator, audioContext, interval, closed: false };
       
       return () => {
         clearInterval(interval);
-        oscillator.stop();
-        audioContext.close();
+        try {
+          oscillator.stop();
+          if (audioContext.state !== 'closed') {
+            audioContext.close();
+          }
+        } catch (e) {
+          // Ignore already closed context errors
+        }
+        if (audioRef.current) {
+          audioRef.current.closed = true;
+        }
       };
-    } else if (audioRef.current) {
+    } else if (audioRef.current && !audioRef.current.closed) {
       const { oscillator, audioContext, interval } = audioRef.current;
       clearInterval(interval);
-      oscillator.stop();
-      audioContext.close();
+      try {
+        oscillator.stop();
+        if (audioContext.state !== 'closed') {
+          audioContext.close();
+        }
+      } catch (e) {
+        // Ignore already closed context errors
+      }
       audioRef.current = null;
     }
   }, [isActive, audioEnabled]);
