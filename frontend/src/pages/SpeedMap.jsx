@@ -625,6 +625,19 @@ export default function SpeedMap() {
 
         {/* Status indicators */}
         <div className="absolute bottom-4 right-4 pointer-events-auto flex gap-2">
+          {/* Recording indicator */}
+          {isRecording && (
+            <div 
+              data-testid="recording-indicator"
+              className="backdrop-blur-xl bg-red-500/20 border border-red-500/50 px-3 py-1 rounded-full flex items-center gap-2 animate-pulse"
+            >
+              <div className="w-2 h-2 bg-red-500 rounded-full" />
+              <span className="text-red-400 font-mono text-xs uppercase tracking-wider">
+                REC
+              </span>
+            </div>
+          )}
+          
           {/* Offline indicator */}
           {isOffline && (
             <div className="backdrop-blur-xl bg-red-500/20 border border-red-500/30 px-3 py-1 rounded-full flex items-center gap-2">
