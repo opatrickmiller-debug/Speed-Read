@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
-import { MapPin, Crosshair } from "lucide-react";
+import { MapPin, Crosshair, WifiOff, Database } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -10,6 +10,12 @@ import { AlertOverlay, AVAILABLE_LANGUAGES } from "@/components/AlertOverlay";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { 
+  cacheSpeedLimit, 
+  getCachedSpeedLimit, 
+  getCacheStats,
+  isOnline 
+} from "@/utils/speedLimitCache";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -66,6 +72,8 @@ export default function SpeedMap() {
   const [speedLimit, setSpeedLimit] = useState(null);
   const [roadName, setRoadName] = useState(null);
   const [isLoadingSpeedLimit, setIsLoadingSpeedLimit] = useState(false);
+  const [isUsingCache, setIsUsingCache] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   
   // Settings state
   const [audioEnabled, setAudioEnabled] = useState(true);
@@ -74,6 +82,7 @@ export default function SpeedMap() {
   const [speedUnit, setSpeedUnit] = useState("mph");
   const [thresholdOffset, setThresholdOffset] = useState(5);
   const [demoMode, setDemoMode] = useState(false);
+  const [offlineCacheEnabled, setOfflineCacheEnabled] = useState(true);
   
   // Demo mode state
   const demoIntervalRef = useRef(null);
@@ -85,6 +94,26 @@ export default function SpeedMap() {
   
   // Speed limit fetch throttle
   const lastFetchRef = useRef(0);
+
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOffline(false);
+      toast.success("Back online");
+    };
+    const handleOffline = () => {
+      setIsOffline(true);
+      toast.warning("Offline - using cached speed limits");
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Load Google Maps
   const { isLoaded, loadError } = useJsApiLoader({
@@ -112,14 +141,13 @@ export default function SpeedMap() {
 
   // Convert speed between units
   const convertSpeed = useCallback((speedMps, toUnit) => {
-    // speedMps is in meters per second
     if (toUnit === "mph") {
       return speedMps * 2.23694;
     }
-    return speedMps * 3.6; // km/h
+    return speedMps * 3.6;
   }, []);
 
-  // Fetch speed limit from API
+  // Fetch speed limit from API with caching
   const fetchSpeedLimit = useCallback(async (lat, lon) => {
     // Throttle requests to every 5 seconds
     const now = Date.now();
@@ -127,15 +155,42 @@ export default function SpeedMap() {
     lastFetchRef.current = now;
     
     setIsLoadingSpeedLimit(true);
+    
+    // Check cache first if offline or cache is enabled
+    if (offlineCacheEnabled) {
+      const cached = getCachedSpeedLimit(lat, lon);
+      
+      // If offline, use cache immediately
+      if (!isOnline() && cached) {
+        let convertedLimit = cached.speedLimit;
+        if (cached.unit === "km/h" && speedUnit === "mph") {
+          convertedLimit = Math.round(cached.speedLimit * 0.621371);
+        } else if (cached.unit === "mph" && speedUnit === "km/h") {
+          convertedLimit = Math.round(cached.speedLimit * 1.60934);
+        }
+        setSpeedLimit(convertedLimit);
+        setRoadName(cached.roadName);
+        setIsUsingCache(true);
+        setIsLoadingSpeedLimit(false);
+        return;
+      }
+    }
+    
     try {
       const response = await axios.get(`${API}/speed-limit`, {
         params: { lat, lon },
+        timeout: 10000,
       });
       
       const { speed_limit, unit, road_name } = response.data;
       
       if (speed_limit) {
-        // Convert to user's preferred unit if needed
+        // Cache the result
+        if (offlineCacheEnabled) {
+          cacheSpeedLimit(lat, lon, speed_limit, unit, road_name);
+        }
+        
+        // Convert to user's preferred unit
         let convertedLimit = speed_limit;
         if (unit === "km/h" && speedUnit === "mph") {
           convertedLimit = Math.round(speed_limit * 0.621371);
@@ -144,16 +199,34 @@ export default function SpeedMap() {
         }
         setSpeedLimit(convertedLimit);
         setRoadName(road_name);
+        setIsUsingCache(false);
       } else {
         setSpeedLimit(null);
         setRoadName(null);
+        setIsUsingCache(false);
       }
     } catch (error) {
       console.error("Error fetching speed limit:", error);
+      
+      // Fallback to cache on error
+      if (offlineCacheEnabled) {
+        const cached = getCachedSpeedLimit(lat, lon);
+        if (cached) {
+          let convertedLimit = cached.speedLimit;
+          if (cached.unit === "km/h" && speedUnit === "mph") {
+            convertedLimit = Math.round(cached.speedLimit * 0.621371);
+          } else if (cached.unit === "mph" && speedUnit === "km/h") {
+            convertedLimit = Math.round(cached.speedLimit * 1.60934);
+          }
+          setSpeedLimit(convertedLimit);
+          setRoadName(cached.roadName);
+          setIsUsingCache(true);
+        }
+      }
     } finally {
       setIsLoadingSpeedLimit(false);
     }
-  }, [speedUnit]);
+  }, [speedUnit, offlineCacheEnabled]);
 
   // Calculate speed from GPS positions
   const calculateSpeed = useCallback((position) => {
@@ -163,30 +236,27 @@ export default function SpeedMap() {
     if (prevPositionRef.current && prevTimeRef.current) {
       const prevLat = prevPositionRef.current.latitude;
       const prevLon = prevPositionRef.current.longitude;
-      const timeDiff = (currentTime - prevTimeRef.current) / 1000; // seconds
+      const timeDiff = (currentTime - prevTimeRef.current) / 1000;
       
       if (timeDiff > 0) {
-        // Haversine formula for distance
-        const R = 6371000; // Earth's radius in meters
+        const R = 6371000;
         const dLat = (latitude - prevLat) * Math.PI / 180;
         const dLon = (longitude - prevLon) * Math.PI / 180;
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                   Math.cos(prevLat * Math.PI / 180) * Math.cos(latitude * Math.PI / 180) *
                   Math.sin(dLon/2) * Math.sin(dLon/2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        const distance = R * c; // meters
+        const distance = R * c;
         
         const speedMps = distance / timeDiff;
         const displaySpeedValue = convertSpeed(speedMps, speedUnit);
         
-        // Filter out unrealistic speeds (GPS noise)
         if (displaySpeedValue < 200) {
           setCurrentSpeed(displaySpeedValue);
         }
       }
     }
     
-    // Use GPS speed if available (more accurate)
     if (position.coords.speed !== null && position.coords.speed >= 0) {
       const gpsSpeed = convertSpeed(position.coords.speed, speedUnit);
       if (gpsSpeed < 200) {
@@ -214,13 +284,9 @@ export default function SpeedMap() {
         setCurrentPosition({ lat: latitude, lng: longitude });
         setIsLoadingLocation(false);
         
-        // Calculate speed
         calculateSpeed(position);
-        
-        // Fetch speed limit
         fetchSpeedLimit(latitude, longitude);
         
-        // Center map on position
         if (map) {
           map.panTo({ lat: latitude, lng: longitude });
         }
@@ -245,13 +311,11 @@ export default function SpeedMap() {
   // Demo mode simulation
   useEffect(() => {
     if (demoMode) {
-      // Set a demo position (San Francisco)
       const demoPos = { lat: 37.7749, lng: -122.4194 };
       setCurrentPosition(demoPos);
       setIsLoadingLocation(false);
       fetchSpeedLimit(demoPos.lat, demoPos.lng);
       
-      // Simulate varying speeds
       let increasing = true;
       demoIntervalRef.current = setInterval(() => {
         setDemoSpeed((prev) => {
@@ -367,6 +431,8 @@ export default function SpeedMap() {
             setThresholdOffset={setThresholdOffset}
             demoMode={demoMode}
             setDemoMode={setDemoMode}
+            offlineCacheEnabled={offlineCacheEnabled}
+            setOfflineCacheEnabled={setOfflineCacheEnabled}
           />
         </div>
         
@@ -390,7 +456,7 @@ export default function SpeedMap() {
           </Button>
         </div>
         
-        {/* Speed HUD - Bottom center on mobile, top-left on desktop */}
+        {/* Speed HUD */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 md:bottom-auto md:top-24 md:left-8 md:translate-x-0 pointer-events-auto">
           <div className="flex flex-col md:flex-row gap-4 items-center md:items-start">
             <Speedometer
@@ -403,6 +469,7 @@ export default function SpeedMap() {
               speedLimit={speedLimit}
               roadName={roadName}
               isLoading={isLoadingSpeedLimit}
+              isCached={isUsingCache}
             />
           </div>
         </div>
@@ -430,8 +497,32 @@ export default function SpeedMap() {
           </div>
         )}
 
-        {/* Voice/Audio status indicators */}
+        {/* Status indicators */}
         <div className="absolute bottom-4 right-4 pointer-events-auto flex gap-2">
+          {/* Offline indicator */}
+          {isOffline && (
+            <div className="backdrop-blur-xl bg-red-500/20 border border-red-500/30 px-3 py-1 rounded-full flex items-center gap-2">
+              <WifiOff className="w-3 h-3 text-red-400" />
+              <span className="text-red-400 font-mono text-xs uppercase tracking-wider">
+                Offline
+              </span>
+            </div>
+          )}
+          
+          {/* Cache indicator */}
+          {isUsingCache && (
+            <div 
+              data-testid="cache-indicator"
+              className="backdrop-blur-xl bg-yellow-500/20 border border-yellow-500/30 px-3 py-1 rounded-full flex items-center gap-2"
+            >
+              <Database className="w-3 h-3 text-yellow-400" />
+              <span className="text-yellow-400 font-mono text-xs uppercase tracking-wider">
+                Cached
+              </span>
+            </div>
+          )}
+          
+          {/* Voice indicator */}
           {voiceEnabled && (
             <div className="backdrop-blur-xl bg-green-500/20 border border-green-500/30 px-3 py-1 rounded-full flex items-center gap-2">
               <span className="text-sm">{currentLangInfo.flag}</span>
@@ -440,6 +531,8 @@ export default function SpeedMap() {
               </span>
             </div>
           )}
+          
+          {/* Audio indicator */}
           {audioEnabled && (
             <div className="backdrop-blur-xl bg-orange-500/20 border border-orange-500/30 px-3 py-1 rounded-full">
               <span className="text-orange-400 font-mono text-xs uppercase tracking-wider">
