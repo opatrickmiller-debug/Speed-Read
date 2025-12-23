@@ -3,44 +3,44 @@
     "total_tests": 6,
     "passed_tests": 6,
     "success_rate": 100.0,
-    "timestamp": "2025-12-23T16:56:46.321857"
+    "timestamp": "2025-12-23T17:06:59.461265"
   },
   "test_results": [
     {
       "test": "API Root Endpoint",
       "success": true,
       "details": "Status: 200, Response: {'message': 'Speed Alert API'}",
-      "timestamp": "2025-12-23T16:56:42.961621"
+      "timestamp": "2025-12-23T17:06:52.494610"
     },
     {
       "test": "Speed Limit - Valid Location",
       "success": true,
       "details": "Status: 200, Speed Limit: 25, Unit: mph, Road: South Van Ness Avenue, Source: openstreetmap",
-      "timestamp": "2025-12-23T16:56:43.620540"
+      "timestamp": "2025-12-23T17:06:53.408905"
     },
     {
       "test": "Speed Limit - Invalid Parameters",
       "success": true,
       "details": "Status: 422 (expected 422 for invalid params)",
-      "timestamp": "2025-12-23T16:56:43.658983"
+      "timestamp": "2025-12-23T17:06:53.448888"
     },
     {
       "test": "Speed Limit - Missing Parameters",
       "success": true,
       "details": "Status: 422 (expected 422 for missing params)",
-      "timestamp": "2025-12-23T16:56:43.735233"
+      "timestamp": "2025-12-23T17:06:53.491705"
     },
     {
       "test": "Speed Limit - Remote Location",
       "success": true,
       "details": "Status: 200, Speed Limit: None (should be null), Source: openstreetmap",
-      "timestamp": "2025-12-23T16:56:45.021371"
+      "timestamp": "2025-12-23T17:06:54.884026"
     },
     {
       "test": "API Response Time",
       "success": true,
-      "details": "Response time: 1.30s, Status: 200",
-      "timestamp": "2025-12-23T16:56:46.320952"
+      "details": "Response time: 4.58s, Status: 200",
+      "timestamp": "2025-12-23T17:06:59.460357"
     }
   ]
 }
