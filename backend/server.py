@@ -912,12 +912,29 @@ async def get_my_family(request: Request, user: dict = Depends(require_auth)):
     if not family:
         return {"family": None}
     
-    # Get stats for each member
+    # Get all member IDs for batch query (fixes N+1 problem)
+    member_ids = [m["user_id"] for m in family.get("members", [])]
+    
+    # Batch fetch all trips for all members (single query)
+    all_trips = await trips_collection.find(
+        {"user_id": {"$in": member_ids}, "is_active": False},
+        {"data_points": 0, "_id": 0}
+    ).to_list(length=1000)
+    
+    # Group trips by user_id
+    trips_by_user = {}
+    for trip in all_trips:
+        uid = trip["user_id"]
+        if uid not in trips_by_user:
+            trips_by_user[uid] = []
+        trips_by_user[uid].append(trip)
+    
+    # Calculate stats for each member
     member_stats = []
+    week_start = datetime.now(timezone.utc) - timedelta(days=datetime.now(timezone.utc).weekday())
+    
     for member in family.get("members", []):
-        member_trips = await trips_collection.find(
-            {"user_id": member["user_id"], "is_active": False}
-        ).to_list(length=100)
+        member_trips = trips_by_user.get(member["user_id"], [])
         
         total_trips = len(member_trips)
         total_alerts = sum(t.get("total_alerts", 0) for t in member_trips)
@@ -925,8 +942,7 @@ async def get_my_family(request: Request, user: dict = Depends(require_auth)):
         safe_trips = sum(1 for t in member_trips if t.get("total_alerts", 0) == 0)
         
         # This week's trips
-        week_start = datetime.now(timezone.utc) - timedelta(days=datetime.now(timezone.utc).weekday())
-        week_trips = [t for t in member_trips if t["start_time"] >= week_start.isoformat()]
+        week_trips = [t for t in member_trips if t.get("start_time", "") >= week_start.isoformat()]
         
         member_stats.append({
             "user_id": member["user_id"],
