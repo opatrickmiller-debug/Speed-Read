@@ -616,6 +616,8 @@ export default function SpeedMap() {
             setOfflineCacheEnabled={setOfflineCacheEnabled}
             currentSpeedLimit={speedLimit}
             currentThreshold={currentThreshold}
+            theme={theme}
+            setTheme={setTheme}
           />
           <AuthPanel />
         </div>
