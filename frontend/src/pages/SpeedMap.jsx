@@ -9,8 +9,10 @@ import { SpeedLimitSign } from "@/components/SpeedLimitSign";
 import { AlertOverlay, AVAILABLE_LANGUAGES } from "@/components/AlertOverlay";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { TripHistory } from "@/components/TripHistory";
+import { AuthPanel } from "@/components/AuthPanel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   cacheSpeedLimit, 
   getCachedSpeedLimit, 
