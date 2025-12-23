@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { Speedometer } from "@/components/Speedometer";
 import { SpeedLimitSign } from "@/components/SpeedLimitSign";
-import { AlertOverlay } from "@/components/AlertOverlay";
+import { AlertOverlay, AVAILABLE_LANGUAGES } from "@/components/AlertOverlay";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -70,6 +70,7 @@ export default function SpeedMap() {
   // Settings state
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [voiceLanguage, setVoiceLanguage] = useState("en");
   const [speedUnit, setSpeedUnit] = useState("mph");
   const [thresholdOffset, setThresholdOffset] = useState(5);
   const [demoMode, setDemoMode] = useState(false);
@@ -95,6 +96,9 @@ export default function SpeedMap() {
   const displaySpeed = demoMode ? demoSpeed : currentSpeed;
   const effectiveLimit = speedLimit ? speedLimit + thresholdOffset : null;
   const isSpeeding = effectiveLimit !== null && displaySpeed > effectiveLimit;
+
+  // Get current language info for display
+  const currentLangInfo = AVAILABLE_LANGUAGES.find(l => l.code === voiceLanguage) || AVAILABLE_LANGUAGES[0];
 
   // Mute all audio/voice
   const handleMuteAll = useCallback(() => {
@@ -303,6 +307,7 @@ export default function SpeedMap() {
         isActive={isSpeeding}
         audioEnabled={audioEnabled}
         voiceEnabled={voiceEnabled}
+        voiceLanguage={voiceLanguage}
         currentSpeed={displaySpeed}
         speedLimit={speedLimit}
         speedUnit={speedUnit}
@@ -354,6 +359,8 @@ export default function SpeedMap() {
             setAudioEnabled={setAudioEnabled}
             voiceEnabled={voiceEnabled}
             setVoiceEnabled={setVoiceEnabled}
+            voiceLanguage={voiceLanguage}
+            setVoiceLanguage={setVoiceLanguage}
             speedUnit={speedUnit}
             setSpeedUnit={setSpeedUnit}
             thresholdOffset={thresholdOffset}
@@ -426,16 +433,17 @@ export default function SpeedMap() {
         {/* Voice/Audio status indicators */}
         <div className="absolute bottom-4 right-4 pointer-events-auto flex gap-2">
           {voiceEnabled && (
-            <div className="backdrop-blur-xl bg-green-500/20 border border-green-500/30 px-3 py-1 rounded-full">
+            <div className="backdrop-blur-xl bg-green-500/20 border border-green-500/30 px-3 py-1 rounded-full flex items-center gap-2">
+              <span className="text-sm">{currentLangInfo.flag}</span>
               <span className="text-green-400 font-mono text-xs uppercase tracking-wider">
-                Voice On
+                Voice
               </span>
             </div>
           )}
           {audioEnabled && (
             <div className="backdrop-blur-xl bg-orange-500/20 border border-orange-500/30 px-3 py-1 rounded-full">
               <span className="text-orange-400 font-mono text-xs uppercase tracking-wider">
-                Audio On
+                Audio
               </span>
             </div>
           )}

@@ -2,10 +2,75 @@ import { useEffect, useRef, useCallback } from "react";
 import { AlertTriangle, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Voice alert messages in different languages
+const VOICE_MESSAGES = {
+  en: {
+    speedAlert: "Speed alert. You are exceeding the speed limit.",
+    severeAlert: (amount, unit) => `Warning! You are ${amount} ${unit === 'mph' ? 'miles per hour' : 'kilometers per hour'} over the limit. Slow down immediately.`,
+    lang: "en-US"
+  },
+  es: {
+    speedAlert: "Alerta de velocidad. Está excediendo el límite de velocidad.",
+    severeAlert: (amount, unit) => `¡Advertencia! Está ${amount} ${unit === 'mph' ? 'millas por hora' : 'kilómetros por hora'} por encima del límite. Reduzca la velocidad inmediatamente.`,
+    lang: "es-ES"
+  },
+  fr: {
+    speedAlert: "Alerte de vitesse. Vous dépassez la limite de vitesse.",
+    severeAlert: (amount, unit) => `Attention! Vous êtes à ${amount} ${unit === 'mph' ? 'miles par heure' : 'kilomètres par heure'} au-dessus de la limite. Ralentissez immédiatement.`,
+    lang: "fr-FR"
+  },
+  de: {
+    speedAlert: "Geschwindigkeitswarnung. Sie überschreiten das Tempolimit.",
+    severeAlert: (amount, unit) => `Warnung! Sie fahren ${amount} ${unit === 'mph' ? 'Meilen pro Stunde' : 'Kilometer pro Stunde'} über dem Limit. Verlangsamen Sie sofort.`,
+    lang: "de-DE"
+  },
+  it: {
+    speedAlert: "Avviso di velocità. Stai superando il limite di velocità.",
+    severeAlert: (amount, unit) => `Attenzione! Stai andando ${amount} ${unit === 'mph' ? 'miglia orarie' : 'chilometri orari'} oltre il limite. Rallenta immediatamente.`,
+    lang: "it-IT"
+  },
+  pt: {
+    speedAlert: "Alerta de velocidade. Você está excedendo o limite de velocidade.",
+    severeAlert: (amount, unit) => `Aviso! Você está ${amount} ${unit === 'mph' ? 'milhas por hora' : 'quilômetros por hora'} acima do limite. Reduza a velocidade imediatamente.`,
+    lang: "pt-BR"
+  },
+  zh: {
+    speedAlert: "速度警报。您已超过限速。",
+    severeAlert: (amount, unit) => `警告！您已超速${amount}${unit === 'mph' ? '英里每小时' : '公里每小时'}。请立即减速。`,
+    lang: "zh-CN"
+  },
+  ja: {
+    speedAlert: "速度警告。制限速度を超えています。",
+    severeAlert: (amount, unit) => `警告！${amount}${unit === 'mph' ? 'マイル' : 'キロ'}オーバーです。直ちに減速してください。`,
+    lang: "ja-JP"
+  },
+  ko: {
+    speedAlert: "속도 경고. 제한 속도를 초과하고 있습니다.",
+    severeAlert: (amount, unit) => `경고! ${amount}${unit === 'mph' ? '마일' : '킬로미터'} 초과입니다. 즉시 감속하세요.`,
+    lang: "ko-KR"
+  },
+  hi: {
+    speedAlert: "गति चेतावनी। आप गति सीमा से अधिक जा रहे हैं।",
+    severeAlert: (amount, unit) => `चेतावनी! आप ${amount} ${unit === 'mph' ? 'मील प्रति घंटा' : 'किलोमीटर प्रति घंटा'} सीमा से ऊपर हैं। तुरंत धीमा करें।`,
+    lang: "hi-IN"
+  },
+  ar: {
+    speedAlert: "تنبيه السرعة. أنت تتجاوز الحد الأقصى للسرعة.",
+    severeAlert: (amount, unit) => `تحذير! أنت تتجاوز الحد بـ ${amount} ${unit === 'mph' ? 'ميل في الساعة' : 'كيلومتر في الساعة'}. أبطئ فوراً.`,
+    lang: "ar-SA"
+  },
+  ru: {
+    speedAlert: "Предупреждение о скорости. Вы превышаете ограничение скорости.",
+    severeAlert: (amount, unit) => `Внимание! Вы превышаете на ${amount} ${unit === 'mph' ? 'миль в час' : 'километров в час'}. Немедленно снизьте скорость.`,
+    lang: "ru-RU"
+  }
+};
+
 export const AlertOverlay = ({ 
   isActive, 
   audioEnabled, 
   voiceEnabled,
+  voiceLanguage = "en",
   currentSpeed,
   speedLimit,
   speedUnit,
@@ -15,26 +80,25 @@ export const AlertOverlay = ({
   const voiceSpokenRef = useRef(false);
   const lastVoiceTimeRef = useRef(0);
   
+  // Get messages for selected language
+  const messages = VOICE_MESSAGES[voiceLanguage] || VOICE_MESSAGES.en;
+
   // Voice announcement function
-  const speakAlert = useCallback((message) => {
+  const speakAlert = useCallback((message, lang) => {
     if (!('speechSynthesis' in window)) return;
     
     // Cancel any ongoing speech
     window.speechSynthesis.cancel();
     
     const utterance = new SpeechSynthesisUtterance(message);
-    utterance.rate = 1.1;
+    utterance.rate = 1.0;
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
+    utterance.lang = lang;
     
-    // Try to use a clear voice
+    // Try to find a voice for the selected language
     const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(v => 
-      v.name.includes('Google') || 
-      v.name.includes('Samantha') || 
-      v.name.includes('Daniel') ||
-      v.lang.startsWith('en')
-    );
+    const preferredVoice = voices.find(v => v.lang.startsWith(lang.split('-')[0]));
     if (preferredVoice) {
       utterance.voice = preferredVoice;
     }
@@ -50,22 +114,27 @@ export const AlertOverlay = ({
       if (!voiceSpokenRef.current || (now - lastVoiceTimeRef.current > 10000)) {
         const speedOver = Math.round(currentSpeed - speedLimit);
         const message = speedOver > 10 
-          ? `Warning! You are ${speedOver} ${speedUnit === 'mph' ? 'miles per hour' : 'kilometers per hour'} over the limit. Slow down immediately.`
-          : `Speed alert. You are exceeding the speed limit.`;
+          ? messages.severeAlert(speedOver, speedUnit)
+          : messages.speedAlert;
         
-        speakAlert(message);
+        speakAlert(message, messages.lang);
         voiceSpokenRef.current = true;
         lastVoiceTimeRef.current = now;
       }
     } else {
       voiceSpokenRef.current = false;
     }
-  }, [isActive, voiceEnabled, currentSpeed, speedLimit, speedUnit, speakAlert]);
+  }, [isActive, voiceEnabled, currentSpeed, speedLimit, speedUnit, messages, speakAlert]);
 
   // Load voices on mount (needed for some browsers)
   useEffect(() => {
     if ('speechSynthesis' in window) {
+      // Load voices
       window.speechSynthesis.getVoices();
+      // Some browsers need this event
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
     }
   }, []);
 
@@ -181,3 +250,19 @@ export const AlertOverlay = ({
     </div>
   );
 };
+
+// Export available languages for settings panel
+export const AVAILABLE_LANGUAGES = [
+  { code: "en", name: "English", flag: "🇺🇸" },
+  { code: "es", name: "Español", flag: "🇪🇸" },
+  { code: "fr", name: "Français", flag: "🇫🇷" },
+  { code: "de", name: "Deutsch", flag: "🇩🇪" },
+  { code: "it", name: "Italiano", flag: "🇮🇹" },
+  { code: "pt", name: "Português", flag: "🇧🇷" },
+  { code: "zh", name: "中文", flag: "🇨🇳" },
+  { code: "ja", name: "日本語", flag: "🇯🇵" },
+  { code: "ko", name: "한국어", flag: "🇰🇷" },
+  { code: "hi", name: "हिन्दी", flag: "🇮🇳" },
+  { code: "ar", name: "العربية", flag: "🇸🇦" },
+  { code: "ru", name: "Русский", flag: "🇷🇺" },
+];

@@ -1,4 +1,4 @@
-import { Settings, Volume2, VolumeX, Gauge, Navigation, Mic, MicOff } from "lucide-react";
+import { Settings, Volume2, VolumeX, Gauge, Navigation, Mic, MicOff, Globe } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
@@ -10,13 +10,44 @@ import {
   SheetTrigger,
   SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { AVAILABLE_LANGUAGES } from "@/components/AlertOverlay";
+
+// Test messages for each language
+const TEST_MESSAGES = {
+  en: "Voice alerts are enabled. You will hear warnings when exceeding the speed limit.",
+  es: "Las alertas de voz están activadas. Escuchará advertencias cuando exceda el límite de velocidad.",
+  fr: "Les alertes vocales sont activées. Vous entendrez des avertissements en cas de dépassement de la limite de vitesse.",
+  de: "Sprachbenachrichtigungen sind aktiviert. Sie werden Warnungen hören, wenn Sie das Tempolimit überschreiten.",
+  it: "Gli avvisi vocali sono attivati. Sentirai avvertimenti quando superi il limite di velocità.",
+  pt: "Os alertas de voz estão ativados. Você ouvirá avisos quando exceder o limite de velocidade.",
+  zh: "语音警报已启用。超速时您将听到警告。",
+  ja: "音声アラートが有効です。制限速度を超えると警告が聞こえます。",
+  ko: "음성 알림이 활성화되었습니다. 제한 속도를 초과하면 경고가 들립니다.",
+  hi: "वॉयस अलर्ट सक्षम हैं। गति सीमा से अधिक होने पर आपको चेतावनी सुनाई देगी।",
+  ar: "تنبيهات الصوت مفعلة. ستسمع تحذيرات عند تجاوز الحد الأقصى للسرعة.",
+  ru: "Голосовые оповещения включены. Вы услышите предупреждения при превышении скорости.",
+};
+
+const LANG_CODES = {
+  en: "en-US", es: "es-ES", fr: "fr-FR", de: "de-DE", it: "it-IT", pt: "pt-BR",
+  zh: "zh-CN", ja: "ja-JP", ko: "ko-KR", hi: "hi-IN", ar: "ar-SA", ru: "ru-RU"
+};
 
 export const SettingsPanel = ({
   audioEnabled,
   setAudioEnabled,
   voiceEnabled,
   setVoiceEnabled,
+  voiceLanguage,
+  setVoiceLanguage,
   speedUnit,
   setSpeedUnit,
   thresholdOffset,
@@ -24,12 +55,23 @@ export const SettingsPanel = ({
   demoMode,
   setDemoMode,
 }) => {
-  // Test voice function
+  // Test voice function with selected language
   const testVoice = () => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance("Voice alerts are enabled. You will hear warnings when exceeding the speed limit.");
-      utterance.rate = 1.1;
+      const message = TEST_MESSAGES[voiceLanguage] || TEST_MESSAGES.en;
+      const utterance = new SpeechSynthesisUtterance(message);
+      utterance.lang = LANG_CODES[voiceLanguage] || "en-US";
+      utterance.rate = 1.0;
+      
+      // Try to find a voice for the selected language
+      const voices = window.speechSynthesis.getVoices();
+      const langPrefix = voiceLanguage;
+      const preferredVoice = voices.find(v => v.lang.startsWith(langPrefix));
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+      
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -54,7 +96,7 @@ export const SettingsPanel = ({
       
       <SheetContent 
         side="right" 
-        className="backdrop-blur-xl bg-zinc-950/95 border-l border-white/10 w-[320px]"
+        className="backdrop-blur-xl bg-zinc-950/95 border-l border-white/10 w-[340px] overflow-y-auto"
       >
         <SheetHeader>
           <SheetTitle className="text-white font-chivo font-black uppercase tracking-wider">
@@ -65,9 +107,9 @@ export const SettingsPanel = ({
           </SheetDescription>
         </SheetHeader>
         
-        <div className="mt-8 space-y-6">
+        <div className="mt-6 space-y-5">
           {/* Audio Alert Toggle */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {audioEnabled ? (
@@ -92,7 +134,7 @@ export const SettingsPanel = ({
           </div>
 
           {/* Voice Alert Toggle */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {voiceEnabled ? (
@@ -114,16 +156,49 @@ export const SettingsPanel = ({
             <p className="text-xs text-zinc-500 font-mono pl-8">
               Speaks warnings when exceeding speed limit
             </p>
-            {voiceEnabled && (
+          </div>
+
+          {/* Language Selector */}
+          {voiceEnabled && (
+            <div className="space-y-3 pl-8">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-sky-400" />
+                <span className="text-xs font-medium text-zinc-300 font-mono uppercase tracking-wider">
+                  Voice Language
+                </span>
+              </div>
+              <Select value={voiceLanguage} onValueChange={setVoiceLanguage}>
+                <SelectTrigger 
+                  data-testid="language-select"
+                  className="w-full bg-zinc-900 border-zinc-700 text-zinc-200"
+                >
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700">
+                  {AVAILABLE_LANGUAGES.map((lang) => (
+                    <SelectItem 
+                      key={lang.code} 
+                      value={lang.code}
+                      className="text-zinc-200 focus:bg-zinc-800 focus:text-white"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>{lang.flag}</span>
+                        <span>{lang.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
               <button
                 data-testid="test-voice-btn"
                 onClick={testVoice}
-                className="ml-8 px-3 py-1 text-xs font-mono uppercase tracking-wider bg-green-500/20 border border-green-500/50 text-green-400 hover:bg-green-500/30 transition-colors"
+                className="w-full px-3 py-2 text-xs font-mono uppercase tracking-wider bg-green-500/20 border border-green-500/50 text-green-400 hover:bg-green-500/30 transition-colors"
               >
                 Test Voice
               </button>
-            )}
-          </div>
+            </div>
+          )}
           
           {/* Speed Unit Toggle */}
           <div className="space-y-3 pt-4 border-t border-zinc-800">
@@ -164,7 +239,7 @@ export const SettingsPanel = ({
           </div>
           
           {/* Threshold Offset Slider */}
-          <div className="space-y-4 pt-4 border-t border-zinc-800">
+          <div className="space-y-3 pt-4 border-t border-zinc-800">
             <div className="flex items-center gap-3">
               <Navigation className="w-5 h-5 text-orange-500" />
               <span className="text-sm font-medium text-zinc-200 font-mono uppercase tracking-wider">
