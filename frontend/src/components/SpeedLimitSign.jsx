@@ -1,15 +1,24 @@
 import { cn } from "@/lib/utils";
 import { Database } from "lucide-react";
 
-export const SpeedLimitSign = ({ speedLimit, roadName, isLoading, isCached }) => {
+export const SpeedLimitSign = ({ speedLimit, roadName, isLoading, isCached, theme = "dark" }) => {
   if (isLoading) {
     return (
       <div 
         data-testid="speed-limit-loading"
-        className="backdrop-blur-xl bg-black/50 border border-white/10 p-4 rounded-none"
+        className={cn(
+          "backdrop-blur-xl border p-4 rounded-none",
+          theme === "dark" ? "bg-black/50 border-white/10" : "bg-white/80 border-gray-300"
+        )}
       >
-        <div className="w-20 h-20 rounded-full border-4 border-zinc-700 flex items-center justify-center animate-pulse">
-          <span className="text-zinc-600 text-sm font-mono">...</span>
+        <div className={cn(
+          "w-20 h-20 rounded-full border-4 flex items-center justify-center animate-pulse",
+          theme === "dark" ? "border-zinc-700" : "border-gray-300"
+        )}>
+          <span className={cn(
+            "text-sm font-mono",
+            theme === "dark" ? "text-zinc-600" : "text-gray-400"
+          )}>...</span>
         </div>
       </div>
     );
@@ -19,13 +28,25 @@ export const SpeedLimitSign = ({ speedLimit, roadName, isLoading, isCached }) =>
     return (
       <div 
         data-testid="speed-limit-unknown"
-        className="backdrop-blur-xl bg-black/50 border border-white/10 p-4 rounded-none"
+        className={cn(
+          "backdrop-blur-xl border p-4 rounded-none",
+          theme === "dark" ? "bg-black/50 border-white/10" : "bg-white/80 border-gray-300"
+        )}
       >
         <div className="flex flex-col items-center gap-2">
-          <div className="w-20 h-20 rounded-full border-4 border-zinc-600 flex items-center justify-center">
-            <span className="text-zinc-500 text-xl font-bold">?</span>
+          <div className={cn(
+            "w-20 h-20 rounded-full border-4 flex items-center justify-center",
+            theme === "dark" ? "border-zinc-600" : "border-gray-400"
+          )}>
+            <span className={cn(
+              "text-xl font-bold",
+              theme === "dark" ? "text-zinc-500" : "text-gray-500"
+            )}>?</span>
           </div>
-          <span className="text-xs text-zinc-500 font-mono uppercase tracking-wider">
+          <span className={cn(
+            "text-xs font-mono uppercase tracking-wider",
+            theme === "dark" ? "text-zinc-500" : "text-gray-500"
+          )}>
             No Data
           </span>
         </div>
@@ -37,7 +58,8 @@ export const SpeedLimitSign = ({ speedLimit, roadName, isLoading, isCached }) =>
     <div 
       data-testid="speed-limit-sign"
       className={cn(
-        "backdrop-blur-xl bg-black/50 border border-white/10 p-4 rounded-none",
+        "backdrop-blur-xl border p-4 rounded-none",
+        theme === "dark" ? "bg-black/50 border-white/10" : "bg-white/80 border-gray-300",
         isCached && "border-yellow-500/30"
       )}
     >
@@ -67,16 +89,25 @@ export const SpeedLimitSign = ({ speedLimit, roadName, isLoading, isCached }) =>
         </div>
         
         {/* Label */}
-        <span className="text-xs text-zinc-400 font-mono uppercase tracking-[0.15em]">
+        <span className={cn(
+          "text-xs font-mono uppercase tracking-[0.15em]",
+          theme === "dark" ? "text-zinc-400" : "text-gray-600"
+        )}>
           LIMIT
         </span>
         
         {/* Road name if available */}
         {roadName && (
-          <div className="mt-1 px-3 py-1 bg-zinc-800/50 rounded">
+          <div className={cn(
+            "mt-1 px-3 py-1 rounded",
+            theme === "dark" ? "bg-zinc-800/50" : "bg-gray-200/80"
+          )}>
             <span 
               data-testid="road-name"
-              className="text-xs text-zinc-300 font-mono truncate max-w-[120px] block"
+              className={cn(
+                "text-xs font-mono truncate max-w-[120px] block",
+                theme === "dark" ? "text-zinc-300" : "text-gray-700"
+              )}
             >
               {roadName}
             </span>
