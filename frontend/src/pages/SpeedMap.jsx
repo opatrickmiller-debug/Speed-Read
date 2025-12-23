@@ -555,8 +555,8 @@ export default function SpeedMap() {
           />
         </div>
         
-        {/* Center on location button */}
-        <div className="absolute top-4 left-4 pointer-events-auto">
+        {/* Center on location button + Trip History */}
+        <div className="absolute top-4 left-4 pointer-events-auto flex gap-2">
           <Button
             data-testid="center-location-btn"
             variant="ghost"
@@ -573,6 +573,13 @@ export default function SpeedMap() {
           >
             <Crosshair className="w-5 h-5 text-zinc-300" />
           </Button>
+          
+          <TripHistory
+            isRecording={isRecording}
+            onStartRecording={handleStartRecording}
+            onStopRecording={handleStopRecording}
+            currentTripStats={currentTripStats}
+          />
         </div>
         
         {/* Speed HUD */}
