@@ -557,7 +557,7 @@ export default function SpeedMap() {
           zoom={17}
           onLoad={onMapLoad}
           options={{
-            styles: darkMapStyle,
+            styles: theme === "dark" ? darkMapStyle : lightMapStyle,
             disableDefaultUI: true,
             zoomControl: false,
             mapTypeControl: false,
