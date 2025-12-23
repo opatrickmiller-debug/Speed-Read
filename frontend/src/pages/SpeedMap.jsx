@@ -84,9 +84,17 @@ export default function SpeedMap() {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [voiceLanguage, setVoiceLanguage] = useState("en");
   const [speedUnit, setSpeedUnit] = useState("mph");
-  const [thresholdOffset, setThresholdOffset] = useState(5);
+  const [useDynamicThreshold, setUseDynamicThreshold] = useState(true);
+  const [thresholdOffset, setThresholdOffset] = useState(5); // Used when dynamic is off
   const [demoMode, setDemoMode] = useState(false);
   const [offlineCacheEnabled, setOfflineCacheEnabled] = useState(true);
+  
+  // Dynamic threshold ranges (speed limit -> allowed over)
+  const [thresholdRanges, setThresholdRanges] = useState([
+    { minLimit: 0, maxLimit: 50, offset: 0 },    // 0-50 mph: exact limit
+    { minLimit: 50, maxLimit: 65, offset: 5 },   // 50-65 mph: +5 mph
+    { minLimit: 65, maxLimit: 999, offset: 10 }, // 65+ mph: +10 mph
+  ]);
   
   // Trip recording state
   const [isRecording, setIsRecording] = useState(false);
