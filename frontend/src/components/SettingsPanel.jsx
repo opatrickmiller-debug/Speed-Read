@@ -61,6 +61,14 @@ export const SettingsPanel = ({
 }) => {
   const [cacheStats, setCacheStats] = useState(() => getCacheStats());
   
+  // Refresh cache stats every 2 seconds when panel is open
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setCacheStats(getCacheStats());
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+  
   // Test voice function with selected language
   const testVoice = () => {
     if ('speechSynthesis' in window) {
