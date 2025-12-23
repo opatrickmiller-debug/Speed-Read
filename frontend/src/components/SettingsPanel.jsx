@@ -54,10 +54,16 @@ export const SettingsPanel = ({
   setSpeedUnit,
   thresholdOffset,
   setThresholdOffset,
+  useDynamicThreshold,
+  setUseDynamicThreshold,
+  thresholdRanges,
+  setThresholdRanges,
   demoMode,
   setDemoMode,
   offlineCacheEnabled,
   setOfflineCacheEnabled,
+  currentSpeedLimit,
+  currentThreshold,
 }) => {
   const [cacheStats, setCacheStats] = useState(() => getCacheStats());
   
