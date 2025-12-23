@@ -136,6 +136,92 @@ export default function SpeedMap() {
   // Get current language info for display
   const currentLangInfo = AVAILABLE_LANGUAGES.find(l => l.code === voiceLanguage) || AVAILABLE_LANGUAGES[0];
 
+  // ==================== TRIP RECORDING ====================
+  
+  // Start recording a trip
+  const handleStartRecording = useCallback(async () => {
+    if (!currentPosition) {
+      toast.error("Cannot start recording - no GPS position");
+      return;
+    }
+    
+    try {
+      const response = await axios.post(`${API}/trips/start`, {
+        start_lat: currentPosition.lat,
+        start_lon: currentPosition.lng,
+        speed_unit: speedUnit
+      });
+      
+      setCurrentTripId(response.data.trip_id);
+      setIsRecording(true);
+      tripDataRef.current = { speeds: [], alerts: 0 };
+      setCurrentTripStats({ maxSpeed: 0, avgSpeed: 0, alerts: 0 });
+      toast.success("Trip recording started");
+    } catch (error) {
+      console.error("Error starting trip:", error);
+      toast.error("Failed to start trip recording");
+    }
+  }, [currentPosition, speedUnit]);
+  
+  // Stop recording a trip
+  const handleStopRecording = useCallback(async () => {
+    if (!currentTripId || !currentPosition) return;
+    
+    try {
+      const response = await axios.post(`${API}/trips/end`, {
+        trip_id: currentTripId,
+        end_lat: currentPosition.lat,
+        end_lon: currentPosition.lng
+      });
+      
+      setIsRecording(false);
+      setCurrentTripId(null);
+      setCurrentTripStats(null);
+      toast.success(`Trip saved! Max: ${Math.round(response.data.max_speed)} ${speedUnit}, Alerts: ${response.data.total_alerts}`);
+    } catch (error) {
+      console.error("Error ending trip:", error);
+      toast.error("Failed to save trip");
+      setIsRecording(false);
+      setCurrentTripId(null);
+    }
+  }, [currentTripId, currentPosition, speedUnit]);
+  
+  // Record data point during trip
+  const recordDataPoint = useCallback(async (lat, lon, speed, limit, speeding) => {
+    if (!isRecording || !currentTripId) return;
+    
+    try {
+      await axios.post(`${API}/trips/data-point`, {
+        trip_id: currentTripId,
+        data_point: {
+          timestamp: new Date().toISOString(),
+          lat,
+          lon,
+          speed: Math.round(speed * 10) / 10,
+          speed_limit: limit,
+          is_speeding: speeding
+        }
+      });
+      
+      // Update local stats
+      tripDataRef.current.speeds.push(speed);
+      if (speeding) tripDataRef.current.alerts++;
+      
+      const speeds = tripDataRef.current.speeds;
+      const maxSpeed = Math.max(...speeds);
+      const avgSpeed = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+      
+      setCurrentTripStats({
+        maxSpeed,
+        avgSpeed,
+        alerts: tripDataRef.current.alerts
+      });
+    } catch (error) {
+      // Silently fail for data points to not interrupt driving
+      console.error("Error recording data point:", error);
+    }
+  }, [isRecording, currentTripId]);
+
   // Mute all audio/voice
   const handleMuteAll = useCallback(() => {
     setAudioEnabled(false);
