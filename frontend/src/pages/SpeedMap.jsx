@@ -69,6 +69,7 @@ export default function SpeedMap() {
   
   // Settings state
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [speedUnit, setSpeedUnit] = useState("mph");
   const [thresholdOffset, setThresholdOffset] = useState(5);
   const [demoMode, setDemoMode] = useState(false);
@@ -94,6 +95,16 @@ export default function SpeedMap() {
   const displaySpeed = demoMode ? demoSpeed : currentSpeed;
   const effectiveLimit = speedLimit ? speedLimit + thresholdOffset : null;
   const isSpeeding = effectiveLimit !== null && displaySpeed > effectiveLimit;
+
+  // Mute all audio/voice
+  const handleMuteAll = useCallback(() => {
+    setAudioEnabled(false);
+    setVoiceEnabled(false);
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    toast.info("All alerts muted");
+  }, []);
 
   // Convert speed between units
   const convertSpeed = useCallback((speedMps, toUnit) => {
@@ -291,7 +302,11 @@ export default function SpeedMap() {
       <AlertOverlay
         isActive={isSpeeding}
         audioEnabled={audioEnabled}
-        onMuteClick={() => setAudioEnabled(false)}
+        voiceEnabled={voiceEnabled}
+        currentSpeed={displaySpeed}
+        speedLimit={speedLimit}
+        speedUnit={speedUnit}
+        onMuteClick={handleMuteAll}
       />
       
       {/* Google Map */}
@@ -337,6 +352,8 @@ export default function SpeedMap() {
           <SettingsPanel
             audioEnabled={audioEnabled}
             setAudioEnabled={setAudioEnabled}
+            voiceEnabled={voiceEnabled}
+            setVoiceEnabled={setVoiceEnabled}
             speedUnit={speedUnit}
             setSpeedUnit={setSpeedUnit}
             thresholdOffset={thresholdOffset}
@@ -405,6 +422,24 @@ export default function SpeedMap() {
             </div>
           </div>
         )}
+
+        {/* Voice/Audio status indicators */}
+        <div className="absolute bottom-4 right-4 pointer-events-auto flex gap-2">
+          {voiceEnabled && (
+            <div className="backdrop-blur-xl bg-green-500/20 border border-green-500/30 px-3 py-1 rounded-full">
+              <span className="text-green-400 font-mono text-xs uppercase tracking-wider">
+                Voice On
+              </span>
+            </div>
+          )}
+          {audioEnabled && (
+            <div className="backdrop-blur-xl bg-orange-500/20 border border-orange-500/30 px-3 py-1 rounded-full">
+              <span className="text-orange-400 font-mono text-xs uppercase tracking-wider">
+                Audio On
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

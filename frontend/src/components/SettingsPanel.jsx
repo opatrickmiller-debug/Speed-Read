@@ -1,4 +1,4 @@
-import { Settings, Volume2, VolumeX, Gauge, Navigation, X } from "lucide-react";
+import { Settings, Volume2, VolumeX, Gauge, Navigation, Mic, MicOff } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 export const SettingsPanel = ({
   audioEnabled,
   setAudioEnabled,
+  voiceEnabled,
+  setVoiceEnabled,
   speedUnit,
   setSpeedUnit,
   thresholdOffset,
@@ -22,6 +24,16 @@ export const SettingsPanel = ({
   demoMode,
   setDemoMode,
 }) => {
+  // Test voice function
+  const testVoice = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance("Voice alerts are enabled. You will hear warnings when exceeding the speed limit.");
+      utterance.rate = 1.1;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -53,8 +65,8 @@ export const SettingsPanel = ({
           </SheetDescription>
         </SheetHeader>
         
-        <div className="mt-8 space-y-8">
-          {/* Audio Toggle */}
+        <div className="mt-8 space-y-6">
+          {/* Audio Alert Toggle */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -64,7 +76,7 @@ export const SettingsPanel = ({
                   <VolumeX className="w-5 h-5 text-zinc-500" />
                 )}
                 <span className="text-sm font-medium text-zinc-200 font-mono uppercase tracking-wider">
-                  Audio Alert
+                  Audio Alarm
                 </span>
               </div>
               <Switch
@@ -75,12 +87,46 @@ export const SettingsPanel = ({
               />
             </div>
             <p className="text-xs text-zinc-500 font-mono pl-8">
-              Plays alarm sound when speeding
+              Plays beeping alarm sound when speeding
             </p>
+          </div>
+
+          {/* Voice Alert Toggle */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {voiceEnabled ? (
+                  <Mic className="w-5 h-5 text-green-500" />
+                ) : (
+                  <MicOff className="w-5 h-5 text-zinc-500" />
+                )}
+                <span className="text-sm font-medium text-zinc-200 font-mono uppercase tracking-wider">
+                  Voice Alerts
+                </span>
+              </div>
+              <Switch
+                data-testid="voice-toggle"
+                checked={voiceEnabled}
+                onCheckedChange={setVoiceEnabled}
+                className="data-[state=checked]:bg-green-500"
+              />
+            </div>
+            <p className="text-xs text-zinc-500 font-mono pl-8">
+              Speaks warnings when exceeding speed limit
+            </p>
+            {voiceEnabled && (
+              <button
+                data-testid="test-voice-btn"
+                onClick={testVoice}
+                className="ml-8 px-3 py-1 text-xs font-mono uppercase tracking-wider bg-green-500/20 border border-green-500/50 text-green-400 hover:bg-green-500/30 transition-colors"
+              >
+                Test Voice
+              </button>
+            )}
           </div>
           
           {/* Speed Unit Toggle */}
-          <div className="space-y-3">
+          <div className="space-y-3 pt-4 border-t border-zinc-800">
             <div className="flex items-center gap-3">
               <Gauge className="w-5 h-5 text-sky-400" />
               <span className="text-sm font-medium text-zinc-200 font-mono uppercase tracking-wider">
@@ -118,7 +164,7 @@ export const SettingsPanel = ({
           </div>
           
           {/* Threshold Offset Slider */}
-          <div className="space-y-4">
+          <div className="space-y-4 pt-4 border-t border-zinc-800">
             <div className="flex items-center gap-3">
               <Navigation className="w-5 h-5 text-orange-500" />
               <span className="text-sm font-medium text-zinc-200 font-mono uppercase tracking-wider">
