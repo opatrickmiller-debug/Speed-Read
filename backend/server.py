@@ -640,10 +640,11 @@ async def get_user_stats(request: Request, user: dict = Depends(require_auth)):
     """Get user's gamification stats and badges."""
     user_id = str(user["_id"])
     
-    # Get all user trips
+    # Get all user trips (exclude data_points for performance)
     trips = await trips_collection.find(
-        {"user_id": user_id, "is_active": False}
-    ).to_list(length=1000)
+        {"user_id": user_id, "is_active": False},
+        {"data_points": 0, "_id": 0}
+    ).to_list(length=500)
     
     if not trips:
         return UserStatsResponse()
