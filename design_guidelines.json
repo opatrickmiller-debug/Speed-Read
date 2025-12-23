@@ -1,0 +1,150 @@
+{
+  "identity": {
+    "name": "E1: The Anti-AI Designer",
+    "mission": "Create a high-contrast, safety-first 'Pilot HUD' aesthetic that breaks the generic Google Maps overlay mold.",
+    "principles": [
+      "Fusion: Fighter Jet HUD x Braun Industrial Design",
+      "Emotion: Trust, Precision, Alertness",
+      "Content: Speed is the hero. Everything else is secondary.",
+      "Contrast: Maximum legibility. Day/Night adaptive.",
+      "Negative Space: Reduce cognitive load. No clutter."
+    ]
+  },
+  "typography": {
+    "primary_font": "Chivo",
+    "secondary_font": "JetBrains Mono",
+    "usage": {
+      "headings": "Chivo, font-black, tracking-tighter, uppercase",
+      "body": "JetBrains Mono, font-medium, tracking-tight",
+      "speed_display": "Chivo, font-black, tabular-nums, tracking-tighter",
+      "labels": "JetBrains Mono, text-xs, uppercase, tracking-[0.2em]"
+    },
+    "scale": {
+      "hero_speed": "text-8xl md:text-9xl",
+      "limit_display": "text-4xl md:text-5xl",
+      "label": "text-xs md:text-sm"
+    }
+  },
+  "colors": {
+    "palette": {
+      "base": {
+        "bg": "#09090b",
+        "surface": "#18181b",
+        "border": "#27272a"
+      },
+      "brand": {
+        "primary": "#f97316",
+        "secondary": "#38bdf8"
+      },
+      "functional": {
+        "safe": "#38bdf8",
+        "warning": "#f97316",
+        "danger": "#ef4444",
+        "success": "#22c55e"
+      }
+    },
+    "themes": {
+      "day": {
+        "bg": "bg-white/90",
+        "text": "text-zinc-950",
+        "accent": "text-orange-600"
+      },
+      "night": {
+        "bg": "bg-zinc-950/90",
+        "text": "text-white",
+        "accent": "text-orange-500"
+      }
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": {
+      "hud_panel": "backdrop-blur-xl bg-black/40 border border-white/10 shadow-2xl",
+      "alert_overlay": "backdrop-blur-sm bg-red-500/20 border-4 border-red-500 animate-pulse"
+    },
+    "textures": {
+      "scanlines": "repeating-linear-gradient(0deg, transparent, transparent 2px, #000000 3px)",
+      "noise": "url('data:image/svg+xml;base64,...')"
+    },
+    "borders": {
+      "tech": "border border-white/10 rounded-none",
+      "pill": "rounded-full border border-white/20"
+    }
+  },
+  "layout_strategy": {
+    "grid_system": "The 'Cockpit' Grid",
+    "rules": [
+      "Map is always full screen (z-0).",
+      "HUD elements float above (z-10).",
+      "Speedometer: Bottom Center (Mobile) or Top Left (Desktop).",
+      "Settings: Slide-over panel from right.",
+      "Alerts: Full-screen perimeter flash."
+    ],
+    "spacing": {
+      "container_padding": "p-6 md:p-12",
+      "element_gap": "gap-4 md:gap-8"
+    }
+  },
+  "components": {
+    "Speedometer": {
+      "path": "src/components/Speedometer.jsx",
+      "style": "Massive text, tabular nums, dynamic color based on limit. No gauge, just pure data.",
+      "animation": "Number counter transition"
+    },
+    "SpeedLimit": {
+      "path": "src/components/SpeedLimit.jsx",
+      "style": "Circular (EU) or Rectangular (US) sign style. White bg, Red border, Black text. High contrast.",
+      "animation": "Pop-in on change"
+    },
+    "AlertOverlay": {
+      "path": "src/components/AlertOverlay.jsx",
+      "style": "Full viewport border flash. Red pulse. Audio toggle visible.",
+      "animation": "Animate-pulse fast"
+    },
+    "SettingsPanel": {
+      "path": "src/components/SettingsPanel.jsx",
+      "style": "Glassmorphism slide-over. Large touch targets for toggles (easy to hit while driving).",
+      "components": ["Switch", "Slider", "Button"]
+    }
+  },
+  "motion": {
+    "transitions": "transition-all duration-300 ease-out",
+    "micro_interactions": "Active states scale down 0.95. Toggles snap.",
+    "accessibility": "Respect prefers-reduced-motion. Ensure color is not the only indicator of speeding (use icons/text)."
+  },
+  "media": {
+    "images": [
+      {
+        "category": "splash_screen",
+        "url": "https://images.unsplash.com/photo-1764538200875-7c5cd7c00229?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMG5pZ2h0JTIwY2l0eSUyMGRyaXZlJTIwbW90aW9uJTIwYmx1ciUyMGxpZ2h0c3xlbnwwfHx8fDE3NjY1MDY1MDJ8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Abstract night drive motion blur for splash/loading screen."
+      }
+    ],
+    "icons": "Lucide React (AlertTriangle, Volume2, VolumeX, Settings, MapPin, Navigation)"
+  },
+  "instructions_to_main_agent": [
+    "Use .jsx extension for all components.",
+    "Do not use 'Inter' font. Import 'Chivo' and 'JetBrains Mono' from Google Fonts.",
+    "Ensure the Google Maps style is 'Dark' or 'Muted' to allow the HUD to pop.",
+    "Implement a 'Demo Mode' that simulates movement/speeding for testing without driving.",
+    "Use the 'use_parallel_tool_calls' block for efficiency.",
+    "Strictly follow the 'Anti-AI' aesthetic: No generic white cards with shadows. Use dark glass and sharp borders."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "You MUST NOT apply universal transition. Eg: transition: all. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms",
+    "You MUST NOT center align the app container, ie do not add .App { text-align: center; } in the css file. This disrupts the human natural reading flow of text",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style",
+    "NEVER: use AI assistant Emoji characters like 🤖🧠 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.",
+    "Main agent relies on these image URLs. Missing categories = main agent will use placeholder text which is FORBIDDEN",
+    "Prioritize using pre-existing components from src/components/ui when applicable",
+    "Components MUST use named exports (export const ComponentName = ...)",
+    "Pages MUST use default exports (export default function PageName() {...})",
+    "Use sonner for toasts"
+  ]
+}
