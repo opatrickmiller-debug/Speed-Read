@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
 Backend API Testing for Speed Alert App
-Tests the /api/speed-limit endpoint functionality
+Tests the /api/speed-limit endpoint and trip history functionality
 """
 
 import requests
 import sys
 import json
+import time
 from datetime import datetime
 
 class SpeedAlertAPITester:
@@ -15,6 +16,7 @@ class SpeedAlertAPITester:
         self.tests_run = 0
         self.tests_passed = 0
         self.test_results = []
+        self.created_trip_ids = []
 
     def log_test(self, name, success, details=""):
         """Log test result"""
