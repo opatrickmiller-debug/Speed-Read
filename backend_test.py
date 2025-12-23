@@ -800,6 +800,15 @@ class SpeedAlertAPITester:
                 print("❌ API root endpoint failed - stopping tests")
                 return False
             
+            # Run authentication tests
+            print("\n🔐 Testing Authentication...")
+            if not self.test_user_registration():
+                print("❌ User registration failed - stopping authenticated tests")
+                return False
+            
+            self.test_user_login()
+            self.test_get_user_profile()
+            
             # Run all speed limit tests
             print("\n📡 Testing Speed Limit API...")
             self.test_speed_limit_valid_location()
@@ -807,6 +816,29 @@ class SpeedAlertAPITester:
             self.test_speed_limit_missing_params()
             self.test_speed_limit_remote_location()
             self.test_api_response_time()
+            
+            # Run gamification tests
+            print("\n🏆 Testing Gamification Features...")
+            self.test_get_user_stats()
+            self.test_get_all_badges()
+            
+            # Run export reports tests
+            print("\n📊 Testing Export Reports...")
+            self.test_generate_report()
+            
+            # Run family mode tests
+            print("\n👨‍👩‍👧‍👦 Testing Family Mode...")
+            self.test_create_family()
+            self.test_get_family()
+            self.test_join_family_invalid_code()
+            self.test_leave_family()
+            
+            # Run speed trap tests
+            print("\n🚨 Testing Speed Trap Features...")
+            self.test_get_nearby_traps()  # Test public endpoint first
+            self.test_report_speed_trap()
+            self.test_dismiss_trap()
+            self.test_trap_invalid_params()
             
             # Run trip history tests
             print("\n🛣️  Testing Trip History API...")
