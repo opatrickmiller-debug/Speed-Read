@@ -56,7 +56,11 @@ export const SettingsPanel = ({
   setThresholdOffset,
   demoMode,
   setDemoMode,
+  offlineCacheEnabled,
+  setOfflineCacheEnabled,
 }) => {
+  const [cacheStats, setCacheStats] = useState(() => getCacheStats());
+  
   // Test voice function with selected language
   const testVoice = () => {
     if ('speechSynthesis' in window) {
@@ -66,7 +70,6 @@ export const SettingsPanel = ({
       utterance.lang = LANG_CODES[voiceLanguage] || "en-US";
       utterance.rate = 1.0;
       
-      // Try to find a voice for the selected language
       const voices = window.speechSynthesis.getVoices();
       const langPrefix = voiceLanguage;
       const preferredVoice = voices.find(v => v.lang.startsWith(langPrefix));
@@ -75,6 +78,13 @@ export const SettingsPanel = ({
       }
       
       window.speechSynthesis.speak(utterance);
+    }
+  };
+  
+  // Clear cache handler
+  const handleClearCache = () => {
+    if (clearCache()) {
+      setCacheStats(getCacheStats());
     }
   };
 
