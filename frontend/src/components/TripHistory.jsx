@@ -22,22 +22,28 @@ export const TripHistory = ({
   onStopRecording,
   currentTripStats 
 }) => {
+  const { isAuthenticated } = useAuth();
   const [trips, setTrips] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState(null);
 
-  // Fetch trips on mount
+  // Fetch trips on mount (only if authenticated)
   const fetchTrips = useCallback(async () => {
+    if (!isAuthenticated) return;
+    
     setIsLoading(true);
     try {
       const response = await axios.get(`${API}/trips?limit=50`);
       setTrips(response.data.trips || []);
     } catch (error) {
       console.error("Error fetching trips:", error);
+      if (error.response?.status === 401) {
+        setTrips([]);
+      }
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     fetchTrips();
