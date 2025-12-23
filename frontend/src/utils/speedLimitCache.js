@@ -91,10 +91,7 @@ const clearOldEntries = (cache) => {
 
 // Cache a speed limit for a location
 export const cacheSpeedLimit = (lat, lon, speedLimit, unit, roadName) => {
-  if (!speedLimit) {
-    console.log('[Cache] Skipping cache - no speed limit');
-    return;
-  }
+  if (!speedLimit) return;
   
   const geohash = encodeGeohash(lat, lon);
   const cache = getCache();
@@ -107,8 +104,6 @@ export const cacheSpeedLimit = (lat, lon, speedLimit, unit, roadName) => {
     lat,
     lon
   };
-  
-  console.log('[Cache] Caching speed limit:', { geohash, speedLimit, unit, roadName, totalEntries: Object.keys(cache).length });
   
   // Limit cache size
   if (Object.keys(cache).length > MAX_CACHE_ENTRIES) {
