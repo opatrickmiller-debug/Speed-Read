@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
-export const Speedometer = ({ speed, speedLimit, unit, isSpeeding }) => {
+export const Speedometer = ({ speed, speedLimit, unit, isSpeeding, theme = "dark" }) => {
   const [displaySpeed, setDisplaySpeed] = useState(0);
   
   // Animate speed number changes
@@ -22,11 +22,11 @@ export const Speedometer = ({ speed, speedLimit, unit, isSpeeding }) => {
 
   // Determine color based on speed vs limit
   const getSpeedColor = () => {
-    if (!speedLimit) return "text-sky-400";
+    if (!speedLimit) return theme === "dark" ? "text-sky-400" : "text-sky-600";
     const ratio = speed / speedLimit;
     if (ratio >= 1) return "text-red-500";
     if (ratio >= 0.9) return "text-orange-500";
-    return "text-sky-400";
+    return theme === "dark" ? "text-sky-400" : "text-sky-600";
   };
 
   return (
@@ -34,9 +34,12 @@ export const Speedometer = ({ speed, speedLimit, unit, isSpeeding }) => {
       data-testid="speedometer"
       className={cn(
         "flex flex-col items-center justify-center",
-        "backdrop-blur-xl bg-black/50 border border-white/10",
+        "backdrop-blur-xl border",
         "rounded-none shadow-2xl",
         "p-6 md:p-8 min-w-[200px]",
+        theme === "dark" 
+          ? "bg-black/50 border-white/10" 
+          : "bg-white/80 border-gray-300",
         isSpeeding && "border-red-500/50"
       )}
     >
@@ -63,7 +66,10 @@ export const Speedometer = ({ speed, speedLimit, unit, isSpeeding }) => {
       {/* Unit label */}
       <span 
         data-testid="speed-unit"
-        className="text-xs md:text-sm uppercase tracking-[0.2em] text-zinc-400 font-mono mt-2"
+        className={cn(
+          "text-xs md:text-sm uppercase tracking-[0.2em] font-mono mt-2",
+          theme === "dark" ? "text-zinc-400" : "text-gray-600"
+        )}
       >
         {unit}
       </span>
@@ -76,7 +82,10 @@ export const Speedometer = ({ speed, speedLimit, unit, isSpeeding }) => {
             isSpeeding ? "bg-red-500 animate-pulse" : "bg-green-500"
           )}
         />
-        <span className="text-xs uppercase tracking-[0.15em] text-zinc-500 font-mono">
+        <span className={cn(
+          "text-xs uppercase tracking-[0.15em] font-mono",
+          theme === "dark" ? "text-zinc-500" : "text-gray-500"
+        )}>
           {isSpeeding ? "OVER LIMIT" : "SAFE"}
         </span>
       </div>
