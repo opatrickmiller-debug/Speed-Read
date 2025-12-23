@@ -42,6 +42,12 @@ class SpeedAlertAPITester:
             "timestamp": datetime.now().isoformat()
         })
 
+    def get_auth_headers(self):
+        """Get authorization headers"""
+        if self.auth_token:
+            return {"Authorization": f"Bearer {self.auth_token}", "Content-Type": "application/json"}
+        return {"Content-Type": "application/json"}
+
     def test_api_root(self):
         """Test API root endpoint"""
         try:
