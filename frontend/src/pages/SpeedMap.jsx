@@ -672,12 +672,14 @@ export default function SpeedMap() {
               speedLimit={speedLimit}
               unit={speedUnit}
               isSpeeding={isSpeeding}
+              theme={theme}
             />
             <SpeedLimitSign
               speedLimit={speedLimit}
               roadName={roadName}
               isLoading={isLoadingSpeedLimit}
               isCached={isUsingCache}
+              theme={theme}
             />
           </div>
         </div>
