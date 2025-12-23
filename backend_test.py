@@ -169,7 +169,403 @@ class SpeedAlertAPITester:
             self.log_test("API Response Time", False, str(e))
             return False
 
-    # ==================== TRIP HISTORY TESTS ====================
+    # ==================== AUTHENTICATION TESTS ====================
+    
+    def test_user_registration(self):
+        """Test user registration"""
+        try:
+            # Generate unique email for testing
+            timestamp = int(time.time())
+            self.user_email = f"test_user_{timestamp}@example.com"
+            
+            data = {
+                "email": self.user_email,
+                "password": "TestPass123!"
+            }
+            response = requests.post(f"{self.base_url}/api/auth/register", json=data, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                if 'access_token' in response_data:
+                    self.auth_token = response_data['access_token']
+                    details += f", User ID: {response_data.get('user_id')}, Email: {response_data.get('email')}"
+                else:
+                    success = False
+                    details += ", Missing access_token in response"
+            
+            self.log_test("User Registration", success, details)
+            return success
+        except Exception as e:
+            self.log_test("User Registration", False, str(e))
+            return False
+
+    def test_user_login(self):
+        """Test user login with registered credentials"""
+        try:
+            if not self.user_email:
+                self.log_test("User Login", False, "No registered user email available")
+                return False
+                
+            data = {
+                "email": self.user_email,
+                "password": "TestPass123!"
+            }
+            response = requests.post(f"{self.base_url}/api/auth/login", json=data, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                if 'access_token' in response_data:
+                    self.auth_token = response_data['access_token']
+                    details += f", Token received, User ID: {response_data.get('user_id')}"
+                else:
+                    success = False
+                    details += ", Missing access_token in response"
+            
+            self.log_test("User Login", success, details)
+            return success
+        except Exception as e:
+            self.log_test("User Login", False, str(e))
+            return False
+
+    def test_get_user_profile(self):
+        """Test getting current user profile"""
+        try:
+            headers = self.get_auth_headers()
+            response = requests.get(f"{self.base_url}/api/auth/me", headers=headers, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                details += f", User ID: {response_data.get('user_id')}, Email: {response_data.get('email')}"
+            
+            self.log_test("Get User Profile", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Get User Profile", False, str(e))
+            return False
+
+    # ==================== GAMIFICATION TESTS ====================
+    
+    def test_get_user_stats(self):
+        """Test getting user gamification stats"""
+        try:
+            headers = self.get_auth_headers()
+            response = requests.get(f"{self.base_url}/api/stats", headers=headers, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                required_fields = ["total_trips", "total_distance", "total_alerts", "current_streak", "badges"]
+                has_all_fields = all(field in response_data for field in required_fields)
+                
+                if has_all_fields:
+                    details += f", Trips: {response_data.get('total_trips')}, Distance: {response_data.get('total_distance')}, Badges: {len(response_data.get('badges', []))}"
+                else:
+                    success = False
+                    details += f", Missing fields in response: {response_data}"
+            
+            self.log_test("Get User Stats", success, details)
+            return success, response.json() if success else {}
+        except Exception as e:
+            self.log_test("Get User Stats", False, str(e))
+            return False, {}
+
+    def test_get_all_badges(self):
+        """Test getting all available badges (public endpoint)"""
+        try:
+            response = requests.get(f"{self.base_url}/api/badges", timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                if 'badges' in response_data:
+                    badge_count = len(response_data['badges'])
+                    details += f", Badge count: {badge_count}"
+                    # Check for some expected badges
+                    expected_badges = ["first_trip", "safe_week", "road_warrior"]
+                    found_badges = [b for b in expected_badges if b in response_data['badges']]
+                    details += f", Found expected badges: {found_badges}"
+                else:
+                    success = False
+                    details += ", Missing 'badges' field in response"
+            
+            self.log_test("Get All Badges", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Get All Badges", False, str(e))
+            return False
+
+    # ==================== EXPORT REPORTS TESTS ====================
+    
+    def test_generate_report(self):
+        """Test generating driving report"""
+        try:
+            headers = self.get_auth_headers()
+            
+            # Generate report for last 30 days
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=30)
+            
+            data = {
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "format": "json"
+            }
+            response = requests.post(f"{self.base_url}/api/reports/generate", json=data, headers=headers, timeout=15)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                if 'error' not in response_data:
+                    # Check for required report fields
+                    required_fields = ["report_id", "generated_at", "summary", "rating"]
+                    has_all_fields = all(field in response_data for field in required_fields)
+                    
+                    if has_all_fields and 'summary' in response_data:
+                        summary = response_data['summary']
+                        details += f", Report ID: {response_data.get('report_id')}, Rating: {response_data.get('rating')}"
+                        details += f", Trips: {summary.get('total_trips')}, Safety Score: {summary.get('safety_score')}"
+                    else:
+                        success = False
+                        details += f", Missing fields in response: {response_data}"
+                else:
+                    # No trips found is acceptable for new user
+                    details += f", {response_data.get('error')}"
+            
+            self.log_test("Generate Report", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Generate Report", False, str(e))
+            return False
+
+    # ==================== FAMILY MODE TESTS ====================
+    
+    def test_create_family(self):
+        """Test creating a family group"""
+        try:
+            headers = self.get_auth_headers()
+            
+            data = {
+                "name": f"Test Family {int(time.time())}"
+            }
+            response = requests.post(f"{self.base_url}/api/family/create", json=data, headers=headers, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                if 'family_id' in response_data and 'invite_code' in response_data:
+                    self.family_id = response_data['family_id']
+                    details += f", Family ID: {response_data.get('family_id')}, Invite Code: {response_data.get('invite_code')}"
+                else:
+                    success = False
+                    details += ", Missing family_id or invite_code in response"
+            
+            self.log_test("Create Family", success, details)
+            return success, response.json() if success else {}
+        except Exception as e:
+            self.log_test("Create Family", False, str(e))
+            return False, {}
+
+    def test_get_family(self):
+        """Test getting user's family information"""
+        try:
+            headers = self.get_auth_headers()
+            response = requests.get(f"{self.base_url}/api/family", headers=headers, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                if 'family' in response_data:
+                    family = response_data.get('family')
+                    if family:
+                        details += f", Family Name: {family.get('name')}, Members: {family.get('member_count')}"
+                        details += f", Is Owner: {response_data.get('is_owner')}"
+                    else:
+                        details += ", No family found (expected for new user)"
+                else:
+                    success = False
+                    details += ", Missing 'family' field in response"
+            
+            self.log_test("Get Family", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Get Family", False, str(e))
+            return False
+
+    def test_join_family_invalid_code(self):
+        """Test joining family with invalid invite code"""
+        try:
+            headers = self.get_auth_headers()
+            response = requests.post(f"{self.base_url}/api/family/join/invalid_code", headers=headers, timeout=10)
+            
+            # Should return 404 for invalid invite code
+            success = response.status_code == 404
+            details = f"Status: {response.status_code} (expected 404 for invalid code)"
+            
+            self.log_test("Join Family - Invalid Code", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Join Family - Invalid Code", False, str(e))
+            return False
+
+    def test_leave_family(self):
+        """Test leaving/deleting family"""
+        try:
+            headers = self.get_auth_headers()
+            response = requests.delete(f"{self.base_url}/api/family/leave", headers=headers, timeout=10)
+            
+            # Should return 200 if family exists, 404 if no family
+            success = response.status_code in [200, 404]
+            details = f"Status: {response.status_code}"
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                details += f", Message: {response_data.get('message')}"
+            elif response.status_code == 404:
+                details += " (no family to leave - expected for new user)"
+            
+            self.log_test("Leave Family", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Leave Family", False, str(e))
+            return False
+
+    # ==================== SPEED TRAP TESTS ====================
+    
+    def test_report_speed_trap(self):
+        """Test reporting a speed trap"""
+        try:
+            headers = self.get_auth_headers()
+            
+            data = {
+                "lat": 37.7749,
+                "lon": -122.4194,
+                "trap_type": "speed_camera",
+                "description": "Test speed camera report"
+            }
+            response = requests.post(f"{self.base_url}/api/traps/report", json=data, headers=headers, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                if 'trap_id' in response_data:
+                    trap_id = response_data['trap_id']
+                    self.created_trap_ids.append(trap_id)
+                    details += f", Trap ID: {trap_id}, New: {response_data.get('new')}"
+                else:
+                    success = False
+                    details += ", Missing trap_id in response"
+            
+            self.log_test("Report Speed Trap", success, details)
+            return success, response.json() if success else {}
+        except Exception as e:
+            self.log_test("Report Speed Trap", False, str(e))
+            return False, {}
+
+    def test_get_nearby_traps(self):
+        """Test getting nearby speed traps (public endpoint)"""
+        try:
+            params = {
+                "lat": 37.7749,
+                "lon": -122.4194,
+                "radius_miles": 5
+            }
+            response = requests.get(f"{self.base_url}/api/traps/nearby", params=params, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                if 'traps' in response_data and 'count' in response_data:
+                    trap_count = response_data.get('count', 0)
+                    details += f", Trap count: {trap_count}"
+                    
+                    # Check trap structure if any traps found
+                    if trap_count > 0:
+                        first_trap = response_data['traps'][0]
+                        required_fields = ["id", "lat", "lon", "trap_type", "reporter_count"]
+                        has_all_fields = all(field in first_trap for field in required_fields)
+                        if not has_all_fields:
+                            success = False
+                            details += ", Missing fields in trap data"
+                else:
+                    success = False
+                    details += ", Missing 'traps' or 'count' field in response"
+            
+            self.log_test("Get Nearby Traps", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Get Nearby Traps", False, str(e))
+            return False
+
+    def test_dismiss_trap(self):
+        """Test dismissing a speed trap"""
+        try:
+            if not self.created_trap_ids:
+                self.log_test("Dismiss Speed Trap", False, "No trap ID available for testing")
+                return False
+                
+            headers = self.get_auth_headers()
+            trap_id = self.created_trap_ids[0]
+            
+            response = requests.post(f"{self.base_url}/api/traps/{trap_id}/dismiss", headers=headers, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                details += f", Message: {response_data.get('message')}"
+            
+            self.log_test("Dismiss Speed Trap", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Dismiss Speed Trap", False, str(e))
+            return False
+
+    def test_trap_invalid_params(self):
+        """Test speed trap endpoints with invalid parameters"""
+        try:
+            headers = self.get_auth_headers()
+            
+            # Test invalid coordinates for reporting
+            data = {
+                "lat": "invalid",
+                "lon": "invalid", 
+                "trap_type": "speed_camera"
+            }
+            response = requests.post(f"{self.base_url}/api/traps/report", json=data, headers=headers, timeout=10)
+            
+            # Should return 422 for invalid parameters
+            success = response.status_code == 422
+            details = f"Status: {response.status_code} (expected 422 for invalid params)"
+            
+            self.log_test("Speed Trap - Invalid Parameters", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Speed Trap - Invalid Parameters", False, str(e))
+            return False
     
     def test_start_trip(self):
         """Test starting a new trip"""
