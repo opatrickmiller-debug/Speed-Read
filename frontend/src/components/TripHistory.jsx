@@ -164,6 +164,16 @@ export const TripHistory = ({
                 </div>
               )}
             </div>
+          ) : !isAuthenticated ? (
+            <div className="text-center space-y-3">
+              <Lock className="w-8 h-8 text-zinc-500 mx-auto" />
+              <p className="text-zinc-400 text-sm font-mono">
+                Sign in to record trips
+              </p>
+              <p className="text-zinc-600 text-xs font-mono">
+                Click the user icon (top right) to create an account
+              </p>
+            </div>
           ) : (
             <Button
               data-testid="start-recording-btn"
@@ -178,7 +188,11 @@ export const TripHistory = ({
         
         {/* Trip List */}
         <div className="flex-1 overflow-y-auto mt-4 space-y-2">
-          {isLoading ? (
+          {!isAuthenticated ? (
+            <div className="text-center py-8 text-zinc-600 font-mono text-sm">
+              Sign in to view your trips
+            </div>
+          ) : isLoading ? (
             <div className="text-center py-8 text-zinc-500 font-mono text-sm">
               Loading trips...
             </div>
