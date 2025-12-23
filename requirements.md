@@ -27,12 +27,24 @@ Build an app that overlays on Google Maps that allows user to set an alarm to go
 ### Key Features Implemented
 - ✅ Real-time GPS tracking with speed calculation
 - ✅ Speed limit fetching from OpenStreetMap Overpass API
-- ✅ Visual alert (red border flash) when speeding
-- ✅ Audio alarm (oscillator-based) when speeding
+- ✅ Visual alert (red border flash + info banner) when speeding
+- ✅ Audio alarm (oscillator-based beeping) when speeding
+- ✅ **Voice alerts** using Web Speech API - announces when speeding starts
 - ✅ Demo mode for testing without GPS
-- ✅ Settings: audio toggle, speed unit (mph/km/h), threshold offset
+- ✅ Settings panel with:
+  - Audio alarm toggle
+  - Voice alerts toggle with "Test Voice" button
+  - Speed unit selector (MPH/KM/H)
+  - Alert threshold slider (0-15 over limit)
+  - Demo mode toggle
 - ✅ Dark "Pilot HUD" theme aesthetic
 - ✅ Mobile-responsive design
+- ✅ Status indicators (Voice On, Audio On badges)
+
+### Alert System Details
+- **Visual**: Full-screen red border flash, animated corner indicators, speed comparison banner
+- **Audio**: Oscillator-based alarm (800Hz/600Hz alternating)
+- **Voice**: Web Speech API announces "Speed alert. You are exceeding the speed limit." with repeat every 10 seconds if still speeding. For severe speeding (10+ over), provides specific over-limit amount.
 
 ### Design System
 - **Fonts**: Chivo (headings/speed), JetBrains Mono (labels)
@@ -43,6 +55,5 @@ Build an app that overlays on Google Maps that allows user to set an alarm to go
 1. Upgrade Google Maps Marker to AdvancedMarkerElement (deprecation warning)
 2. Add speed history/trip logging feature
 3. Add offline caching for speed limits
-4. Add voice announcements for speed alerts
-5. Add customizable alarm sounds
-6. Add multi-language support
+4. Add customizable alarm sounds
+5. Add multi-language support for voice alerts
