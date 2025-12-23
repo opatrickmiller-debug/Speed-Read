@@ -51,6 +51,10 @@ db = client[os.environ['DB_NAME']]
 # Collections
 trips_collection = db.trips
 users_collection = db.users
+speed_traps_collection = db.speed_traps
+families_collection = db.families
+badges_collection = db.badges
+stats_collection = db.user_stats
 
 # Create the main app
 app = FastAPI(
