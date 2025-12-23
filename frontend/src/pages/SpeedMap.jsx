@@ -534,7 +534,7 @@ export default function SpeedMap() {
       )}
       
       {/* HUD Overlay */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none z-10">
         {/* Top bar with settings */}
         <div className="absolute top-4 right-4 pointer-events-auto flex gap-2">
           <SettingsPanel
