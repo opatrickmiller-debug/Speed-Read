@@ -606,6 +606,528 @@ async def delete_trip(request: Request, trip_id: str, user: dict = Depends(requi
     
     return {"message": "Trip deleted"}
 
+# ==================== GAMIFICATION ENDPOINTS ====================
+
+BADGES = {
+    "first_trip": {"name": "First Trip", "description": "Complete your first trip", "icon": "🚗"},
+    "safe_week": {"name": "Safe Week", "description": "7 days without speeding alerts", "icon": "🛡️"},
+    "road_warrior": {"name": "Road Warrior", "description": "Complete 50 trips", "icon": "🏆"},
+    "speed_demon_reformed": {"name": "Reformed", "description": "Reduce alerts by 50% week over week", "icon": "😇"},
+    "night_owl": {"name": "Night Owl", "description": "Complete 10 trips after 10 PM", "icon": "🦉"},
+    "early_bird": {"name": "Early Bird", "description": "Complete 10 trips before 7 AM", "icon": "🐦"},
+    "marathon_driver": {"name": "Marathon Driver", "description": "Drive 100 miles in one trip", "icon": "🏃"},
+    "consistent": {"name": "Consistent", "description": "Record trips 7 days in a row", "icon": "📅"},
+    "explorer": {"name": "Explorer", "description": "Drive in 10 different speed limit zones", "icon": "🗺️"},
+    "perfect_trip": {"name": "Perfect Trip", "description": "Complete a trip with zero alerts", "icon": "⭐"},
+}
+
+class UserStatsResponse(BaseModel):
+    total_trips: int = 0
+    total_distance: float = 0
+    total_alerts: int = 0
+    current_streak: int = 0
+    longest_streak: int = 0
+    avg_speed: float = 0
+    safe_trip_percentage: float = 0
+    badges: List[str] = []
+    weekly_stats: dict = {}
+
+@api_router.get("/stats")
+@limiter.limit("30/minute")
+async def get_user_stats(request: Request, user: dict = Depends(require_auth)):
+    """Get user's gamification stats and badges."""
+    user_id = str(user["_id"])
+    
+    # Get all user trips
+    trips = await trips_collection.find(
+        {"user_id": user_id, "is_active": False}
+    ).to_list(length=1000)
+    
+    if not trips:
+        return UserStatsResponse()
+    
+    # Calculate stats
+    total_trips = len(trips)
+    total_distance = sum(t.get("distance_miles", 0) or 0 for t in trips)
+    total_alerts = sum(t.get("total_alerts", 0) for t in trips)
+    total_speed = sum(t.get("avg_speed", 0) for t in trips)
+    avg_speed = total_speed / total_trips if total_trips > 0 else 0
+    
+    safe_trips = sum(1 for t in trips if t.get("total_alerts", 0) == 0)
+    safe_trip_percentage = (safe_trips / total_trips * 100) if total_trips > 0 else 0
+    
+    # Calculate streaks (consecutive days with trips and no alerts)
+    trip_dates = sorted(set(
+        datetime.fromisoformat(t["start_time"].replace('Z', '+00:00')).date()
+        for t in trips if t.get("total_alerts", 0) == 0
+    ))
+    
+    current_streak = 0
+    longest_streak = 0
+    if trip_dates:
+        today = datetime.now(timezone.utc).date()
+        streak = 0
+        for i, date in enumerate(reversed(trip_dates)):
+            expected_date = today - timedelta(days=i)
+            if date == expected_date:
+                streak += 1
+            else:
+                break
+        current_streak = streak
+        
+        # Calculate longest streak
+        streak = 1
+        for i in range(1, len(trip_dates)):
+            if (trip_dates[i] - trip_dates[i-1]).days == 1:
+                streak += 1
+                longest_streak = max(longest_streak, streak)
+            else:
+                streak = 1
+        longest_streak = max(longest_streak, streak)
+    
+    # Weekly stats (last 4 weeks)
+    weekly_stats = {}
+    now = datetime.now(timezone.utc)
+    for week in range(4):
+        week_start = now - timedelta(days=now.weekday() + 7 * week)
+        week_end = week_start + timedelta(days=7)
+        week_trips = [t for t in trips if week_start.isoformat() <= t["start_time"] < week_end.isoformat()]
+        weekly_stats[f"week_{week}"] = {
+            "trips": len(week_trips),
+            "distance": sum(t.get("distance_miles", 0) or 0 for t in week_trips),
+            "alerts": sum(t.get("total_alerts", 0) for t in week_trips)
+        }
+    
+    # Check and award badges
+    earned_badges = []
+    
+    if total_trips >= 1:
+        earned_badges.append("first_trip")
+    if total_trips >= 50:
+        earned_badges.append("road_warrior")
+    if current_streak >= 7:
+        earned_badges.append("safe_week")
+    if safe_trips >= 1:
+        earned_badges.append("perfect_trip")
+    if any(t.get("distance_miles", 0) and t["distance_miles"] >= 100 for t in trips):
+        earned_badges.append("marathon_driver")
+    
+    # Store badges
+    await stats_collection.update_one(
+        {"user_id": user_id},
+        {"$set": {"badges": earned_badges, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    
+    return UserStatsResponse(
+        total_trips=total_trips,
+        total_distance=round(total_distance, 1),
+        total_alerts=total_alerts,
+        current_streak=current_streak,
+        longest_streak=longest_streak,
+        avg_speed=round(avg_speed, 1),
+        safe_trip_percentage=round(safe_trip_percentage, 1),
+        badges=earned_badges,
+        weekly_stats=weekly_stats
+    )
+
+@api_router.get("/badges")
+async def get_all_badges():
+    """Get all available badges."""
+    return {"badges": BADGES}
+
+# ==================== EXPORT REPORTS ENDPOINTS ====================
+
+class ReportRequest(BaseModel):
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    format: str = "json"  # json or summary
+
+@api_router.post("/reports/generate")
+@limiter.limit("10/minute")
+async def generate_report(request: Request, report_req: ReportRequest, user: dict = Depends(require_auth)):
+    """Generate a driving report for insurance or personal use."""
+    user_id = str(user["_id"])
+    
+    # Build query
+    query = {"user_id": user_id, "is_active": False}
+    
+    if report_req.start_date:
+        query["start_time"] = {"$gte": report_req.start_date}
+    if report_req.end_date:
+        if "start_time" in query:
+            query["start_time"]["$lte"] = report_req.end_date
+        else:
+            query["start_time"] = {"$lte": report_req.end_date}
+    
+    trips = await trips_collection.find(query, {"data_points": 0}).to_list(length=500)
+    
+    if not trips:
+        return {"error": "No trips found for the specified period"}
+    
+    # Calculate report metrics
+    total_trips = len(trips)
+    total_distance = sum(t.get("distance_miles", 0) or 0 for t in trips)
+    total_duration = sum(t.get("duration_minutes", 0) or 0 for t in trips)
+    total_alerts = sum(t.get("total_alerts", 0) for t in trips)
+    safe_trips = sum(1 for t in trips if t.get("total_alerts", 0) == 0)
+    max_speed_recorded = max(t.get("max_speed", 0) for t in trips)
+    avg_speed = sum(t.get("avg_speed", 0) for t in trips) / total_trips if total_trips > 0 else 0
+    
+    # Safety score (0-100)
+    safety_score = max(0, 100 - (total_alerts / max(total_trips, 1)) * 20)
+    safety_score = min(100, safety_score)
+    
+    report = {
+        "report_id": secrets.token_hex(8),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "user_email": user.get("email"),
+        "period": {
+            "start": report_req.start_date or trips[-1]["start_time"] if trips else None,
+            "end": report_req.end_date or trips[0]["start_time"] if trips else None
+        },
+        "summary": {
+            "total_trips": total_trips,
+            "total_distance_miles": round(total_distance, 1),
+            "total_duration_hours": round(total_duration / 60, 1),
+            "total_alerts": total_alerts,
+            "safe_trips": safe_trips,
+            "safe_trip_percentage": round((safe_trips / total_trips * 100) if total_trips > 0 else 0, 1),
+            "max_speed_recorded": round(max_speed_recorded, 1),
+            "average_speed": round(avg_speed, 1),
+            "safety_score": round(safety_score, 1)
+        },
+        "rating": "Excellent" if safety_score >= 90 else "Good" if safety_score >= 70 else "Fair" if safety_score >= 50 else "Needs Improvement",
+        "trips": [
+            {
+                "date": t["start_time"],
+                "duration_minutes": t.get("duration_minutes", 0),
+                "distance_miles": t.get("distance_miles", 0),
+                "max_speed": t.get("max_speed", 0),
+                "alerts": t.get("total_alerts", 0)
+            }
+            for t in trips[:50]  # Limit to 50 trips in detail
+        ] if report_req.format == "json" else []
+    }
+    
+    return report
+
+# ==================== FAMILY MODE ENDPOINTS ====================
+
+class CreateFamilyRequest(BaseModel):
+    name: str
+    
+    @validator('name')
+    def validate_name(cls, v):
+        if len(v) < 2 or len(v) > 50:
+            raise ValueError('Family name must be 2-50 characters')
+        return sanitize_string(v, 50)
+
+class InviteMemberRequest(BaseModel):
+    email: str
+
+class FamilyResponse(BaseModel):
+    id: str
+    name: str
+    owner_id: str
+    members: List[dict]
+    invite_code: str
+    created_at: str
+
+@api_router.post("/family/create")
+@limiter.limit("5/minute")
+async def create_family(request: Request, family_req: CreateFamilyRequest, user: dict = Depends(require_auth)):
+    """Create a new family group."""
+    user_id = str(user["_id"])
+    
+    # Check if user already owns a family
+    existing = await families_collection.find_one({"owner_id": user_id})
+    if existing:
+        raise HTTPException(status_code=400, detail="You already own a family group")
+    
+    invite_code = secrets.token_urlsafe(8)
+    
+    family = {
+        "name": family_req.name,
+        "owner_id": user_id,
+        "members": [{"user_id": user_id, "email": user["email"], "role": "owner", "joined_at": datetime.now(timezone.utc).isoformat()}],
+        "invite_code": invite_code,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    result = await families_collection.insert_one(family)
+    
+    return {
+        "family_id": str(result.inserted_id),
+        "name": family_req.name,
+        "invite_code": invite_code,
+        "message": "Family created successfully"
+    }
+
+@api_router.post("/family/join/{invite_code}")
+@limiter.limit("10/minute")
+async def join_family(request: Request, invite_code: str, user: dict = Depends(require_auth)):
+    """Join a family using invite code."""
+    user_id = str(user["_id"])
+    
+    family = await families_collection.find_one({"invite_code": invite_code})
+    if not family:
+        raise HTTPException(status_code=404, detail="Invalid invite code")
+    
+    # Check if already a member
+    if any(m["user_id"] == user_id for m in family.get("members", [])):
+        raise HTTPException(status_code=400, detail="You are already a member of this family")
+    
+    # Check member limit (max 10)
+    if len(family.get("members", [])) >= 10:
+        raise HTTPException(status_code=400, detail="Family has reached maximum members")
+    
+    # Add member
+    new_member = {
+        "user_id": user_id,
+        "email": user["email"],
+        "role": "member",
+        "joined_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await families_collection.update_one(
+        {"_id": family["_id"]},
+        {"$push": {"members": new_member}}
+    )
+    
+    return {"message": f"Successfully joined {family['name']}"}
+
+@api_router.get("/family")
+@limiter.limit("30/minute")
+async def get_my_family(request: Request, user: dict = Depends(require_auth)):
+    """Get user's family group and member stats."""
+    user_id = str(user["_id"])
+    
+    # Find family where user is a member
+    family = await families_collection.find_one({"members.user_id": user_id})
+    
+    if not family:
+        return {"family": None}
+    
+    # Get stats for each member
+    member_stats = []
+    for member in family.get("members", []):
+        member_trips = await trips_collection.find(
+            {"user_id": member["user_id"], "is_active": False}
+        ).to_list(length=100)
+        
+        total_trips = len(member_trips)
+        total_alerts = sum(t.get("total_alerts", 0) for t in member_trips)
+        total_distance = sum(t.get("distance_miles", 0) or 0 for t in member_trips)
+        safe_trips = sum(1 for t in member_trips if t.get("total_alerts", 0) == 0)
+        
+        # This week's trips
+        week_start = datetime.now(timezone.utc) - timedelta(days=datetime.now(timezone.utc).weekday())
+        week_trips = [t for t in member_trips if t["start_time"] >= week_start.isoformat()]
+        
+        member_stats.append({
+            "user_id": member["user_id"],
+            "email": member["email"],
+            "role": member["role"],
+            "total_trips": total_trips,
+            "total_distance": round(total_distance, 1),
+            "total_alerts": total_alerts,
+            "safe_trip_percentage": round((safe_trips / total_trips * 100) if total_trips > 0 else 0, 1),
+            "trips_this_week": len(week_trips),
+            "alerts_this_week": sum(t.get("total_alerts", 0) for t in week_trips)
+        })
+    
+    return {
+        "family": {
+            "id": str(family["_id"]),
+            "name": family["name"],
+            "owner_id": family["owner_id"],
+            "invite_code": family["invite_code"] if family["owner_id"] == user_id else None,
+            "member_count": len(family.get("members", [])),
+            "created_at": family["created_at"]
+        },
+        "members": member_stats,
+        "is_owner": family["owner_id"] == user_id
+    }
+
+@api_router.delete("/family/leave")
+async def leave_family(request: Request, user: dict = Depends(require_auth)):
+    """Leave current family group."""
+    user_id = str(user["_id"])
+    
+    family = await families_collection.find_one({"members.user_id": user_id})
+    if not family:
+        raise HTTPException(status_code=404, detail="You are not in a family")
+    
+    if family["owner_id"] == user_id:
+        # Owner leaving - delete the family
+        await families_collection.delete_one({"_id": family["_id"]})
+        return {"message": "Family deleted"}
+    else:
+        # Member leaving
+        await families_collection.update_one(
+            {"_id": family["_id"]},
+            {"$pull": {"members": {"user_id": user_id}}}
+        )
+        return {"message": "Left family successfully"}
+
+# ==================== SPEED TRAP CROWDSOURCING ENDPOINTS ====================
+
+class ReportTrapRequest(BaseModel):
+    lat: float
+    lon: float
+    trap_type: str = "speed_camera"  # speed_camera, police, speed_bump, school_zone
+    description: Optional[str] = None
+    
+    @validator('lat')
+    def validate_lat(cls, v):
+        if not -90 <= v <= 90:
+            raise ValueError('Invalid latitude')
+        return v
+    
+    @validator('lon')
+    def validate_lon(cls, v):
+        if not -180 <= v <= 180:
+            raise ValueError('Invalid longitude')
+        return v
+    
+    @validator('trap_type')
+    def validate_type(cls, v):
+        valid_types = ["speed_camera", "police", "speed_bump", "school_zone", "construction"]
+        if v not in valid_types:
+            raise ValueError(f'Type must be one of: {valid_types}')
+        return v
+
+class SpeedTrapResponse(BaseModel):
+    id: str
+    lat: float
+    lon: float
+    trap_type: str
+    description: Optional[str]
+    reporter_count: int
+    last_confirmed: str
+    distance_miles: Optional[float] = None
+
+@api_router.post("/traps/report")
+@limiter.limit("20/minute")
+async def report_speed_trap(request: Request, trap: ReportTrapRequest, user: dict = Depends(require_auth)):
+    """Report a speed trap location."""
+    user_id = str(user["_id"])
+    
+    # Check for nearby existing trap (within ~500 meters)
+    # Simple approximation: 0.005 degrees ≈ 500m
+    nearby = await speed_traps_collection.find_one({
+        "lat": {"$gte": trap.lat - 0.005, "$lte": trap.lat + 0.005},
+        "lon": {"$gte": trap.lon - 0.005, "$lte": trap.lon + 0.005},
+        "trap_type": trap.trap_type,
+        "active": True
+    })
+    
+    if nearby:
+        # Confirm existing trap
+        await speed_traps_collection.update_one(
+            {"_id": nearby["_id"]},
+            {
+                "$inc": {"reporter_count": 1},
+                "$set": {"last_confirmed": datetime.now(timezone.utc).isoformat()},
+                "$addToSet": {"reporters": user_id}
+            }
+        )
+        return {"message": "Speed trap confirmed", "trap_id": str(nearby["_id"]), "new": False}
+    
+    # Create new trap
+    new_trap = {
+        "lat": trap.lat,
+        "lon": trap.lon,
+        "trap_type": trap.trap_type,
+        "description": sanitize_string(trap.description, 200) if trap.description else None,
+        "reporter_count": 1,
+        "reporters": [user_id],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "last_confirmed": datetime.now(timezone.utc).isoformat(),
+        "active": True,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()  # Traps expire after 24h without confirmation
+    }
+    
+    result = await speed_traps_collection.insert_one(new_trap)
+    
+    return {"message": "Speed trap reported", "trap_id": str(result.inserted_id), "new": True}
+
+@api_router.get("/traps/nearby")
+@limiter.limit("60/minute")
+async def get_nearby_traps(request: Request, lat: float, lon: float, radius_miles: float = 5):
+    """Get speed traps near a location."""
+    # Convert radius to degrees (rough approximation)
+    # 1 degree ≈ 69 miles at equator
+    radius_deg = radius_miles / 69
+    
+    # Find active traps within radius
+    traps = await speed_traps_collection.find({
+        "lat": {"$gte": lat - radius_deg, "$lte": lat + radius_deg},
+        "lon": {"$gte": lon - radius_deg, "$lte": lon + radius_deg},
+        "active": True,
+        "last_confirmed": {"$gte": (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()}
+    }).to_list(length=50)
+    
+    # Calculate distance and sort
+    from math import radians, sin, cos, sqrt, atan2
+    
+    def calc_distance(trap_lat, trap_lon):
+        R = 3959  # Earth radius in miles
+        lat1, lon1 = radians(lat), radians(lon)
+        lat2, lon2 = radians(trap_lat), radians(trap_lon)
+        dlat, dlon = lat2 - lat1, lon2 - lon1
+        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+        c = 2 * atan2(sqrt(a), sqrt(1-a))
+        return R * c
+    
+    result = []
+    for trap in traps:
+        dist = calc_distance(trap["lat"], trap["lon"])
+        if dist <= radius_miles:
+            result.append(SpeedTrapResponse(
+                id=str(trap["_id"]),
+                lat=trap["lat"],
+                lon=trap["lon"],
+                trap_type=trap["trap_type"],
+                description=trap.get("description"),
+                reporter_count=trap.get("reporter_count", 1),
+                last_confirmed=trap["last_confirmed"],
+                distance_miles=round(dist, 2)
+            ))
+    
+    # Sort by distance
+    result.sort(key=lambda x: x.distance_miles or 999)
+    
+    return {"traps": result, "count": len(result)}
+
+@api_router.post("/traps/{trap_id}/dismiss")
+@limiter.limit("30/minute")
+async def dismiss_trap(request: Request, trap_id: str, user: dict = Depends(require_auth)):
+    """Report that a trap is no longer present."""
+    try:
+        oid = ObjectId(trap_id)
+    except:
+        raise HTTPException(status_code=400, detail="Invalid trap ID")
+    
+    trap = await speed_traps_collection.find_one({"_id": oid})
+    if not trap:
+        raise HTTPException(status_code=404, detail="Trap not found")
+    
+    # Decrease reporter count or deactivate
+    if trap.get("reporter_count", 1) <= 1:
+        await speed_traps_collection.update_one(
+            {"_id": oid},
+            {"$set": {"active": False}}
+        )
+        return {"message": "Trap dismissed and deactivated"}
+    else:
+        await speed_traps_collection.update_one(
+            {"_id": oid},
+            {"$inc": {"reporter_count": -1}}
+        )
+        return {"message": "Trap dismissal recorded"}
+
 # ==================== APP CONFIGURATION ====================
 
 app.include_router(api_router)
