@@ -1,34 +1,147 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* Speed Alert App - HUD Styling */
+
+/* Font imports */
+@import url('https://fonts.googleapis.com/css2?family=Chivo:wght@400;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+/* Custom font classes */
+.font-chivo {
+  font-family: 'Chivo', sans-serif;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+/* Remove default center alignment */
+.App {
+  min-height: 100vh;
+  background: #09090b;
 }
 
-.App-link {
-    color: #61dafb;
+/* Tabular numbers for speed display */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #18181b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+/* Smooth animations */
+@keyframes pulse-border {
+  0%, 100% {
+    border-color: rgba(239, 68, 68, 0.5);
+  }
+  50% {
+    border-color: rgba(239, 68, 68, 1);
+  }
+}
+
+.animate-pulse-border {
+  animation: pulse-border 0.5s ease-in-out infinite;
+}
+
+/* Glow effect for speeding state */
+.speed-glow {
+  box-shadow: 0 0 60px rgba(239, 68, 68, 0.4);
+}
+
+/* Glass panel effect */
+.glass-panel {
+  backdrop-filter: blur(16px);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* HUD scanline effect (subtle) */
+.hud-scanlines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 3px
+  );
+  pointer-events: none;
+}
+
+/* Safe/Warning/Danger color utilities */
+.text-safe {
+  color: #38bdf8;
+}
+
+.text-warning {
+  color: #f97316;
+}
+
+.text-danger {
+  color: #ef4444;
+}
+
+/* Button active state */
+button:active {
+  transform: scale(0.98);
+}
+
+/* Prevent text selection on HUD elements */
+.hud-element {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Map marker pulse animation */
+@keyframes marker-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .font-chivo {
+    letter-spacing: -0.02em;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .glass-panel {
+    background: rgba(0, 0, 0, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse,
+  .animate-bounce,
+  .animate-ping {
+    animation: none;
+  }
 }
