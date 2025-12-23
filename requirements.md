@@ -43,8 +43,14 @@ Build an app that overlays on Google Maps that allows user to set an alarm to go
 
 ### Alert System Details
 - **Visual**: Full-screen red border flash, animated corner indicators, speed comparison banner
-- **Audio**: Oscillator-based alarm (800Hz/600Hz alternating)
-- **Voice**: Web Speech API announces "Speed alert. You are exceeding the speed limit." with repeat every 10 seconds if still speeding. For severe speeding (10+ over), provides specific over-limit amount.
+- **Audio**: Oscillator-based alarm (800/600Hz alternating)
+- **Voice**: Web Speech API with 12 languages supported:
+  - 🇺🇸 English, 🇪🇸 Español, 🇫🇷 Français, 🇩🇪 Deutsch
+  - 🇮🇹 Italiano, 🇧🇷 Português, 🇨🇳 中文, 🇯🇵 日本語
+  - 🇰🇷 한국어, 🇮🇳 हिन्दी, 🇸🇦 العربية, 🇷🇺 Русский
+- Voice announces in selected language when speeding starts, repeats every 10 seconds
+- Language selector in settings with country flags
+- Status indicator shows selected language flag
 
 ### Design System
 - **Fonts**: Chivo (headings/speed), JetBrains Mono (labels)
