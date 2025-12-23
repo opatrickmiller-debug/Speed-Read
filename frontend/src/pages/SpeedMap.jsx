@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
-import { MapPin, Crosshair, WifiOff, Database } from "lucide-react";
+import { MapPin, Crosshair, WifiOff, Database, Trophy } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -10,6 +10,7 @@ import { AlertOverlay, AVAILABLE_LANGUAGES } from "@/components/AlertOverlay";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { TripHistory } from "@/components/TripHistory";
 import { AuthPanel } from "@/components/AuthPanel";
+import { FeaturesPanel } from "@/components/FeaturesPanel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
