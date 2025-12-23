@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Play, Square, Clock, Gauge, AlertTriangle, MapPin, ChevronRight, Trash2, X } from "lucide-react";
+import { Play, Square, Clock, Gauge, AlertTriangle, MapPin, ChevronRight, Trash2, X, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import axios from "axios";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
