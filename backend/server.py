@@ -40,7 +40,7 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 security = HTTPBearer(auto_error=False)
 
 # Allowed origins for CORS (restrict in production)
-ALLOWED_ORIGINS = os.environ.get('CORS_ORIGINS', 'https://pace-guardian.preview.emergentagent.com,http://localhost:3000').split(',')
+ALLOWED_ORIGINS = os.environ.get('CORS_ORIGINS', 'https://speedsentry-3.preview.emergentagent.com,http://localhost:3000').split(',')
 
 # ==================== DATABASE ====================
 
