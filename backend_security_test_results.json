@@ -1,0 +1,203 @@
+{
+  "summary": {
+    "total_tests": 32,
+    "passed_tests": 26,
+    "success_rate": 81.25,
+    "timestamp": "2025-12-23T17:44:50.487818",
+    "test_type": "security_focused"
+  },
+  "test_results": [
+    {
+      "test": "User Registration - Valid Data",
+      "success": true,
+      "details": "Status: 200, User ID: 694ad4d148fcd7fdcb6a683c, Token received",
+      "timestamp": "2025-12-23T17:43:45.887179"
+    },
+    {
+      "test": "User Login - Valid Credentials",
+      "success": true,
+      "details": "Status: 200, User ID: 694ad44c48fcd7fdcb6a683a, Token received",
+      "timestamp": "2025-12-23T17:43:46.151760"
+    },
+    {
+      "test": "User Login - Invalid Credentials",
+      "success": true,
+      "details": "Status: 401 (expected 401 for invalid credentials)",
+      "timestamp": "2025-12-23T17:43:46.190997"
+    },
+    {
+      "test": "Get User Info - Valid Token",
+      "success": true,
+      "details": "Status: 200, Email: test_user_1766511825@example.com, User ID: 694ad4d148fcd7fdcb6a683c",
+      "timestamp": "2025-12-23T17:43:46.230808"
+    },
+    {
+      "test": "Protected Endpoint Without Token - /trips",
+      "success": true,
+      "details": "Status: 401 (expected 401 for /trips)",
+      "timestamp": "2025-12-23T17:43:46.273443"
+    },
+    {
+      "test": "Protected Endpoint Without Token - /trips/start",
+      "success": true,
+      "details": "Status: 401 (expected 401 for /trips/start)",
+      "timestamp": "2025-12-23T17:43:46.312004"
+    },
+    {
+      "test": "Protected Endpoint Without Token - /auth/me",
+      "success": true,
+      "details": "Status: 401 (expected 401 for /auth/me)",
+      "timestamp": "2025-12-23T17:43:46.354101"
+    },
+    {
+      "test": "Protected Endpoint - Invalid Token",
+      "success": true,
+      "details": "Status: 401 (expected 401 for invalid token)",
+      "timestamp": "2025-12-23T17:43:46.399118"
+    },
+    {
+      "test": "Rate Limit - Registration (5/minute)",
+      "success": false,
+      "details": "Response codes: [200, 200, 200, 200, 200, 200], Rate limited: False",
+      "timestamp": "2025-12-23T17:43:48.603985"
+    },
+    {
+      "test": "Rate Limit - Login (10/minute)",
+      "success": false,
+      "details": "Response codes: [401, 401, 401, 401, 401, 401, 401, 401, 401, 401, 401, 401], Rate limited: False",
+      "timestamp": "2025-12-23T17:43:52.293117"
+    },
+    {
+      "test": "Rate Limit - Speed Limit (30/minute)",
+      "success": false,
+      "details": "HTTPSConnectionPool(host='pace-guardian.preview.emergentagent.com', port=443): Read timed out. (read timeout=10)",
+      "timestamp": "2025-12-23T17:44:49.139825"
+    },
+    {
+      "test": "Input Validation - Invalid Email (invalid-email)",
+      "success": true,
+      "details": "Email: 'invalid-email', Status: 422 (expected 422)",
+      "timestamp": "2025-12-23T17:44:49.208224"
+    },
+    {
+      "test": "Input Validation - Invalid Email (@example.com)",
+      "success": true,
+      "details": "Email: '@example.com', Status: 422 (expected 422)",
+      "timestamp": "2025-12-23T17:44:49.287796"
+    },
+    {
+      "test": "Input Validation - Invalid Email (test@)",
+      "success": true,
+      "details": "Email: 'test@', Status: 422 (expected 422)",
+      "timestamp": "2025-12-23T17:44:49.329474"
+    },
+    {
+      "test": "Input Validation - Invalid Email (test..test@example.com)",
+      "success": false,
+      "details": "Email: 'test..test@example.com', Status: 200 (expected 422)",
+      "timestamp": "2025-12-23T17:44:49.591264"
+    },
+    {
+      "test": "Input Validation - Invalid Email ()",
+      "success": true,
+      "details": "Email: '', Status: 422 (expected 422)",
+      "timestamp": "2025-12-23T17:44:49.627338"
+    },
+    {
+      "test": "Input Validation - Short Password (0 chars)",
+      "success": true,
+      "details": "Password length: 0, Status: 422 (expected 422)",
+      "timestamp": "2025-12-23T17:44:49.663215"
+    },
+    {
+      "test": "Input Validation - Short Password (1 chars)",
+      "success": true,
+      "details": "Password length: 1, Status: 422 (expected 422)",
+      "timestamp": "2025-12-23T17:44:49.703527"
+    },
+    {
+      "test": "Input Validation - Short Password (2 chars)",
+      "success": true,
+      "details": "Password length: 2, Status: 422 (expected 422)",
+      "timestamp": "2025-12-23T17:44:49.737523"
+    },
+    {
+      "test": "Input Validation - Short Password (3 chars)",
+      "success": true,
+      "details": "Password length: 3, Status: 422 (expected 422)",
+      "timestamp": "2025-12-23T17:44:49.778176"
+    },
+    {
+      "test": "Input Validation - Short Password (4 chars)",
+      "success": true,
+      "details": "Password length: 4, Status: 422 (expected 422)",
+      "timestamp": "2025-12-23T17:44:49.813643"
+    },
+    {
+      "test": "Input Validation - Short Password (5 chars)",
+      "success": true,
+      "details": "Password length: 5, Status: 422 (expected 422)",
+      "timestamp": "2025-12-23T17:44:49.849236"
+    },
+    {
+      "test": "Input Validation - Invalid Coordinates {'lat': 91, 'lon': 0}",
+      "success": true,
+      "details": "Coords: {'lat': 91, 'lon': 0}, Status: 400 (expected 400)",
+      "timestamp": "2025-12-23T17:44:49.890021"
+    },
+    {
+      "test": "Input Validation - Invalid Coordinates {'lat': -91, 'lon': 0}",
+      "success": true,
+      "details": "Coords: {'lat': -91, 'lon': 0}, Status: 400 (expected 400)",
+      "timestamp": "2025-12-23T17:44:49.925012"
+    },
+    {
+      "test": "Input Validation - Invalid Coordinates {'lat': 0, 'lon': 181}",
+      "success": true,
+      "details": "Coords: {'lat': 0, 'lon': 181}, Status: 400 (expected 400)",
+      "timestamp": "2025-12-23T17:44:49.961640"
+    },
+    {
+      "test": "Input Validation - Invalid Coordinates {'lat': 0, 'lon': -181}",
+      "success": true,
+      "details": "Coords: {'lat': 0, 'lon': -181}, Status: 400 (expected 400)",
+      "timestamp": "2025-12-23T17:44:49.998972"
+    },
+    {
+      "test": "Input Validation - Invalid Speed (-1)",
+      "success": true,
+      "details": "Speed: -1, Status: 422 (expected 422)",
+      "timestamp": "2025-12-23T17:44:50.115478"
+    },
+    {
+      "test": "Input Validation - Invalid Speed (501)",
+      "success": true,
+      "details": "Speed: 501, Status: 422 (expected 422)",
+      "timestamp": "2025-12-23T17:44:50.152098"
+    },
+    {
+      "test": "Input Validation - Invalid Speed (1000)",
+      "success": true,
+      "details": "Speed: 1000, Status: 422 (expected 422)",
+      "timestamp": "2025-12-23T17:44:50.187718"
+    },
+    {
+      "test": "User Registration - Valid Data",
+      "success": true,
+      "details": "Status: 200, User ID: 694ad51248fcd7fdcb6a6845, Token received",
+      "timestamp": "2025-12-23T17:44:50.449742"
+    },
+    {
+      "test": "User Registration - Valid Data",
+      "success": false,
+      "details": "Status: 400",
+      "timestamp": "2025-12-23T17:44:50.486915"
+    },
+    {
+      "test": "User Isolation - Trip Access",
+      "success": false,
+      "details": "Could not create test users",
+      "timestamp": "2025-12-23T17:44:50.487601"
+    }
+  ]
+}
