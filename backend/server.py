@@ -63,9 +63,10 @@ app = FastAPI(
     redoc_url=None
 )
 
-# Add rate limiting
+# Add rate limiting middleware
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
