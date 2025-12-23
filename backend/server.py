@@ -32,8 +32,13 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Rate limiting
-limiter = Limiter(key_func=get_remote_address)
+# Rate limiting - using a simpler approach for APIRouter compatibility
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
+limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 
 # Security scheme
 security = HTTPBearer(auto_error=False)
