@@ -536,7 +536,13 @@ export default function SpeedMap() {
   }
 
   return (
-    <div data-testid="speed-map-page" className="relative h-screen w-screen overflow-hidden bg-zinc-950">
+    <div 
+      data-testid="speed-map-page" 
+      className={cn(
+        "relative h-screen w-screen overflow-hidden transition-colors duration-300",
+        theme === "dark" ? "bg-zinc-950" : "bg-gray-100"
+      )}
+    >
       {/* Alert Overlay */}
       <AlertOverlay
         isActive={isSpeeding}
