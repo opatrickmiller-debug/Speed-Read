@@ -64,6 +64,8 @@ export const SettingsPanel = ({
   setOfflineCacheEnabled,
   currentSpeedLimit,
   currentThreshold,
+  theme,
+  setTheme,
 }) => {
   const [cacheStats, setCacheStats] = useState(() => getCacheStats());
   
