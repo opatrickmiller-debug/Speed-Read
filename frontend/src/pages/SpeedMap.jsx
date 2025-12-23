@@ -706,6 +706,13 @@ export default function SpeedMap() {
           )}
         </div>
       </div>
+      
+      {/* Features Panel */}
+      <FeaturesPanel 
+        isOpen={showFeaturesPanel} 
+        onClose={() => setShowFeaturesPanel(false)}
+        currentPosition={currentPosition}
+      />
     </div>
   );
 }
