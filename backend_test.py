@@ -759,6 +759,7 @@ class SpeedAlertAPITester:
         
         # Test invalid trip ID for data point
         try:
+            headers = self.get_auth_headers()
             data = {
                 "trip_id": "invalid_id",
                 "data_point": {
@@ -770,7 +771,7 @@ class SpeedAlertAPITester:
                     "is_speeding": True
                 }
             }
-            response = requests.post(f"{self.base_url}/api/trips/data-point", json=data, timeout=10)
+            response = requests.post(f"{self.base_url}/api/trips/data-point", json=data, headers=headers, timeout=10)
             success = response.status_code == 400
             self.log_test("Invalid Trip ID (Add Data Point)", success, f"Status: {response.status_code} (expected 400)")
         except Exception as e:
@@ -778,7 +779,8 @@ class SpeedAlertAPITester:
         
         # Test non-existent trip detail
         try:
-            response = requests.get(f"{self.base_url}/api/trips/507f1f77bcf86cd799439011", timeout=10)
+            headers = self.get_auth_headers()
+            response = requests.get(f"{self.base_url}/api/trips/507f1f77bcf86cd799439011", headers=headers, timeout=10)
             success = response.status_code == 404
             self.log_test("Non-existent Trip Detail", success, f"Status: {response.status_code} (expected 404)")
         except Exception as e:
