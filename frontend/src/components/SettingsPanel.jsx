@@ -305,6 +305,72 @@ export const SettingsPanel = ({
               Simulates driving for testing without GPS
             </p>
           </div>
+          
+          {/* Offline Cache Section */}
+          <div className="space-y-4 pt-4 border-t border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Database className={cn(
+                  "w-5 h-5",
+                  offlineCacheEnabled ? "text-yellow-500" : "text-zinc-500"
+                )} />
+                <span className="text-sm font-medium text-zinc-200 font-mono uppercase tracking-wider">
+                  Offline Cache
+                </span>
+              </div>
+              <Switch
+                data-testid="cache-toggle"
+                checked={offlineCacheEnabled}
+                onCheckedChange={setOfflineCacheEnabled}
+                className="data-[state=checked]:bg-yellow-500"
+              />
+            </div>
+            <p className="text-xs text-zinc-500 font-mono pl-8">
+              Cache speed limits for offline use
+            </p>
+            
+            {offlineCacheEnabled && (
+              <div className="pl-8 space-y-3">
+                {/* Cache stats */}
+                <div className="bg-zinc-900/50 border border-zinc-800 p-3 rounded space-y-2">
+                  <div className="flex justify-between text-xs font-mono">
+                    <span className="text-zinc-500">Cached locations:</span>
+                    <span data-testid="cache-count" className="text-yellow-400">{cacheStats.validEntries}</span>
+                  </div>
+                  {cacheStats.validEntries > 0 && (
+                    <>
+                      <div className="flex justify-between text-xs font-mono">
+                        <span className="text-zinc-500">Oldest entry:</span>
+                        <span className="text-zinc-400">{cacheStats.oldestEntry} days ago</span>
+                      </div>
+                      <div className="flex justify-between text-xs font-mono">
+                        <span className="text-zinc-500">Newest entry:</span>
+                        <span className="text-zinc-400">{cacheStats.newestEntry} min ago</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+                
+                {/* Clear cache button */}
+                <button
+                  data-testid="clear-cache-btn"
+                  onClick={handleClearCache}
+                  disabled={cacheStats.validEntries === 0}
+                  className={cn(
+                    "w-full flex items-center justify-center gap-2 px-3 py-2",
+                    "text-xs font-mono uppercase tracking-wider",
+                    "border transition-colors",
+                    cacheStats.validEntries > 0
+                      ? "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
+                      : "bg-zinc-800/50 border-zinc-700 text-zinc-600 cursor-not-allowed"
+                  )}
+                >
+                  <Trash2 className="w-3 h-3" />
+                  Clear Cache
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </SheetContent>
     </Sheet>
