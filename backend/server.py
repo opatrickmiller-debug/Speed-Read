@@ -763,7 +763,7 @@ async def generate_report(request: Request, report_req: ReportRequest, user: dic
         else:
             query["start_time"] = {"$lte": report_req.end_date}
     
-    trips = await trips_collection.find(query, {"data_points": 0}).to_list(length=500)
+    trips = await trips_collection.find(query, {"data_points": 0, "_id": 0}).to_list(length=200)
     
     if not trips:
         return {"error": "No trips found for the specified period"}
