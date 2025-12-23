@@ -5,8 +5,11 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Optional, List
+from datetime import datetime, timezone
 import httpx
+from bson import ObjectId
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -15,6 +18,9 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
+
+# Collections
+trips_collection = db.trips
 
 # Create the main app
 app = FastAPI()
@@ -39,6 +45,44 @@ class SpeedLimitResponse(BaseModel):
     unit: str
     road_name: str | None
     source: str
+
+class TripDataPoint(BaseModel):
+    timestamp: str
+    lat: float
+    lon: float
+    speed: float
+    speed_limit: Optional[int] = None
+    is_speeding: bool = False
+
+class StartTripRequest(BaseModel):
+    start_lat: float
+    start_lon: float
+    speed_unit: str = "mph"
+
+class EndTripRequest(BaseModel):
+    trip_id: str
+    end_lat: float
+    end_lon: float
+
+class AddDataPointRequest(BaseModel):
+    trip_id: str
+    data_point: TripDataPoint
+
+class TripResponse(BaseModel):
+    id: str
+    start_time: str
+    end_time: Optional[str] = None
+    duration_minutes: Optional[float] = None
+    max_speed: float = 0
+    avg_speed: float = 0
+    total_alerts: int = 0
+    speed_unit: str = "mph"
+    distance_miles: Optional[float] = None
+    start_location: Optional[str] = None
+    is_active: bool = True
+
+class TripDetailResponse(TripResponse):
+    data_points: List[TripDataPoint] = []
 
 # OpenStreetMap Overpass API for speed limits
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
