@@ -578,10 +578,16 @@ export default function SpeedMap() {
             setSpeedUnit={setSpeedUnit}
             thresholdOffset={thresholdOffset}
             setThresholdOffset={setThresholdOffset}
+            useDynamicThreshold={useDynamicThreshold}
+            setUseDynamicThreshold={setUseDynamicThreshold}
+            thresholdRanges={thresholdRanges}
+            setThresholdRanges={setThresholdRanges}
             demoMode={demoMode}
             setDemoMode={setDemoMode}
             offlineCacheEnabled={offlineCacheEnabled}
             setOfflineCacheEnabled={setOfflineCacheEnabled}
+            currentSpeedLimit={speedLimit}
+            currentThreshold={currentThreshold}
           />
           <AuthPanel />
         </div>
