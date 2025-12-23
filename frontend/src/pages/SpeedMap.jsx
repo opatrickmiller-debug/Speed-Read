@@ -109,6 +109,7 @@ export default function SpeedMap() {
   const [thresholdOffset, setThresholdOffset] = useState(5); // Used when dynamic is off
   const [demoMode, setDemoMode] = useState(false);
   const [offlineCacheEnabled, setOfflineCacheEnabled] = useState(true);
+  const [theme, setTheme] = useState("dark"); // "dark" or "light"
   
   // Dynamic threshold ranges (speed limit -> allowed over)
   const [thresholdRanges, setThresholdRanges] = useState([
