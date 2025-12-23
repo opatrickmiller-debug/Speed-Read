@@ -558,6 +558,7 @@ export default function SpeedMap() {
             offlineCacheEnabled={offlineCacheEnabled}
             setOfflineCacheEnabled={setOfflineCacheEnabled}
           />
+          <AuthPanel />
         </div>
         
         {/* Center on location button + Trip History */}
