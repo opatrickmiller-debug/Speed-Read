@@ -98,6 +98,9 @@ export default function SpeedMap() {
   const demoIntervalRef = useRef(null);
   const [demoSpeed, setDemoSpeed] = useState(0);
   
+  // Features panel state
+  const [showFeaturesPanel, setShowFeaturesPanel] = useState(false);
+  
   // Previous position for speed calculation
   const prevPositionRef = useRef(null);
   const prevTimeRef = useRef(null);
