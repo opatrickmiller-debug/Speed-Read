@@ -2,6 +2,7 @@ import "@/App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import SpeedMap from "@/pages/SpeedMap";
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
             },
           }}
         />
+        <InstallPrompt />
       </div>
     </AuthProvider>
   );
