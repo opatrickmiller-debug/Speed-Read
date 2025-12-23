@@ -145,9 +145,22 @@ export default function SpeedMap() {
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
   });
 
+  // Calculate dynamic threshold based on speed limit
+  const getDynamicThreshold = (limit) => {
+    if (!limit || !useDynamicThreshold) return thresholdOffset;
+    
+    for (const range of thresholdRanges) {
+      if (limit >= range.minLimit && limit < range.maxLimit) {
+        return range.offset;
+      }
+    }
+    return thresholdOffset; // fallback
+  };
+
   // Calculate if speeding
   const displaySpeed = demoMode ? demoSpeed : currentSpeed;
-  const effectiveLimit = speedLimit ? speedLimit + thresholdOffset : null;
+  const currentThreshold = getDynamicThreshold(speedLimit);
+  const effectiveLimit = speedLimit ? speedLimit + currentThreshold : null;
   const isSpeeding = effectiveLimit !== null && displaySpeed > effectiveLimit;
 
   // Get current language info for display
