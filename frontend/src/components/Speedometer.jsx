@@ -80,14 +80,18 @@ export const Speedometer = ({ speed, speedLimit, unit, isSpeeding, isOverLimit, 
         <div 
           className={cn(
             "w-2 h-2 rounded-full",
-            isSpeeding ? "bg-red-500 animate-pulse" : "bg-green-500"
+            isSpeeding ? "bg-red-500 animate-pulse" : 
+            isOverLimit ? "bg-orange-500 animate-pulse" : 
+            "bg-green-500"
           )}
         />
         <span className={cn(
           "text-xs uppercase tracking-[0.15em] font-mono",
           theme === "dark" ? "text-zinc-500" : "text-gray-500"
         )}>
-          {isSpeeding ? "OVER LIMIT" : "SAFE"}
+          {isSpeeding ? "OVER LIMIT" : 
+           isOverLimit ? `ALERT IN ${Math.ceil(alertDelay - speedingDuration)}s` : 
+           "SAFE"}
         </span>
       </div>
     </div>
