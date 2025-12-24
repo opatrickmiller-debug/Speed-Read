@@ -192,6 +192,35 @@ export const SettingsPanel = ({
             </div>
           </div>
 
+          {/* Keep Screen On (Wake Lock) */}
+          <div className="space-y-2 pt-4 border-t border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Smartphone className={cn(
+                  "w-5 h-5",
+                  wakeLockActive ? "text-cyan-500" : "text-zinc-500"
+                )} />
+                <span className="text-sm font-medium text-zinc-200 font-mono uppercase tracking-wider">
+                  Keep Screen On
+                </span>
+              </div>
+              <Switch
+                data-testid="wakelock-toggle"
+                checked={wakeLockEnabled}
+                onCheckedChange={onWakeLockToggle}
+                className="data-[state=checked]:bg-cyan-500"
+              />
+            </div>
+            <p className="text-xs text-zinc-500 font-mono pl-8">
+              Prevents phone from sleeping while driving
+            </p>
+            {wakeLockActive && (
+              <p className="text-xs text-cyan-400 font-mono pl-8">
+                ✓ Screen wake lock is active
+              </p>
+            )}
+          </div>
+
           {/* Weather Alerts Toggle */}
           <div className="space-y-2 pt-4 border-t border-zinc-800">
             <div className="flex items-center justify-between">
