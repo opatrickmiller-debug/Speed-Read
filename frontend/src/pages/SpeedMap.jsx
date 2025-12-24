@@ -119,6 +119,10 @@ export default function SpeedMap() {
     const saved = localStorage.getItem('alertDelay');
     return saved ? parseInt(saved, 10) : 3;
   });
+  const [weatherAlertsEnabled, setWeatherAlertsEnabled] = useState(() => {
+    const saved = localStorage.getItem('weatherAlertsEnabled');
+    return saved !== null ? saved === 'true' : true; // Default to enabled
+  });
   
   // Dynamic threshold ranges (speed limit -> allowed over)
   const [thresholdRanges, setThresholdRanges] = useState(() => {
