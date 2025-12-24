@@ -188,6 +188,37 @@ export default function SpeedMap() {
   // Sound customization
   const { alertSound, setAlertSound, alertVolume, setAlertVolume, triggerAlert } = useAlertSound();
   
+  // Wake Lock - keep screen on while driving
+  const { isActive: wakeLockActive, requestWakeLock, releaseWakeLock, isSupported: wakeLockSupported } = useWakeLock();
+  
+  // State to track if user wants wake lock enabled (persisted)
+  const [wakeLockEnabled, setWakeLockEnabled] = useState(() => {
+    const saved = localStorage.getItem('wakeLockEnabled');
+    return saved !== null ? saved === 'true' : true; // Default to enabled
+  });
+  
+  // Request wake lock on mount if enabled
+  useEffect(() => {
+    if (wakeLockEnabled && !wakeLockActive) {
+      requestWakeLock();
+    }
+  }, [wakeLockEnabled, wakeLockActive, requestWakeLock]);
+  
+  // Persist wake lock preference
+  useEffect(() => {
+    localStorage.setItem('wakeLockEnabled', wakeLockEnabled.toString());
+  }, [wakeLockEnabled]);
+  
+  // Handle wake lock toggle
+  const handleWakeLockToggle = async (enabled) => {
+    setWakeLockEnabled(enabled);
+    if (enabled) {
+      await requestWakeLock();
+    } else {
+      await releaseWakeLock();
+    }
+  };
+  
   // Settings state - load from localStorage where applicable
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
