@@ -388,6 +388,151 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
         source="error"
     )
 
+# ==================== WEATHER ALERTS (NWS) ====================
+
+class WeatherAlert(BaseModel):
+    id: str
+    event: str
+    headline: str
+    description: str
+    severity: str  # Minor, Moderate, Severe, Extreme
+    urgency: str   # Immediate, Expected, Future
+    certainty: str
+    effective: Optional[str] = None
+    expires: Optional[str] = None
+    driving_impact: str  # Custom field we calculate
+
+class WeatherResponse(BaseModel):
+    alerts: List[WeatherAlert]
+    current_conditions: Optional[dict] = None
+    driving_hazards: List[str]
+    source: str = "weather.gov"
+
+# Map NWS event types to driving impacts
+DRIVING_IMPACT_MAP = {
+    # High Impact
+    "Blizzard": ("extreme", "Dangerous driving conditions - avoid travel"),
+    "Ice Storm": ("extreme", "Roads extremely hazardous - avoid travel"),
+    "Winter Storm": ("severe", "Hazardous driving conditions expected"),
+    "Tornado": ("extreme", "Seek shelter immediately - do not drive"),
+    "Flash Flood": ("extreme", "Do not drive through flooded areas"),
+    "Flood": ("severe", "Avoid flooded roadways"),
+    "Hurricane": ("extreme", "Evacuate if ordered - do not drive"),
+    "Tropical Storm": ("severe", "High winds and flooding possible"),
+    
+    # Moderate Impact
+    "Winter Weather": ("moderate", "Slippery roads possible"),
+    "Freezing Rain": ("severe", "Black ice likely - drive with caution"),
+    "Freezing Fog": ("moderate", "Icy patches and reduced visibility"),
+    "Snow Squall": ("severe", "Sudden whiteout conditions possible"),
+    "Heavy Snow": ("severe", "Difficult driving conditions"),
+    "Sleet": ("moderate", "Slippery conditions developing"),
+    "Dense Fog": ("moderate", "Reduced visibility - use low beams"),
+    "High Wind": ("moderate", "Difficult for high-profile vehicles"),
+    "Dust Storm": ("severe", "Zero visibility possible - pull over"),
+    "Severe Thunderstorm": ("moderate", "Heavy rain and strong winds"),
+    
+    # Lower Impact
+    "Wind Advisory": ("low", "Gusty winds - secure loose items"),
+    "Frost": ("low", "Slippery bridges and overpasses"),
+    "Freeze": ("low", "Black ice possible on bridges"),
+    "Heat Advisory": ("low", "Vehicle overheating risk"),
+    "Excessive Heat": ("moderate", "Check tire pressure and coolant"),
+    "Air Quality": ("low", "Keep windows closed"),
+    "Special Weather": ("low", "Check conditions before travel"),
+}
+
+def get_driving_impact(event_type: str) -> tuple:
+    """Get driving impact level and message for an event type."""
+    for key, value in DRIVING_IMPACT_MAP.items():
+        if key.lower() in event_type.lower():
+            return value
+    return ("low", "Check local conditions")
+
+@api_router.get("/weather/alerts")
+@limiter.limit("30/minute")
+async def get_weather_alerts(request: Request, lat: float, lon: float):
+    """
+    Get weather alerts for driving conditions from Weather.gov (NWS).
+    US locations only.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            # NWS API requires a User-Agent header
+            headers = {
+                "User-Agent": "(SpeedAlert App, contact@example.com)",
+                "Accept": "application/geo+json"
+            }
+            
+            # Get active alerts for the location
+            alerts_url = f"https://api.weather.gov/alerts/active?point={lat},{lon}"
+            response = await client.get(alerts_url, headers=headers)
+            
+            if response.status_code != 200:
+                logger.warning(f"NWS API error: {response.status_code}")
+                return WeatherResponse(
+                    alerts=[],
+                    driving_hazards=[],
+                    source="weather.gov (error)"
+                )
+            
+            data = response.json()
+            features = data.get("features", [])
+            
+            alerts = []
+            driving_hazards = set()
+            
+            for feature in features:
+                props = feature.get("properties", {})
+                event = props.get("event", "Unknown")
+                
+                # Calculate driving impact
+                impact_level, impact_message = get_driving_impact(event)
+                
+                # Only include alerts relevant to driving
+                if impact_level != "none":
+                    alert = WeatherAlert(
+                        id=props.get("id", ""),
+                        event=event,
+                        headline=props.get("headline", ""),
+                        description=props.get("description", "")[:500],  # Truncate long descriptions
+                        severity=props.get("severity", "Unknown"),
+                        urgency=props.get("urgency", "Unknown"),
+                        certainty=props.get("certainty", "Unknown"),
+                        effective=props.get("effective"),
+                        expires=props.get("expires"),
+                        driving_impact=impact_message
+                    )
+                    alerts.append(alert)
+                    
+                    if impact_level in ["severe", "extreme"]:
+                        driving_hazards.add(impact_message)
+            
+            # Sort by severity (Extreme > Severe > Moderate > Minor)
+            severity_order = {"Extreme": 0, "Severe": 1, "Moderate": 2, "Minor": 3, "Unknown": 4}
+            alerts.sort(key=lambda x: severity_order.get(x.severity, 5))
+            
+            return WeatherResponse(
+                alerts=alerts,
+                driving_hazards=list(driving_hazards),
+                source="weather.gov"
+            )
+            
+    except httpx.TimeoutException:
+        logger.warning("Weather API timeout")
+        return WeatherResponse(
+            alerts=[],
+            driving_hazards=[],
+            source="weather.gov (timeout)"
+        )
+    except Exception as e:
+        logger.error(f"Weather API error: {e}")
+        return WeatherResponse(
+            alerts=[],
+            driving_hazards=[],
+            source="weather.gov (error)"
+        )
+
 # ==================== PROTECTED TRIP ENDPOINTS ====================
 
 @api_router.post("/trips/start")
