@@ -973,6 +973,14 @@ class SpeedAlertAPITester:
             self.test_speed_limit_remote_location()
             self.test_api_response_time()
             
+            # Run speed prediction tests
+            print("\n🔮 Testing Speed Prediction API...")
+            self.test_speed_ahead_valid_location()
+            self.test_speed_ahead_invalid_params()
+            self.test_speed_ahead_missing_params()
+            self.test_speed_ahead_different_bearings()
+            self.test_speed_ahead_response_time()
+            
             # Run gamification tests
             print("\n🏆 Testing Gamification Features...")
             self.test_get_user_stats()
