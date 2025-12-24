@@ -162,6 +162,17 @@ export default function SpeedMap() {
     localStorage.setItem('thresholdRanges', JSON.stringify(thresholdRanges));
   }, [thresholdRanges]);
   
+  useEffect(() => {
+    localStorage.setItem('weatherAlertsEnabled', weatherAlertsEnabled.toString());
+  }, [weatherAlertsEnabled]);
+  
+  // Save last known position to localStorage
+  useEffect(() => {
+    if (currentPosition && !demoMode) {
+      localStorage.setItem('lastPosition', JSON.stringify(currentPosition));
+    }
+  }, [currentPosition, demoMode]);
+  
   // Trip recording state
   const [isRecording, setIsRecording] = useState(false);
   const [currentTripId, setCurrentTripId] = useState(null);
