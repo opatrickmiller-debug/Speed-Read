@@ -1,16 +1,16 @@
 /* eslint-disable no-restricted-globals */
 
-const CACHE_NAME = 'speed-alert-v1';
-const STATIC_CACHE = 'speed-alert-static-v1';
-const DYNAMIC_CACHE = 'speed-alert-dynamic-v1';
+// VERSION - increment this to force cache refresh on all clients
+const SW_VERSION = '1.1.0';
+const CACHE_NAME = `speed-alert-v${SW_VERSION}`;
+const STATIC_CACHE = `speed-alert-static-v${SW_VERSION}`;
+const DYNAMIC_CACHE = `speed-alert-dynamic-v${SW_VERSION}`;
 
 // Files to cache immediately on install
 const STATIC_FILES = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/static/js/bundle.js',
-  '/static/css/main.css'
+  '/manifest.json'
 ];
 
 // API routes to cache with network-first strategy
@@ -18,35 +18,56 @@ const API_ROUTES = [
   '/api/speed-limit'
 ];
 
-// Install event - cache static files
+// Install event - cache static files and skip waiting
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing Service Worker...');
+  console.log(`[SW ${SW_VERSION}] Installing Service Worker...`);
   event.waitUntil(
     caches.open(STATIC_CACHE)
       .then((cache) => {
-        console.log('[SW] Caching static files');
+        console.log(`[SW ${SW_VERSION}] Caching static files`);
         return cache.addAll(STATIC_FILES).catch(err => {
-          console.log('[SW] Some static files failed to cache:', err);
+          console.log(`[SW ${SW_VERSION}] Some static files failed to cache:`, err);
         });
       })
-      .then(() => self.skipWaiting())
+      .then(() => {
+        console.log(`[SW ${SW_VERSION}] Skip waiting - activating immediately`);
+        return self.skipWaiting();
+      })
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up ALL old caches and take control immediately
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating Service Worker...');
+  console.log(`[SW ${SW_VERSION}] Activating Service Worker...`);
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== STATIC_CACHE && name !== DYNAMIC_CACHE)
+          .filter((name) => {
+            // Delete any cache that doesn't match current version
+            return !name.includes(SW_VERSION);
+          })
           .map((name) => {
-            console.log('[SW] Deleting old cache:', name);
+            console.log(`[SW ${SW_VERSION}] Deleting old cache:`, name);
             return caches.delete(name);
           })
       );
-    }).then(() => self.clients.claim())
+    })
+    .then(() => {
+      console.log(`[SW ${SW_VERSION}] Claiming all clients`);
+      return self.clients.claim();
+    })
+    .then(() => {
+      // Notify all clients that update is available
+      return self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'SW_UPDATED',
+            version: SW_VERSION
+          });
+        });
+      });
+    })
   );
 });
 
