@@ -1124,6 +1124,19 @@ export default function SpeedMap() {
               </span>
             </div>
           )}
+          
+          {/* Network & Battery Status Badges */}
+          <NetworkStatusBadge />
+          <BatteryWarningBadge />
+          
+          {/* Data Saver indicator */}
+          {dataSaverEnabled && (
+            <div className="backdrop-blur-xl bg-green-500/20 border border-green-500/30 px-3 py-1 rounded-full">
+              <span className="text-green-400 font-mono text-xs uppercase tracking-wider">
+                Data Saver
+              </span>
+            </div>
+          )}
         </div>
       </div>
       
