@@ -22,6 +22,63 @@ import {
   isOnline 
 } from "@/utils/speedLimitCache";
 
+// App version - increment this when you want to clear user caches on update
+const APP_VERSION = "1.1.0";
+
+// Check for app updates and clear stale caches
+const checkAppVersion = () => {
+  const storedVersion = localStorage.getItem('appVersion');
+  
+  if (storedVersion !== APP_VERSION) {
+    console.log(`App updated: ${storedVersion || 'none'} -> ${APP_VERSION}`);
+    
+    // Clear all localStorage except critical items we want to preserve
+    const preserveKeys = ['lastPosition', 'theme']; // Keep position and theme preference
+    const preserved = {};
+    
+    preserveKeys.forEach(key => {
+      const value = localStorage.getItem(key);
+      if (value) preserved[key] = value;
+    });
+    
+    // Clear everything
+    localStorage.clear();
+    
+    // Restore preserved items
+    Object.entries(preserved).forEach(([key, value]) => {
+      localStorage.setItem(key, value);
+    });
+    
+    // Set new version
+    localStorage.setItem('appVersion', APP_VERSION);
+    
+    // Clear service worker caches
+    if ('caches' in window) {
+      caches.keys().then(names => {
+        names.forEach(name => {
+          caches.delete(name);
+        });
+      });
+    }
+    
+    // Unregister old service workers and register fresh
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(registration => {
+          registration.update();
+        });
+      });
+    }
+    
+    return true; // Version changed
+  }
+  
+  return false; // No change
+};
+
+// Run version check on module load
+const versionUpdated = checkAppVersion();
+
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
