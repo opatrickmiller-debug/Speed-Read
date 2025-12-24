@@ -202,8 +202,8 @@ export function MobileSettingsSection({
               <p className="mb-2">To install on iOS:</p>
               <ol className="list-decimal list-inside space-y-1">
                 <li>Tap the Share button</li>
-                <li>Scroll down and tap "Add to Home Screen"</li>
-                <li>Tap "Add"</li>
+                <li>Scroll down and tap &quot;Add to Home Screen&quot;</li>
+                <li>Tap &quot;Add&quot;</li>
               </ol>
             </div>
           ) : null}
