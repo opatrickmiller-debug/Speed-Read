@@ -388,6 +388,138 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
         source="error"
     )
 
+# ==================== SPEED PREDICTION (Look Ahead) ====================
+
+class SpeedPredictionResponse(BaseModel):
+    upcoming_limits: List[dict]  # [{distance_meters, speed_limit, road_name, unit}]
+    warning: Optional[str] = None
+    current_direction: Optional[str] = None  # N, NE, E, SE, S, SW, W, NW
+
+def calculate_point_ahead(lat: float, lon: float, bearing: float, distance_m: float):
+    """Calculate a point at a given distance and bearing from start point."""
+    import math
+    R = 6371000  # Earth's radius in meters
+    
+    lat1 = math.radians(lat)
+    lon1 = math.radians(lon)
+    bearing_rad = math.radians(bearing)
+    
+    lat2 = math.asin(
+        math.sin(lat1) * math.cos(distance_m / R) +
+        math.cos(lat1) * math.sin(distance_m / R) * math.cos(bearing_rad)
+    )
+    lon2 = lon1 + math.atan2(
+        math.sin(bearing_rad) * math.sin(distance_m / R) * math.cos(lat1),
+        math.cos(distance_m / R) - math.sin(lat1) * math.sin(lat2)
+    )
+    
+    return (math.degrees(lat2), math.degrees(lon2))
+
+def bearing_to_direction(bearing: float) -> str:
+    """Convert bearing in degrees to cardinal direction."""
+    directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
+    index = round(bearing / 45) % 8
+    return directions[index]
+
+@api_router.get("/speed-ahead", response_model=SpeedPredictionResponse)
+@limiter.limit("20/minute")
+async def get_speed_ahead(
+    request: Request, 
+    lat: float, 
+    lon: float, 
+    bearing: float = 0,  # Direction of travel (0-360 degrees)
+    current_speed_limit: Optional[int] = None
+):
+    """
+    Look ahead for upcoming speed limit changes along the travel direction.
+    Returns speed limits at 200m, 500m, and 1000m ahead.
+    """
+    if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
+        raise HTTPException(status_code=400, detail="Invalid coordinates")
+    
+    if not (0 <= bearing <= 360):
+        bearing = bearing % 360
+    
+    distances = [200, 500, 1000]  # meters ahead to check
+    upcoming_limits = []
+    warning = None
+    
+    for distance in distances:
+        ahead_lat, ahead_lon = calculate_point_ahead(lat, lon, bearing, distance)
+        
+        # Query for speed limit at this point
+        query = f"""
+        [out:json][timeout:5];
+        way(around:50,{ahead_lat},{ahead_lon})["highway"]["maxspeed"];
+        out body;
+        """
+        
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as http_client:
+                response = await http_client.post(
+                    OVERPASS_URL,
+                    data={"data": query},
+                    headers={"Content-Type": "application/x-www-form-urlencoded"}
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    if data.get("elements") and len(data["elements"]) > 0:
+                        road = data["elements"][0]
+                        tags = road.get("tags", {})
+                        maxspeed = tags.get("maxspeed", "")
+                        road_name = tags.get("name") or tags.get("ref") or "Road"
+                        
+                        if maxspeed:
+                            maxspeed_clean = maxspeed.lower().strip()
+                            speed_limit = None
+                            unit = "mph"
+                            
+                            if "mph" in maxspeed_clean:
+                                digits = ''.join(filter(str.isdigit, maxspeed_clean))
+                                speed_limit = int(digits) if digits else None
+                                unit = "mph"
+                            elif "km/h" in maxspeed_clean or "kmh" in maxspeed_clean:
+                                digits = ''.join(filter(str.isdigit, maxspeed_clean))
+                                speed_limit = int(digits) if digits else None
+                                unit = "km/h"
+                            elif maxspeed_clean.isdigit():
+                                speed_limit = int(maxspeed_clean)
+                                unit = "km/h"
+                            else:
+                                digits = ''.join(filter(str.isdigit, maxspeed_clean))
+                                if digits:
+                                    speed_limit = int(digits)
+                                    unit = "km/h"
+                            
+                            if speed_limit:
+                                upcoming_limits.append({
+                                    "distance_meters": distance,
+                                    "speed_limit": speed_limit,
+                                    "road_name": sanitize_string(road_name, 50),
+                                    "unit": unit
+                                })
+                                
+                                # Generate warning if approaching lower speed zone
+                                if current_speed_limit and speed_limit < current_speed_limit:
+                                    if not warning:
+                                        if distance <= 200:
+                                            warning = f"⚠️ SLOW DOWN: {speed_limit} {unit} zone in {distance}m"
+                                        elif distance <= 500:
+                                            warning = f"Speed reduction ahead: {speed_limit} {unit} in ~{distance}m"
+                                        else:
+                                            warning = f"Lower speed zone ({speed_limit} {unit}) approaching"
+        except Exception as e:
+            logger.debug(f"Speed ahead check failed at {distance}m: {e}")
+            continue
+    
+    return SpeedPredictionResponse(
+        upcoming_limits=upcoming_limits,
+        warning=warning,
+        current_direction=bearing_to_direction(bearing)
+    )
+
 # ==================== WEATHER ALERTS (NWS) ====================
 
 class WeatherAlert(BaseModel):
