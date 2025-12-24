@@ -120,9 +120,16 @@ export function useSmartGPS(onPositionUpdate, enabled = true) {
   const [isMoving, setIsMoving] = useState(false);
   const [accuracy, setAccuracy] = useState('high');
   const lastPositionRef = useRef(null);
-  const lastMoveTimeRef = useRef(Date.now());
+  const lastMoveTimeRef = useRef(null);
   const watchIdRef = useRef(null);
   const intervalRef = useRef(null);
+  
+  // Initialize lastMoveTime on first render
+  useEffect(() => {
+    if (lastMoveTimeRef.current === null) {
+      lastMoveTimeRef.current = Date.now();
+    }
+  }, []);
 
   const calculateDistance = useCallback((pos1, pos2) => {
     if (!pos1 || !pos2) return Infinity;
