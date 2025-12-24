@@ -352,19 +352,21 @@ export function useOfflineQueue() {
  */
 export function useInstallPrompt() {
   const [installPrompt, setInstallPrompt] = useState(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
+  // Initialize based on current state to avoid setState in effect
+  const [isInstalled, setIsInstalled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(display-mode: standalone)').matches;
+    }
+    return false;
+  });
+  const [isIOS, setIsIOS] = useState(() => {
+    if (typeof navigator !== 'undefined') {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent);
+    }
+    return false;
+  });
 
   useEffect(() => {
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-    }
-
-    // Check for iOS
-    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    setIsIOS(iOS);
-
     // Listen for install prompt
     const handleBeforeInstall = (e) => {
       e.preventDefault();
