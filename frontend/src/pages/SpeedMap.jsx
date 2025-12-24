@@ -32,8 +32,15 @@ const checkAppVersion = () => {
   if (storedVersion !== APP_VERSION) {
     console.log(`App updated: ${storedVersion || 'none'} -> ${APP_VERSION}`);
     
-    // Clear all localStorage except critical items we want to preserve
-    const preserveKeys = ['lastPosition', 'theme']; // Keep position and theme preference
+    // Preserve user preferences across updates
+    const preserveKeys = [
+      'lastPosition',        // Last GPS location
+      'theme',               // Light/dark mode
+      'speedUnit',           // MPH or KM/H
+      'alertDelay',          // Seconds before alert
+      'thresholdRanges',     // Speed zone configurations
+      'weatherAlertsEnabled' // Weather alerts toggle
+    ];
     const preserved = {};
     
     preserveKeys.forEach(key => {
