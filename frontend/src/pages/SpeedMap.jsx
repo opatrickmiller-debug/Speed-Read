@@ -880,6 +880,9 @@ export default function SpeedMap() {
             setAlertSound={setAlertSound}
             alertVolume={alertVolume}
             setAlertVolume={setAlertVolume}
+            wakeLockEnabled={wakeLockEnabled}
+            onWakeLockToggle={handleWakeLockToggle}
+            wakeLockActive={wakeLockActive}
           />
           <AuthPanel />
         </div>
