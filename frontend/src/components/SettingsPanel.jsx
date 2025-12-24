@@ -1,4 +1,4 @@
-import { Settings, Volume2, VolumeX, Gauge, Navigation, Mic, MicOff, Globe, Database, Trash2, Zap, Sun, Moon, Timer, CloudRain } from "lucide-react";
+import { Settings, Volume2, VolumeX, Gauge, Navigation, Mic, MicOff, Globe, Database, Trash2, Zap, Sun, Moon, Timer, CloudRain, Music } from "lucide-react";
 import React, { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { AVAILABLE_LANGUAGES } from "@/components/AlertOverlay";
 import { getCacheStats, clearCache } from "@/utils/speedLimitCache";
+import { SoundSelector } from "@/components/SoundCustomization";
 
 // Test messages for each language
 const TEST_MESSAGES = {
