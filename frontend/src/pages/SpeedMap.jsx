@@ -240,6 +240,33 @@ export default function SpeedMap() {
     }
   }, [currentPosition, demoMode]);
   
+  // Listen for service worker updates
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      const handleMessage = (event) => {
+        if (event.data?.type === 'SW_UPDATED') {
+          toast.success(`App updated to v${event.data.version}!`, {
+            description: "New features are now available.",
+            duration: 5000
+          });
+        }
+      };
+      
+      navigator.serviceWorker.addEventListener('message', handleMessage);
+      return () => navigator.serviceWorker.removeEventListener('message', handleMessage);
+    }
+  }, []);
+  
+  // Show update notification if version changed
+  useEffect(() => {
+    if (versionUpdated) {
+      toast.success(`App updated to v${APP_VERSION}!`, {
+        description: "Settings have been refreshed.",
+        duration: 5000
+      });
+    }
+  }, []);
+  
   // Trip recording state
   const [isRecording, setIsRecording] = useState(false);
   const [currentTripId, setCurrentTripId] = useState(null);
