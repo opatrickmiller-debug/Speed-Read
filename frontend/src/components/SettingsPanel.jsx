@@ -66,6 +66,8 @@ export const SettingsPanel = ({
   currentThreshold,
   theme,
   setTheme,
+  alertDelay,
+  setAlertDelay,
 }) => {
   const [cacheStats, setCacheStats] = useState(() => getCacheStats());
   
