@@ -45,7 +45,9 @@ const checkAppVersion = () => {
       'thresholdRanges',     // Speed zone configurations
       'weatherAlertsEnabled', // Weather alerts toggle
       'onboardingComplete',   // Skip tutorial after first time
-      'wakeLockEnabled'       // Keep screen on setting
+      'wakeLockEnabled',      // Keep screen on setting
+      'alertSound',           // Selected alert sound
+      'alertVolume'           // Alert volume level
     ];
     const preserved = {};
     
