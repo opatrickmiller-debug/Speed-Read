@@ -620,6 +620,12 @@ export default function SpeedMap() {
         onMuteClick={handleMuteAll}
       />
       
+      {/* Weather Alert Banner */}
+      <WeatherAlertBanner 
+        currentPosition={currentPosition}
+        theme={theme}
+      />
+      
       {/* Google Map */}
       {isLoaded ? (
         <GoogleMap
