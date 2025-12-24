@@ -78,6 +78,8 @@ export const SettingsPanel = ({
   wakeLockEnabled,
   onWakeLockToggle,
   wakeLockActive,
+  speedPredictionEnabled,
+  setSpeedPredictionEnabled,
 }) => {
   const [cacheStats, setCacheStats] = useState(() => getCacheStats());
   
