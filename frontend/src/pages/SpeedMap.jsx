@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
-import { MapPin, Crosshair, WifiOff, Database, Trophy } from "lucide-react";
+import { MapPin, Crosshair, WifiOff, Database, Trophy, Maximize2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
 
-import { Speedometer } from "@/components/Speedometer";
+import { SpeedometerPro } from "@/components/SpeedometerPro";
 import { SpeedLimitSign } from "@/components/SpeedLimitSign";
 import { AlertOverlay, AVAILABLE_LANGUAGES } from "@/components/AlertOverlay";
 import { SettingsPanel } from "@/components/SettingsPanel";
@@ -12,6 +12,9 @@ import { TripHistory } from "@/components/TripHistory";
 import { AuthPanel } from "@/components/AuthPanel";
 import { FeaturesPanel } from "@/components/FeaturesPanel";
 import { WeatherAlertBanner } from "@/components/WeatherAlert";
+import { OnboardingFlow, useOnboarding } from "@/components/OnboardingFlow";
+import { HUDMode } from "@/components/HUDMode";
+import { useAlertSound } from "@/components/SoundCustomization";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,7 +26,7 @@ import {
 } from "@/utils/speedLimitCache";
 
 // App version - increment this when you want to clear user caches on update
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.2.0";
 
 // Check for app updates and clear stale caches
 const checkAppVersion = () => {
