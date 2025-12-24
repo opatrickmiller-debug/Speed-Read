@@ -236,6 +236,24 @@ export const SettingsPanel = ({
             <p className="text-xs text-zinc-500 font-mono pl-8">
               Plays beeping alarm sound when speeding
             </p>
+            
+            {/* Sound Customization */}
+            {audioEnabled && (
+              <div className="pl-8 pt-2">
+                <div className="flex items-center gap-2 mb-3">
+                  <Music className="w-4 h-4 text-orange-400" />
+                  <span className="text-xs font-medium text-zinc-300 font-mono uppercase tracking-wider">
+                    Customize Sound
+                  </span>
+                </div>
+                <SoundSelector
+                  selectedSound={alertSound}
+                  onSelect={setAlertSound}
+                  volume={alertVolume}
+                  onVolumeChange={setAlertVolume}
+                />
+              </div>
+            )}
           </div>
 
           {/* Voice Alert Toggle */}
