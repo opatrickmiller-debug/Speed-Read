@@ -49,7 +49,9 @@ const checkAppVersion = () => {
       'wakeLockEnabled',      // Keep screen on setting
       'alertSound',           // Selected alert sound
       'alertVolume',          // Alert volume level
-      'speedPredictionEnabled' // AI speed prediction toggle
+      'speedPredictionEnabled', // AI speed prediction toggle
+      'dataSaverEnabled',     // Mobile data saver mode
+      'lowPowerMode'          // Battery saver mode
     ];
     const preserved = {};
     
