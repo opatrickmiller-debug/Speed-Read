@@ -11,6 +11,7 @@ import { SettingsPanel } from "@/components/SettingsPanel";
 import { TripHistory } from "@/components/TripHistory";
 import { AuthPanel } from "@/components/AuthPanel";
 import { FeaturesPanel } from "@/components/FeaturesPanel";
+import { WeatherAlertBanner } from "@/components/WeatherAlert";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
