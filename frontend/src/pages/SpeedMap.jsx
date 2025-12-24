@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
-import { MapPin, Crosshair, WifiOff, Database, Trophy, Maximize2 } from "lucide-react";
+import { MapPin, Crosshair, WifiOff, Database, Trophy, Maximize2, Smartphone } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
 
