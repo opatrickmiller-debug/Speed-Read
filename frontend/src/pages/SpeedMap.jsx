@@ -178,6 +178,15 @@ export default function SpeedMap() {
   const [isUsingCache, setIsUsingCache] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   
+  // HUD Mode state
+  const [hudMode, setHudMode] = useState(false);
+  
+  // Onboarding
+  const { showOnboarding, isChecking: isCheckingOnboarding, completeOnboarding } = useOnboarding();
+  
+  // Sound customization
+  const { alertSound, setAlertSound, alertVolume, setAlertVolume, triggerAlert } = useAlertSound();
+  
   // Settings state - load from localStorage where applicable
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
