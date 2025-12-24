@@ -329,3 +329,5 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: "Implemented all 4 differentiation features. Backend has new endpoints for stats, badges, reports, family management, and speed traps. Frontend has 4 new panel components integrated via FeaturesPanel. Need comprehensive E2E testing of all new features. Test user auth first, then test each feature with authenticated user. For speed traps nearby endpoint, no auth is required."
+  - agent: "main"
+    message: "Implemented Wake Lock feature and Skip Tutorial feature. Wake Lock keeps screen on while driving - added useWakeLock hook, settings toggle, and status indicator. Skip Tutorial: onboardingComplete localStorage key is now preserved across app updates. Both features verified via screenshots. Wake Lock toggle is visible in settings panel. Need testing to verify: 1) Settings panel shows 'Keep Screen On' toggle, 2) Onboarding skips when onboardingComplete is set in localStorage, 3) User settings persist across reloads."
