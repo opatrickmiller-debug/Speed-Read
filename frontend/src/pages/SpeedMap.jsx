@@ -718,6 +718,8 @@ export default function SpeedMap() {
             setTheme={setTheme}
             alertDelay={alertDelay}
             setAlertDelay={setAlertDelay}
+            weatherAlertsEnabled={weatherAlertsEnabled}
+            setWeatherAlertsEnabled={setWeatherAlertsEnabled}
           />
           <AuthPanel />
         </div>
