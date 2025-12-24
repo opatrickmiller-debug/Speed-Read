@@ -247,6 +247,30 @@ export const SettingsPanel = ({
             </p>
           </div>
 
+          {/* Speed Prediction (AI Look-Ahead) */}
+          <div className="space-y-2 pt-4 border-t border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className={cn(
+                  "w-5 h-5",
+                  speedPredictionEnabled ? "text-amber-500" : "text-zinc-500"
+                )} />
+                <span className="text-sm font-medium text-zinc-200 font-mono uppercase tracking-wider">
+                  Speed Prediction
+                </span>
+              </div>
+              <Switch
+                data-testid="prediction-toggle"
+                checked={speedPredictionEnabled}
+                onCheckedChange={setSpeedPredictionEnabled}
+                className="data-[state=checked]:bg-amber-500"
+              />
+            </div>
+            <p className="text-xs text-zinc-500 font-mono pl-8">
+              AI warns you before entering lower speed zones
+            </p>
+          </div>
+
           {/* Audio Alert Toggle */}
           <div className="space-y-2 pt-4 border-t border-zinc-800">
             <div className="flex items-center justify-between">
