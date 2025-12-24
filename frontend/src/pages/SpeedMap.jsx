@@ -644,6 +644,8 @@ export default function SpeedMap() {
             currentThreshold={currentThreshold}
             theme={theme}
             setTheme={setTheme}
+            alertDelay={alertDelay}
+            setAlertDelay={setAlertDelay}
           />
           <AuthPanel />
         </div>
