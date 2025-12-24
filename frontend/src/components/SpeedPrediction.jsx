@@ -104,12 +104,15 @@ export function SpeedPredictionBanner({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
 
-  // Reset dismissed state when warning changes
-  useEffect(() => {
-    if (prediction?.warning) {
+  // Reset dismissed state when warning changes - using a ref to track previous warning
+  const prevWarningRef = useRef(prediction?.warning);
+  
+  if (prediction?.warning !== prevWarningRef.current) {
+    prevWarningRef.current = prediction?.warning;
+    if (prediction?.warning && isDismissed) {
       setIsDismissed(false);
     }
-  }, [prediction?.warning]);
+  }
 
   if (!prediction || isDismissed) return null;
 
