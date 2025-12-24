@@ -48,7 +48,8 @@ const checkAppVersion = () => {
       'onboardingComplete',   // Skip tutorial after first time
       'wakeLockEnabled',      // Keep screen on setting
       'alertSound',           // Selected alert sound
-      'alertVolume'           // Alert volume level
+      'alertVolume',          // Alert volume level
+      'speedPredictionEnabled' // AI speed prediction toggle
     ];
     const preserved = {};
     
