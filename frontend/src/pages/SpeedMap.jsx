@@ -646,10 +646,12 @@ export default function SpeedMap() {
       />
       
       {/* Weather Alert Banner */}
-      <WeatherAlertBanner 
-        currentPosition={currentPosition}
-        theme={theme}
-      />
+      {weatherAlertsEnabled && (
+        <WeatherAlertBanner 
+          currentPosition={currentPosition}
+          theme={theme}
+        />
+      )}
       
       {/* Google Map */}
       {isLoaded ? (
