@@ -674,6 +674,9 @@ export default function SpeedMap() {
         calculateSpeed(position);
         fetchSpeedLimit(latitude, longitude);
         
+        // Update bearing for speed prediction
+        updateBearing(latitude, longitude);
+        
         if (map) {
           map.panTo({ lat: latitude, lng: longitude });
         }
@@ -693,7 +696,7 @@ export default function SpeedMap() {
     return () => {
       navigator.geolocation.clearWatch(watchId);
     };
-  }, [map, calculateSpeed, fetchSpeedLimit, demoMode]);
+  }, [map, calculateSpeed, fetchSpeedLimit, demoMode, updateBearing]);
 
   // Record trip data points every 5 seconds while recording
   useEffect(() => {
