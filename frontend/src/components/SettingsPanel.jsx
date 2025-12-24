@@ -75,6 +75,9 @@ export const SettingsPanel = ({
   setAlertSound,
   alertVolume,
   setAlertVolume,
+  wakeLockEnabled,
+  onWakeLockToggle,
+  wakeLockActive,
 }) => {
   const [cacheStats, setCacheStats] = useState(() => getCacheStats());
   
