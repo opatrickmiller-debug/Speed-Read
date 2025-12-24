@@ -184,6 +184,30 @@ export const SettingsPanel = ({
             </div>
           </div>
 
+          {/* Weather Alerts Toggle */}
+          <div className="space-y-2 pt-4 border-t border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CloudRain className={cn(
+                  "w-5 h-5",
+                  weatherAlertsEnabled ? "text-sky-500" : "text-zinc-500"
+                )} />
+                <span className="text-sm font-medium text-zinc-200 font-mono uppercase tracking-wider">
+                  Weather Alerts
+                </span>
+              </div>
+              <Switch
+                data-testid="weather-toggle"
+                checked={weatherAlertsEnabled}
+                onCheckedChange={setWeatherAlertsEnabled}
+                className="data-[state=checked]:bg-sky-500"
+              />
+            </div>
+            <p className="text-xs text-zinc-500 font-mono pl-8">
+              Show driving condition alerts from Weather.gov (US only)
+            </p>
+          </div>
+
           {/* Audio Alert Toggle */}
           <div className="space-y-2 pt-4 border-t border-zinc-800">
             <div className="flex items-center justify-between">
