@@ -700,6 +700,9 @@ export default function SpeedMap() {
               speedLimit={speedLimit}
               unit={speedUnit}
               isSpeeding={isSpeeding}
+              isOverLimit={isOverLimit}
+              speedingDuration={speedingDuration}
+              alertDelay={alertDelay}
               theme={theme}
             />
             <SpeedLimitSign
