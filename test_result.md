@@ -350,18 +350,11 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Sound Customization Feature"
     - "Wake Lock Feature"
     - "Skip Tutorial Feature"
-    - "Gamification Stats API"
-    - "Export Reports API"
-    - "Family Create/Join/Get APIs"
-    - "Speed Trap Report/Nearby APIs"
-    - "GamificationPanel Component"
-    - "ExportReportPanel Component"
-    - "FamilyPanel Component"
-    - "SpeedTrapPanel Component"
   stuck_tasks: []
-  test_all: true
+  test_all: false
   test_priority: "high_first"
 
 agent_communication:
