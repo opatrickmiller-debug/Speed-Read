@@ -82,10 +82,20 @@ const mapContainerStyle = {
   height: "100vh",
 };
 
-const defaultCenter = {
-  lat: 37.7749,
-  lng: -122.4194,
+// Get saved position or use default (San Francisco)
+const getSavedPosition = () => {
+  try {
+    const saved = localStorage.getItem('lastPosition');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error("Error loading saved position:", e);
+  }
+  return { lat: 37.7749, lng: -122.4194 };
 };
+
+const defaultCenter = getSavedPosition();
 
 export default function SpeedMap() {
   // Map state
