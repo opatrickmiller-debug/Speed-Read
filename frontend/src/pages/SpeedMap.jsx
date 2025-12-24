@@ -922,6 +922,8 @@ export default function SpeedMap() {
             wakeLockEnabled={wakeLockEnabled}
             onWakeLockToggle={handleWakeLockToggle}
             wakeLockActive={wakeLockActive}
+            speedPredictionEnabled={speedPredictionEnabled}
+            setSpeedPredictionEnabled={setSpeedPredictionEnabled}
           />
           <AuthPanel />
         </div>
