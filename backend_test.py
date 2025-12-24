@@ -169,6 +169,154 @@ class SpeedAlertAPITester:
             self.log_test("API Response Time", False, str(e))
             return False
 
+    # ==================== SPEED PREDICTION TESTS ====================
+    
+    def test_speed_ahead_valid_location(self):
+        """Test speed prediction endpoint with valid coordinates"""
+        try:
+            # San Francisco coordinates with bearing (heading North)
+            params = {
+                "lat": 37.7749, 
+                "lon": -122.4194,
+                "bearing": 0,  # North
+                "current_speed_limit": 35
+            }
+            response = requests.get(f"{self.base_url}/api/speed-ahead", params=params, timeout=20)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                data = response.json()
+                # Check response structure
+                required_fields = ["upcoming_limits", "warning", "current_direction"]
+                has_all_fields = all(field in data for field in required_fields)
+                
+                if has_all_fields:
+                    upcoming_count = len(data.get('upcoming_limits', []))
+                    direction = data.get('current_direction')
+                    warning = data.get('warning')
+                    details += f", Upcoming limits: {upcoming_count}, Direction: {direction}"
+                    if warning:
+                        details += f", Warning: {warning}"
+                    
+                    # Check structure of upcoming limits if any
+                    if upcoming_count > 0:
+                        first_limit = data['upcoming_limits'][0]
+                        limit_fields = ["distance_meters", "speed_limit", "road_name", "unit"]
+                        has_limit_fields = all(field in first_limit for field in limit_fields)
+                        if not has_limit_fields:
+                            success = False
+                            details += ", Missing fields in upcoming_limits"
+                else:
+                    success = False
+                    details += f", Missing fields in response: {data}"
+            
+            self.log_test("Speed Prediction - Valid Location", success, details)
+            return success, response.json() if success else {}
+        except Exception as e:
+            self.log_test("Speed Prediction - Valid Location", False, str(e))
+            return False, {}
+
+    def test_speed_ahead_invalid_params(self):
+        """Test speed prediction endpoint with invalid parameters"""
+        try:
+            # Test with invalid coordinates
+            params = {"lat": "invalid", "lon": "invalid", "bearing": "invalid"}
+            response = requests.get(f"{self.base_url}/api/speed-ahead", params=params, timeout=10)
+            
+            # Should return 422 for invalid parameters
+            success = response.status_code == 422
+            details = f"Status: {response.status_code} (expected 422 for invalid params)"
+            
+            self.log_test("Speed Prediction - Invalid Parameters", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Speed Prediction - Invalid Parameters", False, str(e))
+            return False
+
+    def test_speed_ahead_missing_params(self):
+        """Test speed prediction endpoint with missing required parameters"""
+        try:
+            # Test with missing lat/lon parameters
+            response = requests.get(f"{self.base_url}/api/speed-ahead", timeout=10)
+            
+            # Should return 422 for missing required parameters
+            success = response.status_code == 422
+            details = f"Status: {response.status_code} (expected 422 for missing params)"
+            
+            self.log_test("Speed Prediction - Missing Parameters", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Speed Prediction - Missing Parameters", False, str(e))
+            return False
+
+    def test_speed_ahead_different_bearings(self):
+        """Test speed prediction with different bearing directions"""
+        try:
+            bearings = [0, 90, 180, 270]  # N, E, S, W
+            expected_directions = ['N', 'E', 'S', 'W']
+            
+            all_success = True
+            details_list = []
+            
+            for bearing, expected_dir in zip(bearings, expected_directions):
+                params = {
+                    "lat": 37.7749, 
+                    "lon": -122.4194,
+                    "bearing": bearing,
+                    "current_speed_limit": 35
+                }
+                response = requests.get(f"{self.base_url}/api/speed-ahead", params=params, timeout=15)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    actual_dir = data.get('current_direction')
+                    if actual_dir == expected_dir:
+                        details_list.append(f"Bearing {bearing}° → {actual_dir} ✓")
+                    else:
+                        details_list.append(f"Bearing {bearing}° → {actual_dir} (expected {expected_dir}) ✗")
+                        all_success = False
+                else:
+                    details_list.append(f"Bearing {bearing}° → HTTP {response.status_code} ✗")
+                    all_success = False
+                
+                time.sleep(0.5)  # Small delay between requests
+            
+            details = ", ".join(details_list)
+            self.log_test("Speed Prediction - Different Bearings", all_success, details)
+            return all_success
+        except Exception as e:
+            self.log_test("Speed Prediction - Different Bearings", False, str(e))
+            return False
+
+    def test_speed_ahead_response_time(self):
+        """Test speed prediction API response time"""
+        try:
+            import time
+            start_time = time.time()
+            
+            params = {
+                "lat": 37.7749, 
+                "lon": -122.4194,
+                "bearing": 0,
+                "current_speed_limit": 35
+            }
+            response = requests.get(f"{self.base_url}/api/speed-ahead", params=params, timeout=25)
+            
+            end_time = time.time()
+            response_time = end_time - start_time
+            
+            # Speed prediction API should respond within 25 seconds (multiple external API calls)
+            success = response.status_code == 200 and response_time < 25
+            details = f"Response time: {response_time:.2f}s, Status: {response.status_code}"
+            
+            self.log_test("Speed Prediction - Response Time", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Speed Prediction - Response Time", False, str(e))
+            return False
+
     # ==================== AUTHENTICATION TESTS ====================
     
     def test_user_registration(self):
