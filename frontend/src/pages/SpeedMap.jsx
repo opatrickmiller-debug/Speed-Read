@@ -180,11 +180,36 @@ export default function SpeedMap() {
     return thresholdOffset; // fallback
   };
 
-  // Calculate if speeding
+  // Calculate if over speed limit (raw)
   const displaySpeed = demoMode ? demoSpeed : currentSpeed;
   const currentThreshold = getDynamicThreshold(speedLimit);
   const effectiveLimit = speedLimit ? speedLimit + currentThreshold : null;
-  const isSpeeding = effectiveLimit !== null && displaySpeed > effectiveLimit;
+  const isOverLimit = effectiveLimit !== null && displaySpeed > effectiveLimit;
+  
+  // Alert delay tracking
+  const speedingStartTimeRef = useRef(null);
+  const [speedingDuration, setSpeedingDuration] = useState(0);
+  
+  // Track how long user has been speeding
+  useEffect(() => {
+    let interval;
+    if (isOverLimit) {
+      if (!speedingStartTimeRef.current) {
+        speedingStartTimeRef.current = Date.now();
+      }
+      interval = setInterval(() => {
+        const duration = (Date.now() - speedingStartTimeRef.current) / 1000;
+        setSpeedingDuration(duration);
+      }, 100);
+    } else {
+      speedingStartTimeRef.current = null;
+      setSpeedingDuration(0);
+    }
+    return () => clearInterval(interval);
+  }, [isOverLimit]);
+  
+  // Only trigger alert after delay has passed
+  const isSpeeding = isOverLimit && speedingDuration >= alertDelay;
 
   // Get current language info for display
   const currentLangInfo = AVAILABLE_LANGUAGES.find(l => l.code === voiceLanguage) || AVAILABLE_LANGUAGES[0];
