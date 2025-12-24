@@ -312,51 +312,34 @@ export const SettingsPanel = ({
             </div>
           </div>
           
-          {/* Theme Toggle */}
+          {/* Alert Delay Timer */}
           <div className="space-y-3 pt-4 border-t border-zinc-800">
             <div className="flex items-center gap-3">
-              {theme === "dark" ? (
-                <Moon className="w-5 h-5 text-indigo-400" />
-              ) : (
-                <Sun className="w-5 h-5 text-yellow-500" />
-              )}
+              <Timer className="w-5 h-5 text-purple-500" />
               <span className="text-sm font-medium text-zinc-200 font-mono uppercase tracking-wider">
-                Theme
+                Alert Delay
               </span>
             </div>
-            <div className="flex gap-2 pl-8">
-              <button
-                data-testid="theme-light"
-                onClick={() => setTheme("light")}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-mono",
-                  "border transition-colors duration-200 rounded",
-                  theme === "light"
-                    ? "bg-yellow-500/20 border-yellow-500 text-yellow-400"
-                    : "bg-transparent border-zinc-700 text-zinc-500 hover:border-zinc-500"
-                )}
-              >
-                <Sun className="w-4 h-4" />
-                Light
-              </button>
-              <button
-                data-testid="theme-dark"
-                onClick={() => setTheme("dark")}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-mono",
-                  "border transition-colors duration-200 rounded",
-                  theme === "dark"
-                    ? "bg-indigo-500/20 border-indigo-500 text-indigo-400"
-                    : "bg-transparent border-zinc-700 text-zinc-500 hover:border-zinc-500"
-                )}
-              >
-                <Moon className="w-4 h-4" />
-                Dark
-              </button>
+            <div className="pl-8 space-y-3">
+              <div className="flex justify-between text-xs text-zinc-500 font-mono">
+                <span>Trigger after</span>
+                <span data-testid="delay-value" className="text-purple-400">
+                  {alertDelay === 0 ? "Instant" : `${alertDelay} sec`}
+                </span>
+              </div>
+              <Slider
+                data-testid="delay-slider"
+                value={[alertDelay]}
+                onValueChange={(value) => setAlertDelay(value[0])}
+                max={10}
+                min={0}
+                step={1}
+                className="[&_[role=slider]]:bg-purple-500 [&_[role=slider]]:border-purple-400"
+              />
+              <p className="text-xs text-zinc-500 font-mono">
+                Wait this long over speed limit before alerting
+              </p>
             </div>
-            <p className="text-xs text-zinc-500 font-mono pl-8">
-              Light mode for daytime, dark mode for night driving
-            </p>
           </div>
           
           {/* Threshold Settings */}
