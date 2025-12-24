@@ -306,6 +306,30 @@ frontend:
         agent: "main"
         comment: "useWakeLock hook implemented with fallback for older browsers. Settings toggle added. Status indicator added. Needs frontend testing to verify toggle visibility and functionality."
 
+  - task: "HUD Mode Feature"
+    implemented: true
+    working: true
+    file: "frontend/src/components/HUDMode.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "HUD Mode fully functional - large mirrored speed display for windshield, brightness control, mirror toggle. Verified via screenshot."
+
+  - task: "AI Speed Prediction Feature"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/SpeedPrediction.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Backend /api/speed-ahead endpoint created. Frontend SpeedPrediction component with useBearing and useSpeedPrediction hooks. Settings toggle added. Needs testing with real GPS data to verify warnings appear."
+
   - task: "Sound Customization Feature"
     implemented: true
     working: "NA"
