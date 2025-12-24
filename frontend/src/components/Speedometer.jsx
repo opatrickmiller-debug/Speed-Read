@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
-export const Speedometer = ({ speed, speedLimit, unit, isSpeeding, theme = "dark" }) => {
+export const Speedometer = ({ speed, speedLimit, unit, isSpeeding, isOverLimit, speedingDuration, alertDelay, theme = "dark" }) => {
   const [displaySpeed, setDisplaySpeed] = useState(0);
   
   // Animate speed number changes
@@ -23,8 +23,9 @@ export const Speedometer = ({ speed, speedLimit, unit, isSpeeding, theme = "dark
   // Determine color based on speed vs limit
   const getSpeedColor = () => {
     if (!speedLimit) return theme === "dark" ? "text-sky-400" : "text-sky-600";
+    if (isSpeeding) return "text-red-500";
+    if (isOverLimit) return "text-orange-500"; // Over limit but waiting for delay
     const ratio = speed / speedLimit;
-    if (ratio >= 1) return "text-red-500";
     if (ratio >= 0.9) return "text-orange-500";
     return theme === "dark" ? "text-sky-400" : "text-sky-600";
   };
