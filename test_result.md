@@ -294,6 +294,30 @@ frontend:
         agent: "main"
         comment: "Slide-in panel with 4 tabs - verified via screenshot"
 
+  - task: "Wake Lock Feature"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/WakeLock.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "useWakeLock hook implemented with fallback for older browsers. Settings toggle added. Status indicator added. Needs frontend testing to verify toggle visibility and functionality."
+
+  - task: "Skip Tutorial Feature"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/OnboardingFlow.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "onboardingComplete key is now preserved across app updates. Skip button works. Verified via screenshot that returning users skip onboarding."
+
   - task: "SpeedMap Integration"
     implemented: true
     working: true
