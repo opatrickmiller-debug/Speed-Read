@@ -74,11 +74,14 @@ export const AlertOverlay = ({
   currentSpeed,
   speedLimit,
   speedUnit,
-  onMuteClick 
+  onMuteClick,
+  alertSound = "beep",
+  alertVolume = 0.7,
+  triggerAlert
 }) => {
-  const audioRef = useRef(null);
   const voiceSpokenRef = useRef(false);
   const lastVoiceTimeRef = useRef(0);
+  const alertIntervalRef = useRef(null);
   
   // Get messages for selected language
   const messages = VOICE_MESSAGES[voiceLanguage] || VOICE_MESSAGES.en;
