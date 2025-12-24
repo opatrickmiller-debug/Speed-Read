@@ -338,6 +338,8 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Wake Lock Feature"
+    - "Skip Tutorial Feature"
     - "Gamification Stats API"
     - "Export Reports API"
     - "Family Create/Join/Get APIs"
