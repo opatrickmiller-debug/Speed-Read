@@ -297,6 +297,10 @@ export default function SpeedMap() {
     localStorage.setItem('weatherAlertsEnabled', weatherAlertsEnabled.toString());
   }, [weatherAlertsEnabled]);
   
+  useEffect(() => {
+    localStorage.setItem('speedPredictionEnabled', speedPredictionEnabled.toString());
+  }, [speedPredictionEnabled]);
+  
   // Save last known position to localStorage
   useEffect(() => {
     if (currentPosition && !demoMode) {
