@@ -138,8 +138,52 @@ export const SettingsPanel = ({
         </SheetHeader>
         
         <div className="mt-6 space-y-5">
+          {/* Theme Toggle - AT TOP */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              {theme === "dark" ? (
+                <Moon className="w-5 h-5 text-indigo-400" />
+              ) : (
+                <Sun className="w-5 h-5 text-yellow-500" />
+              )}
+              <span className="text-sm font-medium text-zinc-200 font-mono uppercase tracking-wider">
+                Theme
+              </span>
+            </div>
+            <div className="flex gap-2 pl-8">
+              <button
+                data-testid="theme-light"
+                onClick={() => setTheme("light")}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-mono",
+                  "border transition-colors duration-200 rounded",
+                  theme === "light"
+                    ? "bg-yellow-500/20 border-yellow-500 text-yellow-400"
+                    : "bg-transparent border-zinc-700 text-zinc-500 hover:border-zinc-500"
+                )}
+              >
+                <Sun className="w-4 h-4" />
+                Light
+              </button>
+              <button
+                data-testid="theme-dark"
+                onClick={() => setTheme("dark")}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-mono",
+                  "border transition-colors duration-200 rounded",
+                  theme === "dark"
+                    ? "bg-indigo-500/20 border-indigo-500 text-indigo-400"
+                    : "bg-transparent border-zinc-700 text-zinc-500 hover:border-zinc-500"
+                )}
+              >
+                <Moon className="w-4 h-4" />
+                Dark
+              </button>
+            </div>
+          </div>
+
           {/* Audio Alert Toggle */}
-          <div className="space-y-2">
+          <div className="space-y-2 pt-4 border-t border-zinc-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {audioEnabled ? (
