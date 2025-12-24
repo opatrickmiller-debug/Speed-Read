@@ -68,6 +68,8 @@ export const SettingsPanel = ({
   setTheme,
   alertDelay,
   setAlertDelay,
+  weatherAlertsEnabled,
+  setWeatherAlertsEnabled,
 }) => {
   const [cacheStats, setCacheStats] = useState(() => getCacheStats());
   
