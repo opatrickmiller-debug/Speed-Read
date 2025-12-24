@@ -374,17 +374,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Sound Customization Feature"
-    - "Wake Lock Feature"
-    - "Skip Tutorial Feature"
+    - "AI Speed Prediction Feature"
+    - "HUD Mode Feature"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
-    message: "Implemented all 4 differentiation features. Backend has new endpoints for stats, badges, reports, family management, and speed traps. Frontend has 4 new panel components integrated via FeaturesPanel. Need comprehensive E2E testing of all new features. Test user auth first, then test each feature with authenticated user. For speed traps nearby endpoint, no auth is required."
-  - agent: "main"
-    message: "Implemented Wake Lock feature and Skip Tutorial feature. Wake Lock keeps screen on while driving - added useWakeLock hook, settings toggle, and status indicator. Skip Tutorial: onboardingComplete localStorage key is now preserved across app updates. Both features verified via screenshots. Wake Lock toggle is visible in settings panel. Need testing to verify: 1) Settings panel shows 'Keep Screen On' toggle, 2) Onboarding skips when onboardingComplete is set in localStorage, 3) User settings persist across reloads."
-  - agent: "main"
-    message: "Implemented Sound Customization feature. AlertOverlay now uses custom sounds from SoundCustomization.jsx instead of hardcoded oscillator. 6 different sounds available: Classic Beep, Gentle Chime, Urgent Alert, Soft Ping, Mini Siren, Double Tap. Volume slider and Test Sound button work. Settings persist to localStorage. Verified via screenshot that selecting different sounds works. alertSound and alertVolume added to preserved keys list."
+    message: "Implemented HUD Mode and AI Speed Prediction features. HUD Mode has full-screen mirrored display with brightness control - verified via screenshots. AI Speed Prediction: new backend /api/speed-ahead endpoint looks ahead at 200m, 500m, 1000m for speed limit changes. Frontend has SpeedPrediction component with warning banner. Settings toggle added. Need to test the prediction API and verify warnings display when approaching lower speed zones."
