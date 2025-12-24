@@ -312,6 +312,14 @@ export default function SpeedMap() {
     localStorage.setItem('speedPredictionEnabled', speedPredictionEnabled.toString());
   }, [speedPredictionEnabled]);
   
+  useEffect(() => {
+    localStorage.setItem('dataSaverEnabled', dataSaverEnabled.toString());
+  }, [dataSaverEnabled]);
+  
+  useEffect(() => {
+    localStorage.setItem('lowPowerMode', lowPowerMode.toString());
+  }, [lowPowerMode]);
+  
   // Save last known position to localStorage
   useEffect(() => {
     if (currentPosition && !demoMode) {
