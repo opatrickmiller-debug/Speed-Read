@@ -256,6 +256,16 @@ export default function SpeedMap() {
   const [showPredictionBanner, setShowPredictionBanner] = useState(false);
   const { bearing, updateBearing } = useBearing();
   
+  // Mobile optimizations
+  const [dataSaverEnabled, setDataSaverEnabled] = useState(() => {
+    const saved = localStorage.getItem('dataSaverEnabled');
+    return saved !== null ? saved === 'true' : false;
+  });
+  const [lowPowerMode, setLowPowerMode] = useState(() => {
+    const saved = localStorage.getItem('lowPowerMode');
+    return saved !== null ? saved === 'true' : false;
+  });
+  
   // Dynamic threshold ranges (speed limit -> allowed over)
   const [thresholdRanges, setThresholdRanges] = useState(() => {
     const saved = localStorage.getItem('thresholdRanges');
