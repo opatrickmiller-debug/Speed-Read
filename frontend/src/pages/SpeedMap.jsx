@@ -43,7 +43,9 @@ const checkAppVersion = () => {
       'speedUnit',           // MPH or KM/H
       'alertDelay',          // Seconds before alert
       'thresholdRanges',     // Speed zone configurations
-      'weatherAlertsEnabled' // Weather alerts toggle
+      'weatherAlertsEnabled', // Weather alerts toggle
+      'onboardingComplete',   // Skip tutorial after first time
+      'wakeLockEnabled'       // Keep screen on setting
     ];
     const preserved = {};
     
