@@ -844,11 +844,15 @@ export default function SpeedMap() {
             setAlertDelay={setAlertDelay}
             weatherAlertsEnabled={weatherAlertsEnabled}
             setWeatherAlertsEnabled={setWeatherAlertsEnabled}
+            alertSound={alertSound}
+            setAlertSound={setAlertSound}
+            alertVolume={alertVolume}
+            setAlertVolume={setAlertVolume}
           />
           <AuthPanel />
         </div>
         
-        {/* Center on location button + Trip History + Features */}
+        {/* Center on location button + Trip History + Features + HUD Mode */}
         <div className="absolute top-4 left-4 pointer-events-auto flex gap-2">
           <Button
             data-testid="center-location-btn"
