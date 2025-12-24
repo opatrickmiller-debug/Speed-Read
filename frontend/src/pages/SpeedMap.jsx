@@ -728,6 +728,24 @@ export default function SpeedMap() {
     );
   }
 
+  // Show onboarding for first-time users
+  if (!isCheckingOnboarding && showOnboarding) {
+    return <OnboardingFlow onComplete={completeOnboarding} />;
+  }
+
+  // HUD Mode - full screen display for windshield
+  if (hudMode) {
+    return (
+      <HUDMode
+        speed={displaySpeed}
+        speedLimit={speedLimit}
+        unit={speedUnit}
+        isSpeeding={isSpeeding}
+        onClose={() => setHudMode(false)}
+      />
+    );
+  }
+
   return (
     <div 
       data-testid="speed-map-page" 
@@ -746,6 +764,9 @@ export default function SpeedMap() {
         speedLimit={speedLimit}
         speedUnit={speedUnit}
         onMuteClick={handleMuteAll}
+        alertSound={alertSound}
+        alertVolume={alertVolume}
+        triggerAlert={triggerAlert}
       />
       
       {/* Weather Alert Banner */}
