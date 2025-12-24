@@ -837,6 +837,17 @@ export default function SpeedMap() {
         />
       )}
       
+      {/* Speed Prediction Banner */}
+      {speedPredictionEnabled && speedPrediction && (
+        <SpeedPredictionBanner
+          prediction={speedPrediction}
+          currentSpeedLimit={speedLimit}
+          speedUnit={speedUnit}
+          theme={theme}
+          onDismiss={() => setShowPredictionBanner(false)}
+        />
+      )}
+      
       {/* Google Map */}
       {isLoaded ? (
         <GoogleMap
