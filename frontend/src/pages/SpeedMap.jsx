@@ -247,6 +247,14 @@ export default function SpeedMap() {
     return saved !== null ? saved === 'true' : true; // Default to enabled
   });
   
+  // Speed Prediction (AI look-ahead)
+  const [speedPredictionEnabled, setSpeedPredictionEnabled] = useState(() => {
+    const saved = localStorage.getItem('speedPredictionEnabled');
+    return saved !== null ? saved === 'true' : true; // Default to enabled
+  });
+  const [showPredictionBanner, setShowPredictionBanner] = useState(false);
+  const { bearing, updateBearing } = useBearing();
+  
   // Dynamic threshold ranges (speed limit -> allowed over)
   const [thresholdRanges, setThresholdRanges] = useState(() => {
     const saved = localStorage.getItem('thresholdRanges');
