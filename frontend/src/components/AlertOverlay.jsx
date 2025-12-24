@@ -141,58 +141,36 @@ export const AlertOverlay = ({
     }
   }, []);
 
-  // Play alarm sound when active
+  // Play customized alarm sound when active
   useEffect(() => {
-    if (isActive && audioEnabled) {
-      // Create oscillator-based alarm sound
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
+    if (isActive && audioEnabled && triggerAlert) {
+      // Calculate how much over the limit
+      const speedOver = currentSpeed - speedLimit;
       
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      // Trigger initial alert
+      triggerAlert(speedOver);
       
-      oscillator.frequency.value = 800;
-      oscillator.type = 'square';
-      gainNode.gain.value = 0.1;
-      
-      oscillator.start();
-      
-      // Modulate frequency for alarm effect
-      const interval = setInterval(() => {
-        oscillator.frequency.value = oscillator.frequency.value === 800 ? 600 : 800;
-      }, 300);
-      
-      audioRef.current = { oscillator, audioContext, interval, closed: false };
+      // Set up interval for repeated alerts (every 3 seconds)
+      alertIntervalRef.current = setInterval(() => {
+        if (isActive && audioEnabled) {
+          triggerAlert(speedOver);
+        }
+      }, 3500);
       
       return () => {
-        clearInterval(interval);
-        try {
-          oscillator.stop();
-          if (audioContext.state !== 'closed') {
-            audioContext.close();
-          }
-        } catch (e) {
-          // Ignore already closed context errors
-        }
-        if (audioRef.current) {
-          audioRef.current.closed = true;
+        if (alertIntervalRef.current) {
+          clearInterval(alertIntervalRef.current);
+          alertIntervalRef.current = null;
         }
       };
-    } else if (audioRef.current && !audioRef.current.closed) {
-      const { oscillator, audioContext, interval } = audioRef.current;
-      clearInterval(interval);
-      try {
-        oscillator.stop();
-        if (audioContext.state !== 'closed') {
-          audioContext.close();
-        }
-      } catch (e) {
-        // Ignore already closed context errors
+    } else {
+      // Clear interval when not active
+      if (alertIntervalRef.current) {
+        clearInterval(alertIntervalRef.current);
+        alertIntervalRef.current = null;
       }
-      audioRef.current = null;
     }
-  }, [isActive, audioEnabled]);
+  }, [isActive, audioEnabled, triggerAlert, currentSpeed, speedLimit]);
 
   // Cleanup speech on unmount
   useEffect(() => {
