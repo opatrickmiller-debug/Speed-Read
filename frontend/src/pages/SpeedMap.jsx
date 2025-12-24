@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
-import { MapPin, Crosshair, WifiOff, Database, Trophy, Maximize2, Smartphone } from "lucide-react";
+import { MapPin, Crosshair, WifiOff, Database, Trophy, Maximize2, Smartphone, AlertTriangle } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -16,6 +16,7 @@ import { OnboardingFlow, useOnboarding } from "@/components/OnboardingFlow";
 import { HUDMode } from "@/components/HUDMode";
 import { useAlertSound } from "@/components/SoundCustomization";
 import { useWakeLock } from "@/components/WakeLock";
+import { SpeedPredictionBanner, SpeedPredictionIndicator, useBearing, useSpeedPrediction } from "@/components/SpeedPrediction";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,7 +28,7 @@ import {
 } from "@/utils/speedLimitCache";
 
 // App version - increment this when you want to clear user caches on update
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "1.3.0";
 
 // Check for app updates and clear stale caches
 const checkAppVersion = () => {
