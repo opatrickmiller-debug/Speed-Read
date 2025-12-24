@@ -100,24 +100,62 @@ export default function SpeedMap() {
   const [isUsingCache, setIsUsingCache] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   
-  // Settings state
+  // Settings state - load from localStorage where applicable
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [voiceLanguage, setVoiceLanguage] = useState("en");
-  const [speedUnit, setSpeedUnit] = useState("mph");
+  const [speedUnit, setSpeedUnit] = useState(() => {
+    return localStorage.getItem('speedUnit') || 'mph';
+  });
   const [useDynamicThreshold, setUseDynamicThreshold] = useState(true);
   const [thresholdOffset, setThresholdOffset] = useState(5); // Used when dynamic is off
   const [demoMode, setDemoMode] = useState(false);
   const [offlineCacheEnabled, setOfflineCacheEnabled] = useState(true);
-  const [theme, setTheme] = useState("dark"); // "dark" or "light"
-  const [alertDelay, setAlertDelay] = useState(3); // seconds before alert triggers
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('theme') || 'dark';
+  });
+  const [alertDelay, setAlertDelay] = useState(() => {
+    const saved = localStorage.getItem('alertDelay');
+    return saved ? parseInt(saved, 10) : 3;
+  });
   
   // Dynamic threshold ranges (speed limit -> allowed over)
-  const [thresholdRanges, setThresholdRanges] = useState([
-    { minLimit: 0, maxLimit: 50, offset: 0 },    // 0-50 mph: exact limit
-    { minLimit: 50, maxLimit: 65, offset: 5 },   // 50-65 mph: +5 mph
-    { minLimit: 65, maxLimit: 999, offset: 10 }, // 65+ mph: +10 mph
-  ]);
+  const [thresholdRanges, setThresholdRanges] = useState(() => {
+    const saved = localStorage.getItem('thresholdRanges');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return [
+          { minLimit: 0, maxLimit: 50, offset: 0 },
+          { minLimit: 50, maxLimit: 65, offset: 5 },
+          { minLimit: 65, maxLimit: 999, offset: 10 },
+        ];
+      }
+    }
+    return [
+      { minLimit: 0, maxLimit: 50, offset: 0 },
+      { minLimit: 50, maxLimit: 65, offset: 5 },
+      { minLimit: 65, maxLimit: 999, offset: 10 },
+    ];
+  });
+  
+  // Persist settings to localStorage
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+  
+  useEffect(() => {
+    localStorage.setItem('speedUnit', speedUnit);
+  }, [speedUnit]);
+  
+  useEffect(() => {
+    localStorage.setItem('alertDelay', alertDelay.toString());
+  }, [alertDelay]);
+  
+  useEffect(() => {
+    localStorage.setItem('thresholdRanges', JSON.stringify(thresholdRanges));
+  }, [thresholdRanges]);
   
   // Trip recording state
   const [isRecording, setIsRecording] = useState(false);
