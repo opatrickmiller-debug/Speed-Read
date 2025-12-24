@@ -945,6 +945,10 @@ export default function SpeedMap() {
             wakeLockActive={wakeLockActive}
             speedPredictionEnabled={speedPredictionEnabled}
             setSpeedPredictionEnabled={setSpeedPredictionEnabled}
+            dataSaverEnabled={dataSaverEnabled}
+            setDataSaverEnabled={setDataSaverEnabled}
+            lowPowerMode={lowPowerMode}
+            setLowPowerMode={setLowPowerMode}
           />
           <AuthPanel />
         </div>
