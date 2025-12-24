@@ -81,6 +81,10 @@ export const SettingsPanel = ({
   wakeLockActive,
   speedPredictionEnabled,
   setSpeedPredictionEnabled,
+  dataSaverEnabled,
+  setDataSaverEnabled,
+  lowPowerMode,
+  setLowPowerMode,
 }) => {
   const [cacheStats, setCacheStats] = useState(() => getCacheStats());
   
