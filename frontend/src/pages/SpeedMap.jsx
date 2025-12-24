@@ -15,6 +15,7 @@ import { WeatherAlertBanner } from "@/components/WeatherAlert";
 import { OnboardingFlow, useOnboarding } from "@/components/OnboardingFlow";
 import { HUDMode } from "@/components/HUDMode";
 import { useAlertSound } from "@/components/SoundCustomization";
+import { useWakeLock } from "@/components/WakeLock";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
