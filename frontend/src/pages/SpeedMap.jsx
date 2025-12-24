@@ -1044,6 +1044,16 @@ export default function SpeedMap() {
               </span>
             </div>
           )}
+          
+          {/* Wake Lock indicator */}
+          {wakeLockActive && (
+            <div className="backdrop-blur-xl bg-cyan-500/20 border border-cyan-500/30 px-3 py-1 rounded-full flex items-center gap-2">
+              <Smartphone className="w-3 h-3 text-cyan-400" />
+              <span className="text-cyan-400 font-mono text-xs uppercase tracking-wider">
+                Awake
+              </span>
+            </div>
+          )}
         </div>
       </div>
       
