@@ -760,6 +760,21 @@ export const SettingsPanel = ({
               </div>
             )}
           </div>
+          
+          {/* Mobile Optimization Section */}
+          <div className="space-y-4 pt-4 border-t border-zinc-800">
+            <div className="flex items-center gap-2 text-zinc-200 font-mono uppercase text-sm tracking-wider mb-4">
+              <Signal className="w-5 h-5 text-sky-500" />
+              Mobile & Cellular
+            </div>
+            <MobileSettingsSection
+              dataSaverEnabled={dataSaverEnabled}
+              setDataSaverEnabled={setDataSaverEnabled}
+              lowPowerMode={lowPowerMode}
+              setLowPowerMode={setLowPowerMode}
+              theme={theme}
+            />
+          </div>
         </div>
       </SheetContent>
     </Sheet>
