@@ -223,15 +223,16 @@ export default function SpeedMap() {
   useEffect(() => {
     let isMounted = true;
     let retryCount = 0;
-    const maxRetries = 3;
-    const timeout = 15000; // 15 second timeout per request
+    const maxRetries = 5;
+    const timeout = 8000; // 8 second timeout per request
     
     const checkBackend = async () => {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
         
-        const response = await fetch(`${API}/speed-limit?lat=37.7749&lon=-122.4194`, {
+        // Use the health endpoint for faster wake-up check
+        const response = await fetch(`${API}/health`, {
           method: 'GET',
           headers: { 'Accept': 'application/json' },
           signal: controller.signal,
@@ -265,14 +266,15 @@ export default function SpeedMap() {
         
         retryCount++;
         if (retryCount < maxRetries) {
-          // Wait 2 seconds between retries
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // Wait 1.5 seconds between retries (faster)
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
       }
       
       // Even if backend didn't respond, proceed to app (will work offline/cached)
       if (isMounted) {
         console.log('[App] Proceeding without confirmed backend connection');
+        setBackendAwake(true); // Assume awake and let app handle errors gracefully
         setWakingUp(false);
       }
     };
