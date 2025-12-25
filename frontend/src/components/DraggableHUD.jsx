@@ -231,7 +231,7 @@ export function DraggableContainer({
     <div
       className={cn(
         "absolute touch-none select-none",
-        isDragging && "z-50",
+        (isDragging || showControls) && "z-[9998]",
         className
       )}
       style={{
