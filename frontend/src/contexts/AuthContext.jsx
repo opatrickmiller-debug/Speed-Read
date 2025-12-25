@@ -14,7 +14,18 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    // Try to restore user info from localStorage
+    const savedUser = localStorage.getItem('auth_user');
+    if (savedUser) {
+      try {
+        return JSON.parse(savedUser);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
   const [token, setToken] = useState(() => localStorage.getItem('auth_token'));
   const [isLoading, setIsLoading] = useState(true);
 
@@ -43,9 +54,12 @@ export const AuthProvider = ({ children }) => {
           headers: { Authorization: `Bearer ${token}` }
         });
         setUser(response.data);
+        // Save user info for persistence
+        localStorage.setItem('auth_user', JSON.stringify(response.data));
       } catch (error) {
         // Token invalid, clear it
         localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
         setToken(null);
         setUser(null);
       } finally {
@@ -60,9 +74,12 @@ export const AuthProvider = ({ children }) => {
     const response = await axios.post(`${API}/auth/login`, { email, password });
     const { access_token, user_id, email: userEmail } = response.data;
     
+    const userData = { user_id, email: userEmail };
+    
     localStorage.setItem('auth_token', access_token);
+    localStorage.setItem('auth_user', JSON.stringify(userData));
     setToken(access_token);
-    setUser({ user_id, email: userEmail });
+    setUser(userData);
     
     return response.data;
   }, []);
@@ -71,15 +88,19 @@ export const AuthProvider = ({ children }) => {
     const response = await axios.post(`${API}/auth/register`, { email, password });
     const { access_token, user_id, email: userEmail } = response.data;
     
+    const userData = { user_id, email: userEmail };
+    
     localStorage.setItem('auth_token', access_token);
+    localStorage.setItem('auth_user', JSON.stringify(userData));
     setToken(access_token);
-    setUser({ user_id, email: userEmail });
+    setUser(userData);
     
     return response.data;
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
     setToken(null);
     setUser(null);
   }, []);
