@@ -366,6 +366,19 @@ frontend:
         agent: "main"
         comment: "Trophy button added, opens FeaturesPanel - verified via screenshot"
 
+
+  - task: "Mobile Drag-and-Drop Speedometer"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/DraggableHUD.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "DraggableHUD.jsx has touch event handlers (onTouchStart, onTouchMove, onTouchEnd). Features: tap to show controls, drag handle, lock/unlock button, position persistence to localStorage. Needs testing on mobile viewport."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
