@@ -1151,8 +1151,13 @@ export default function SpeedMap() {
           </Button>
         </div>
         
-        {/* Speed HUD - positioned high for driver visibility */}
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 pointer-events-auto z-10">
+        {/* Speed HUD - Draggable for user customization */}
+        <DraggableContainer
+          storageKey="speedHudPosition"
+          defaultPosition={{ x: 0, y: 80 }}
+          showHandle={true}
+          className="left-1/2 -translate-x-1/2 pointer-events-auto z-10"
+        >
           <div className="flex flex-col items-center gap-3">
             <SpeedometerPro
               speed={displaySpeed}
@@ -1173,7 +1178,7 @@ export default function SpeedMap() {
               theme={theme}
             />
           </div>
-        </div>
+        </DraggableContainer>
         
         {/* Loading indicator */}
         {isLoadingLocation && !demoMode && (
