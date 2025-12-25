@@ -103,6 +103,30 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
+// Auto-wake backend servers on app load
+const wakeBackendServers = async () => {
+  try {
+    console.log('[App] Waking up backend servers...');
+    // Try multiple endpoints to ensure server wakes up
+    const wakePromises = [
+      fetch(`${API}/speed-limit?lat=0&lon=0`, { method: 'GET' }).catch(() => null),
+      fetch(`${BACKEND_URL}/api/health`, { method: 'GET' }).catch(() => null),
+    ];
+    
+    await Promise.race([
+      Promise.all(wakePromises),
+      new Promise(resolve => setTimeout(resolve, 10000)) // 10s timeout
+    ]);
+    
+    console.log('[App] Backend wake-up request sent');
+  } catch (error) {
+    console.log('[App] Backend wake-up failed, will retry on user action');
+  }
+};
+
+// Start wake-up process immediately on module load
+wakeBackendServers();
+
 // Dark map style for HUD aesthetic
 const darkMapStyle = [
   { elementType: "geometry", stylers: [{ color: "#1d2c4d" }] },
