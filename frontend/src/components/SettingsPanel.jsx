@@ -987,6 +987,34 @@ function AppVersionSection() {
         Last checked: {formatLastChecked()}
       </p>
 
+      {/* Clear All App Data */}
+      <button
+        onClick={() => {
+          if (confirm('This will clear all app data including settings, position, and cached data. Continue?')) {
+            // Clear all localStorage
+            localStorage.clear();
+            // Clear service worker caches
+            if ('caches' in window) {
+              caches.keys().then(names => {
+                names.forEach(name => caches.delete(name));
+              });
+            }
+            // Unregister service workers
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(registrations => {
+                registrations.forEach(reg => reg.unregister());
+              });
+            }
+            // Hard reload
+            window.location.href = window.location.origin + '/?cleared=' + Date.now();
+          }
+        }}
+        className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono uppercase tracking-wider bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors"
+      >
+        <Trash2 className="w-3 h-3" />
+        Clear All App Data
+      </button>
+
       {/* Copyright */}
       <p className="text-xs text-zinc-700 font-mono text-center pt-2 border-t border-zinc-800">
         © 2025 All rights reserved
