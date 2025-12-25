@@ -28,7 +28,7 @@ load_dotenv(ROOT_DIR / '.env')
 # JWT Configuration
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY', secrets.token_urlsafe(32))
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 30  # 30 days - keep users signed in
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
