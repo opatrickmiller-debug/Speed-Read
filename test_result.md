@@ -374,8 +374,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "AI Speed Prediction Feature"
-    - "HUD Mode Feature"
+    - "Mobile Drag-and-Drop Speedometer"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -383,3 +382,5 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: "Implemented HUD Mode and AI Speed Prediction features. HUD Mode has full-screen mirrored display with brightness control - verified via screenshots. AI Speed Prediction: new backend /api/speed-ahead endpoint looks ahead at 200m, 500m, 1000m for speed limit changes. Frontend has SpeedPrediction component with warning banner. Settings toggle added. Need to test the prediction API and verify warnings display when approaching lower speed zones."
+  - agent: "main"
+    message: "PRIORITY: Testing mobile drag-and-drop functionality for speedometer. The DraggableHUD.jsx component has touch event handlers (onTouchStart, onTouchMove, onTouchEnd) implemented. Need to verify: 1) Tap on speedometer shows drag controls, 2) Touch-drag gesture moves the component, 3) Position persists to localStorage, 4) Lock/Unlock functionality works, 5) Reset Position button works from settings."
