@@ -212,8 +212,11 @@ export const SettingsPanel = ({
             </p>
             <button
               onClick={() => {
+                // Clear position from localStorage
                 localStorage.removeItem('speedHudPosition');
-                window.location.reload();
+                localStorage.removeItem('speedHudPosition_locked');
+                // Force a hard reload to bypass any caching
+                window.location.href = window.location.href.split('?')[0] + '?reset=' + Date.now();
               }}
               className={cn(
                 "w-full flex items-center justify-center gap-2 px-3 py-2 ml-8",
