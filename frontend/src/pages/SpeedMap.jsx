@@ -220,44 +220,67 @@ export default function SpeedMap() {
   
   // Auto-wake backend on component mount
   useEffect(() => {
+    let isMounted = true;
     let retryCount = 0;
-    const maxRetries = 5;
+    const maxRetries = 3;
+    const timeout = 15000; // 15 second timeout per request
     
     const checkBackend = async () => {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        
         const response = await fetch(`${API}/speed-limit?lat=37.7749&lon=-122.4194`, {
           method: 'GET',
           headers: { 'Accept': 'application/json' },
+          signal: controller.signal,
         });
         
-        if (response.ok) {
+        clearTimeout(timeoutId);
+        
+        if (response.ok && isMounted) {
           setBackendAwake(true);
           setWakingUp(false);
           console.log('[App] Backend is awake!');
           return true;
         }
       } catch (error) {
-        console.log(`[App] Backend check failed (attempt ${retryCount + 1}/${maxRetries})`);
+        if (error.name !== 'AbortError') {
+          console.log(`[App] Backend check failed (attempt ${retryCount + 1}/${maxRetries}):`, error.message);
+        } else {
+          console.log(`[App] Backend check timed out (attempt ${retryCount + 1}/${maxRetries})`);
+        }
       }
       return false;
     };
     
     const wakeUp = async () => {
+      if (!isMounted) return;
       setWakingUp(true);
       
-      while (retryCount < maxRetries) {
+      while (retryCount < maxRetries && isMounted) {
         const isAwake = await checkBackend();
-        if (isAwake) break;
+        if (isAwake) return;
         
         retryCount++;
-        // Wait 3 seconds between retries
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        if (retryCount < maxRetries) {
+          // Wait 2 seconds between retries
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
       }
       
-      setWakingUp(false);
+      // Even if backend didn't respond, proceed to app (will work offline/cached)
+      if (isMounted) {
+        console.log('[App] Proceeding without confirmed backend connection');
+        setWakingUp(false);
+      }
     };
     
     wakeUp();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
   
   // HUD Mode state
