@@ -775,6 +775,16 @@ export const SettingsPanel = ({
               theme={theme}
             />
           </div>
+          
+          {/* App Version */}
+          <div className="pt-6 pb-4 border-t border-zinc-800 text-center">
+            <p className="text-xs text-zinc-600 font-mono">
+              Speed Alert v1.4.0
+            </p>
+            <p className="text-xs text-zinc-700 font-mono mt-1">
+              © 2025 All rights reserved
+            </p>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
