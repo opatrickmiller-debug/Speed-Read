@@ -369,15 +369,18 @@ frontend:
 
   - task: "Mobile Drag-and-Drop Speedometer"
     implemented: true
-    working: "NA"
+    working: true
     file: "frontend/src/components/DraggableHUD.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "DraggableHUD.jsx has touch event handlers (onTouchStart, onTouchMove, onTouchEnd). Features: tap to show controls, drag handle, lock/unlock button, position persistence to localStorage. Needs testing on mobile viewport."
+      - working: true
+        agent: "main"
+        comment: "Fixed: 1) Added isDraggingRef for immediate state updates. 2) Moved toast notifications from top-center to bottom-left to prevent blocking drag. 3) Added window-level touch event listeners. 4) Added touch-action:none to drag handle. Drag successfully changes position from {x:0,y:80} to {x:-50,y:434}."
 
 metadata:
   created_by: "main_agent"
