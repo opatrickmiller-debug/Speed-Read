@@ -2,10 +2,10 @@
 
 // VERSION - increment this to force cache refresh on all clients
 const SW_VERSION = '1.2.0';
-const CACHE_NAME = `speed-alert-v${SW_VERSION}`;
-const STATIC_CACHE = `speed-alert-static-v${SW_VERSION}`;
-const DYNAMIC_CACHE = `speed-alert-dynamic-v${SW_VERSION}`;
-const API_CACHE = `speed-alert-api-v${SW_VERSION}`;
+const CACHE_NAME = `speedshield-v${SW_VERSION}`;
+const STATIC_CACHE = `speedshield-static-v${SW_VERSION}`;
+const DYNAMIC_CACHE = `speedshield-dynamic-v${SW_VERSION}`;
+const API_CACHE = `speedshield-api-v${SW_VERSION}`;
 
 // Files to cache immediately on install
 const STATIC_FILES = [
@@ -257,7 +257,7 @@ self.addEventListener('push', (event) => {
         icon: '/icons/icon-192.png',
         badge: '/icons/icon-72.png',
         vibrate: [200, 100, 200],
-        tag: 'speed-alert',
+        tag: 'speedshield',
         requireInteraction: true,
         actions: [
           { action: 'open', title: 'Open App' },
