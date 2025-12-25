@@ -1172,21 +1172,6 @@ export default function SpeedMap() {
               theme={theme}
             />
           </div>
-          {/* HUD Mode Button */}
-          <Button
-            onClick={() => setHudMode(true)}
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "mt-2 backdrop-blur-xl border",
-              theme === "dark" 
-                ? "bg-black/50 border-white/10 text-zinc-400 hover:text-white hover:border-cyan-500/50" 
-                : "bg-white/50 border-gray-300 text-gray-600 hover:text-gray-900"
-            )}
-          >
-            <Maximize2 className="w-4 h-4 mr-2" />
-            HUD Mode
-          </Button>
         </div>
         
         {/* Loading indicator */}
