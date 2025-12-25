@@ -127,7 +127,34 @@ export function useDraggable(storageKey, defaultPosition = { x: 0, y: 0 }) {
     };
   }, [isDragging, handleMove, handleEnd]);
 
-  // Touch events - OPTIMIZED FOR MOBILE
+  // Touch events - window listeners during drag for mobile
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const onTouchMoveWindow = (e) => {
+      if (isLocked) return;
+      e.preventDefault(); // Prevent scrolling while dragging
+      const touch = e.touches[0];
+      handleMove(touch.clientX, touch.clientY);
+    };
+
+    const onTouchEndWindow = () => {
+      handleEnd();
+    };
+
+    // Use passive: false to allow preventDefault
+    window.addEventListener('touchmove', onTouchMoveWindow, { passive: false });
+    window.addEventListener('touchend', onTouchEndWindow);
+    window.addEventListener('touchcancel', onTouchEndWindow);
+
+    return () => {
+      window.removeEventListener('touchmove', onTouchMoveWindow);
+      window.removeEventListener('touchend', onTouchEndWindow);
+      window.removeEventListener('touchcancel', onTouchEndWindow);
+    };
+  }, [isDragging, isLocked, handleMove, handleEnd]);
+
+  // Touch events - start handler for drag handle
   const onTouchStart = useCallback((e) => {
     if (isLocked) return;
     e.stopPropagation();
@@ -136,10 +163,10 @@ export function useDraggable(storageKey, defaultPosition = { x: 0, y: 0 }) {
     handleStart(touch.clientX, touch.clientY);
   }, [handleStart, isLocked]);
 
+  // Keep these for element-level events (backup)
   const onTouchMove = useCallback((e) => {
     if (!isDragging || isLocked) return;
-    e.preventDefault(); // Prevent scrolling while dragging
-    
+    e.preventDefault();
     const touch = e.touches[0];
     handleMove(touch.clientX, touch.clientY);
   }, [isDragging, isLocked, handleMove]);
