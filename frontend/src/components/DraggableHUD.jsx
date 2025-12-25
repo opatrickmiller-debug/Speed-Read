@@ -19,6 +19,7 @@ export function useDraggable(storageKey, defaultPosition = { x: 0, y: 0 }) {
   });
 
   const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false); // Use ref for immediate updates
   const [isLocked, setIsLocked] = useState(() => {
     const saved = localStorage.getItem(`${storageKey}_locked`);
     return saved === 'true';
