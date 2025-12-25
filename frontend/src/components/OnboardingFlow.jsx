@@ -52,6 +52,7 @@ export function OnboardingFlow({ onComplete }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [locationGranted, setLocationGranted] = useState(false);
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(true); // Default to true
 
   const step = ONBOARDING_STEPS[currentStep];
   const isLastStep = currentStep === ONBOARDING_STEPS.length - 1;
@@ -82,7 +83,9 @@ export function OnboardingFlow({ onComplete }) {
 
   const nextStep = () => {
     if (isLastStep) {
-      localStorage.setItem('onboardingComplete', 'true');
+      if (dontShowAgain) {
+        localStorage.setItem('onboardingComplete', 'true');
+      }
       onComplete();
     } else {
       setCurrentStep(prev => prev + 1);
@@ -98,7 +101,9 @@ export function OnboardingFlow({ onComplete }) {
   };
 
   const skipOnboarding = () => {
-    localStorage.setItem('onboardingComplete', 'true');
+    if (dontShowAgain) {
+      localStorage.setItem('onboardingComplete', 'true');
+    }
     onComplete();
   };
 
@@ -125,9 +130,9 @@ export function OnboardingFlow({ onComplete }) {
       <div className="absolute top-4 right-4">
         <button
           onClick={skipOnboarding}
-          className="text-zinc-500 hover:text-zinc-300 text-sm font-mono"
+          className="px-4 py-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg text-sm font-mono transition-colors"
         >
-          Skip
+          Skip →
         </button>
       </div>
 
@@ -161,7 +166,28 @@ export function OnboardingFlow({ onComplete }) {
       </div>
 
       {/* Bottom action */}
-      <div className="p-8 pb-12">
+      <div className="p-8 pb-12 space-y-4">
+        {/* Don't show again checkbox */}
+        <label className="flex items-center justify-center gap-3 cursor-pointer group">
+          <div 
+            className={cn(
+              "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
+              dontShowAgain 
+                ? "bg-sky-500 border-sky-500" 
+                : "border-zinc-600 group-hover:border-zinc-400"
+            )}
+            onClick={() => setDontShowAgain(!dontShowAgain)}
+          >
+            {dontShowAgain && <Check className="w-3 h-3 text-white" />}
+          </div>
+          <span 
+            className="text-zinc-400 text-sm font-mono"
+            onClick={() => setDontShowAgain(!dontShowAgain)}
+          >
+            Don&apos;t show this again
+          </span>
+        </label>
+
         <Button
           onClick={handleNext}
           disabled={isRequestingLocation}
