@@ -55,6 +55,7 @@ export function useDraggable(storageKey, defaultPosition = { x: 0, y: 0 }) {
   const handleStart = useCallback((clientX, clientY) => {
     if (isLocked) return;
     
+    isDraggingRef.current = true;
     setIsDragging(true);
     hasMoved.current = false;
     startPosRef.current = { x: clientX, y: clientY };
@@ -63,7 +64,7 @@ export function useDraggable(storageKey, defaultPosition = { x: 0, y: 0 }) {
   }, [position, isLocked, vibrate]);
 
   const handleMove = useCallback((clientX, clientY) => {
-    if (!isDragging || isLocked) return;
+    if (!isDraggingRef.current || isLocked) return;
 
     const deltaX = clientX - startPosRef.current.x;
     const deltaY = clientY - startPosRef.current.y;
@@ -85,12 +86,13 @@ export function useDraggable(storageKey, defaultPosition = { x: 0, y: 0 }) {
     const newY = Math.max(minY, Math.min(maxY, startOffsetRef.current.y + deltaY));
 
     setPosition({ x: newX, y: newY });
-  }, [isDragging, isLocked]);
+  }, [isLocked]);
 
   const handleEnd = useCallback(() => {
-    if (isDragging && hasMoved.current) {
+    if (isDraggingRef.current && hasMoved.current) {
       vibrate(10); // Short vibration on end
     }
+    isDraggingRef.current = false;
     setIsDragging(false);
     
     // Clear any pending long press
@@ -98,7 +100,7 @@ export function useDraggable(storageKey, defaultPosition = { x: 0, y: 0 }) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
-  }, [isDragging, vibrate]);
+  }, [vibrate]);
 
   // Mouse events
   const onMouseDown = useCallback((e) => {
