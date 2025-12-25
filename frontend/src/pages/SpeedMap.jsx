@@ -885,6 +885,40 @@ export default function SpeedMap() {
     return <OnboardingFlow onComplete={completeOnboarding} />;
   }
 
+  // Show waking up indicator
+  if (wakingUp) {
+    return (
+      <div className="h-screen w-screen bg-zinc-950 flex flex-col items-center justify-center">
+        <div className="text-center space-y-6">
+          {/* Animated logo/icon */}
+          <div className="relative">
+            <div className="w-20 h-20 border-4 border-cyan-500/30 rounded-full animate-ping absolute inset-0" />
+            <div className="w-20 h-20 border-4 border-cyan-500 rounded-full flex items-center justify-center">
+              <Smartphone className="w-10 h-10 text-cyan-500 animate-pulse" />
+            </div>
+          </div>
+          
+          {/* Status text */}
+          <div className="space-y-2">
+            <h2 className="text-xl font-mono text-zinc-200 uppercase tracking-wider">
+              Starting Up
+            </h2>
+            <p className="text-sm text-zinc-500 font-mono">
+              Connecting to servers...
+            </p>
+          </div>
+          
+          {/* Loading dots */}
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+            <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+            <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // HUD Mode - full screen display for windshield
   if (hudMode) {
     return (
