@@ -230,13 +230,14 @@ export function DraggableContainer({
   return (
     <div
       className={cn(
-        "absolute touch-none select-none",
+        "absolute select-none",
         (isDragging || showControls) && "z-[9998]",
         className
       )}
       style={{
         transform: `translate(${position.x}px, ${position.y}px)`,
         transition: isDragging ? 'none' : 'transform 0.15s ease-out',
+        touchAction: 'none', // Prevent default touch behaviors
       }}
     >
       {/* Large touch-friendly drag handle - MOBILE OPTIMIZED */}
