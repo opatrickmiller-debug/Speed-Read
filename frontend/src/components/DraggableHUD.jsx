@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { GripVertical, RotateCcw } from "lucide-react";
+import { Move, Lock, Unlock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Hook for draggable functionality with persistence
+ * Hook for draggable functionality with persistence - MOBILE OPTIMIZED
  */
 export function useDraggable(storageKey, defaultPosition = { x: 0, y: 0 }) {
   const [position, setPosition] = useState(() => {
@@ -19,9 +19,16 @@ export function useDraggable(storageKey, defaultPosition = { x: 0, y: 0 }) {
   });
 
   const [isDragging, setIsDragging] = useState(false);
+  const [isLocked, setIsLocked] = useState(() => {
+    const saved = localStorage.getItem(`${storageKey}_locked`);
+    return saved === 'true';
+  });
+  
   const dragRef = useRef(null);
   const startPosRef = useRef({ x: 0, y: 0 });
   const startOffsetRef = useRef({ x: 0, y: 0 });
+  const longPressTimerRef = useRef(null);
+  const hasMoved = useRef(false);
 
   // Save position to localStorage
   useEffect(() => {
@@ -32,39 +39,73 @@ export function useDraggable(storageKey, defaultPosition = { x: 0, y: 0 }) {
     }
   }, [position, storageKey]);
 
+  // Save lock state
+  useEffect(() => {
+    localStorage.setItem(`${storageKey}_locked`, isLocked.toString());
+  }, [isLocked, storageKey]);
+
+  // Haptic feedback
+  const vibrate = useCallback((pattern = 10) => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(pattern);
+    }
+  }, []);
+
   const handleStart = useCallback((clientX, clientY) => {
+    if (isLocked) return;
+    
     setIsDragging(true);
+    hasMoved.current = false;
     startPosRef.current = { x: clientX, y: clientY };
     startOffsetRef.current = { ...position };
-  }, [position]);
+    vibrate(15); // Short vibration on start
+  }, [position, isLocked, vibrate]);
 
   const handleMove = useCallback((clientX, clientY) => {
-    if (!isDragging) return;
+    if (!isDragging || isLocked) return;
 
     const deltaX = clientX - startPosRef.current.x;
     const deltaY = clientY - startPosRef.current.y;
 
-    // Get viewport bounds
-    const maxX = window.innerWidth - 100;
-    const maxY = window.innerHeight - 100;
-    const minX = -100;
-    const minY = 0;
+    // Only start moving after 5px threshold (prevents accidental drags)
+    if (!hasMoved.current && Math.abs(deltaX) < 5 && Math.abs(deltaY) < 5) {
+      return;
+    }
+    hasMoved.current = true;
+
+    // Get viewport bounds with padding
+    const padding = 20;
+    const maxX = window.innerWidth - 150;
+    const maxY = window.innerHeight - 200;
+    const minX = -50;
+    const minY = 60; // Below toolbar
 
     const newX = Math.max(minX, Math.min(maxX, startOffsetRef.current.x + deltaX));
     const newY = Math.max(minY, Math.min(maxY, startOffsetRef.current.y + deltaY));
 
     setPosition({ x: newX, y: newY });
-  }, [isDragging]);
+  }, [isDragging, isLocked]);
 
   const handleEnd = useCallback(() => {
+    if (isDragging && hasMoved.current) {
+      vibrate(10); // Short vibration on end
+    }
     setIsDragging(false);
-  }, []);
+    
+    // Clear any pending long press
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, [isDragging, vibrate]);
 
   // Mouse events
   const onMouseDown = useCallback((e) => {
+    if (isLocked) return;
     e.preventDefault();
+    e.stopPropagation();
     handleStart(e.clientX, e.clientY);
-  }, [handleStart]);
+  }, [handleStart, isLocked]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -86,30 +127,44 @@ export function useDraggable(storageKey, defaultPosition = { x: 0, y: 0 }) {
     };
   }, [isDragging, handleMove, handleEnd]);
 
-  // Touch events
+  // Touch events - OPTIMIZED FOR MOBILE
   const onTouchStart = useCallback((e) => {
+    if (isLocked) return;
+    e.stopPropagation();
+    
     const touch = e.touches[0];
     handleStart(touch.clientX, touch.clientY);
-  }, [handleStart]);
+  }, [handleStart, isLocked]);
 
   const onTouchMove = useCallback((e) => {
-    if (!isDragging) return;
+    if (!isDragging || isLocked) return;
+    e.preventDefault(); // Prevent scrolling while dragging
+    
     const touch = e.touches[0];
     handleMove(touch.clientX, touch.clientY);
-  }, [isDragging, handleMove]);
+  }, [isDragging, isLocked, handleMove]);
 
-  const onTouchEnd = useCallback(() => {
+  const onTouchEnd = useCallback((e) => {
+    e.stopPropagation();
     handleEnd();
   }, [handleEnd]);
 
   const resetPosition = useCallback(() => {
     setPosition(defaultPosition);
-  }, [defaultPosition]);
+    vibrate([20, 50, 20]);
+  }, [defaultPosition, vibrate]);
+
+  const toggleLock = useCallback(() => {
+    setIsLocked(prev => !prev);
+    vibrate(25);
+  }, [vibrate]);
 
   return {
     position,
     setPosition,
     isDragging,
+    isLocked,
+    toggleLock,
     resetPosition,
     dragHandlers: {
       onMouseDown,
@@ -122,26 +177,55 @@ export function useDraggable(storageKey, defaultPosition = { x: 0, y: 0 }) {
 }
 
 /**
- * Draggable wrapper component
+ * Draggable wrapper component - MOBILE OPTIMIZED
  */
 export function DraggableContainer({ 
   children, 
   storageKey,
   defaultPosition = { x: 0, y: 0 },
-  showHandle = true,
   className,
   onPositionChange,
 }) {
   const { 
     position, 
-    isDragging, 
+    isDragging,
+    isLocked,
+    toggleLock,
     resetPosition,
     dragHandlers 
   } = useDraggable(storageKey, defaultPosition);
 
+  const [showControls, setShowControls] = useState(false);
+  const controlsTimerRef = useRef(null);
+
   useEffect(() => {
     onPositionChange?.(position);
   }, [position, onPositionChange]);
+
+  // Auto-hide controls after 3 seconds
+  useEffect(() => {
+    if (showControls && !isDragging) {
+      controlsTimerRef.current = setTimeout(() => {
+        setShowControls(false);
+      }, 3000);
+    }
+    return () => {
+      if (controlsTimerRef.current) {
+        clearTimeout(controlsTimerRef.current);
+      }
+    };
+  }, [showControls, isDragging]);
+
+  // Show controls when dragging
+  useEffect(() => {
+    if (isDragging) {
+      setShowControls(true);
+    }
+  }, [isDragging]);
+
+  const handleTap = () => {
+    setShowControls(prev => !prev);
+  };
 
   return (
     <div
@@ -152,34 +236,86 @@ export function DraggableContainer({
       )}
       style={{
         transform: `translate(${position.x}px, ${position.y}px)`,
-        transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+        transition: isDragging ? 'none' : 'transform 0.15s ease-out',
       }}
     >
-      {/* Drag Handle */}
-      {showHandle && (
+      {/* Large touch-friendly drag handle - MOBILE OPTIMIZED */}
+      <div 
+        className={cn(
+          "absolute -top-12 left-1/2 -translate-x-1/2",
+          "flex items-center gap-2",
+          "transition-all duration-200",
+          showControls || isDragging ? "opacity-100" : "opacity-0"
+        )}
+      >
+        {/* Lock/Unlock button */}
+        <button
+          onClick={toggleLock}
+          className={cn(
+            "w-10 h-10 rounded-full flex items-center justify-center",
+            "backdrop-blur-xl border-2 transition-all",
+            isLocked 
+              ? "bg-red-500/30 border-red-500/50 text-red-400" 
+              : "bg-green-500/30 border-green-500/50 text-green-400"
+          )}
+        >
+          {isLocked ? <Lock className="w-5 h-5" /> : <Unlock className="w-5 h-5" />}
+        </button>
+
+        {/* Drag handle - larger for mobile */}
         <div 
           className={cn(
-            "absolute -top-6 left-1/2 -translate-x-1/2",
-            "flex items-center gap-1 px-2 py-1 rounded-t-lg",
-            "bg-black/60 backdrop-blur-sm",
+            "flex items-center gap-2 px-4 py-2 rounded-full",
+            "backdrop-blur-xl border-2 transition-all",
             "cursor-grab active:cursor-grabbing",
-            "opacity-60 hover:opacity-100 transition-opacity",
-            isDragging && "opacity-100"
+            "min-h-[44px]", // iOS minimum touch target
+            isDragging 
+              ? "bg-cyan-500/40 border-cyan-400 scale-110" 
+              : isLocked
+              ? "bg-zinc-800/80 border-zinc-600 opacity-50"
+              : "bg-black/70 border-white/20 hover:border-cyan-500/50"
           )}
-          {...dragHandlers}
+          {...(isLocked ? {} : dragHandlers)}
         >
-          <GripVertical className="w-4 h-4 text-white/70" />
-          <span className="text-[10px] text-white/70 font-mono uppercase">Drag</span>
+          <Move className={cn(
+            "w-5 h-5",
+            isDragging ? "text-cyan-300" : "text-white/70"
+          )} />
+          <span className={cn(
+            "text-xs font-mono uppercase font-medium",
+            isDragging ? "text-cyan-300" : "text-white/70"
+          )}>
+            {isLocked ? "Locked" : isDragging ? "Moving..." : "Drag"}
+          </span>
         </div>
-      )}
-      
-      {/* Content */}
-      <div className={cn(
-        "relative",
-        isDragging && "scale-105 transition-transform"
-      )}>
-        {children}
       </div>
+      
+      {/* Tap area to show/hide controls */}
+      <div 
+        onClick={handleTap}
+        className="relative"
+      >
+        {/* Dragging indicator ring */}
+        {isDragging && (
+          <div className="absolute inset-0 -m-2 rounded-2xl border-2 border-cyan-500/50 animate-pulse pointer-events-none" />
+        )}
+        
+        {/* Content */}
+        <div className={cn(
+          "relative transition-transform duration-150",
+          isDragging && "scale-[1.02]"
+        )}>
+          {children}
+        </div>
+      </div>
+
+      {/* Position guide lines when dragging */}
+      {isDragging && (
+        <>
+          <div className="fixed top-0 left-1/2 w-px h-full bg-cyan-500/20 pointer-events-none -translate-x-1/2" />
+          <div className="fixed left-0 top-1/2 w-full h-px bg-cyan-500/20 pointer-events-none -translate-y-1/2" />
+        </>
+      )}
     </div>
   );
 }
@@ -190,7 +326,7 @@ export function DraggableContainer({
 export function ResetPositionButton({ onReset, label = "Reset Display Position" }) {
   const handleReset = () => {
     // Clear all position keys
-    const keys = ['speedometerPosition', 'speedLimitPosition', 'hudPosition'];
+    const keys = ['speedHudPosition', 'speedHudPosition_locked'];
     keys.forEach(key => localStorage.removeItem(key));
     onReset?.();
     // Reload to apply
@@ -207,7 +343,7 @@ export function ResetPositionButton({ onReset, label = "Reset Display Position" 
         "hover:bg-zinc-700/50 hover:text-zinc-300 transition-colors"
       )}
     >
-      <RotateCcw className="w-3 h-3" />
+      <Move className="w-3 h-3" />
       {label}
     </button>
   );
