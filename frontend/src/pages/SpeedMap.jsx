@@ -939,6 +939,14 @@ export default function SpeedMap() {
             <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
             <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
           </div>
+          
+          {/* Skip button */}
+          <button
+            onClick={() => setWakingUp(false)}
+            className="mt-8 px-6 py-2 text-zinc-500 hover:text-zinc-300 font-mono text-sm transition-colors"
+          >
+            Skip →
+          </button>
         </div>
       </div>
     );
