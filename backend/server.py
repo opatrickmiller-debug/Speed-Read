@@ -289,6 +289,11 @@ async def get_me(user: dict = Depends(require_auth)):
 
 # ==================== PUBLIC ENDPOINTS ====================
 
+@api_router.get("/health")
+async def health_check():
+    """Health check endpoint for server wake-up detection"""
+    return {"status": "ok", "message": "Backend is running"}
+
 @api_router.get("/")
 @limiter.limit("100/minute")
 async def root(request: Request):
