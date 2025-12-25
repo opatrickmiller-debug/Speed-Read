@@ -776,17 +776,189 @@ export const SettingsPanel = ({
             />
           </div>
           
-          {/* App Version */}
-          <div className="pt-6 pb-4 border-t border-zinc-800 text-center">
-            <p className="text-xs text-zinc-600 font-mono">
-              Speed Alert v1.4.0
-            </p>
-            <p className="text-xs text-zinc-700 font-mono mt-1">
-              © 2025 All rights reserved
-            </p>
+          {/* App Version & Updates */}
+          <div className="pt-6 pb-4 border-t border-zinc-800">
+            <AppVersionSection />
           </div>
         </div>
       </SheetContent>
     </Sheet>
   );
 };
+
+/**
+ * App Version and Update Section
+ */
+function AppVersionSection() {
+  const [isChecking, setIsChecking] = React.useState(false);
+  const [updateAvailable, setUpdateAvailable] = React.useState(false);
+  const [isUpdating, setIsUpdating] = React.useState(false);
+  const [lastChecked, setLastChecked] = React.useState(() => {
+    const saved = localStorage.getItem('lastUpdateCheck');
+    return saved ? new Date(saved) : null;
+  });
+
+  const APP_VERSION = "1.4.0";
+
+  // Check for service worker updates
+  const checkForUpdates = async () => {
+    setIsChecking(true);
+    
+    try {
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        
+        if (registration) {
+          // Force check for updates
+          await registration.update();
+          
+          // Check if there's a waiting worker (new version available)
+          if (registration.waiting) {
+            setUpdateAvailable(true);
+          } else if (registration.installing) {
+            // New version is being installed
+            registration.installing.addEventListener('statechange', (e) => {
+              if (e.target.state === 'installed') {
+                setUpdateAvailable(true);
+              }
+            });
+          } else {
+            // No update available
+            setUpdateAvailable(false);
+          }
+        }
+      }
+      
+      // Save check time
+      const now = new Date();
+      localStorage.setItem('lastUpdateCheck', now.toISOString());
+      setLastChecked(now);
+      
+    } catch (error) {
+      console.error('Update check failed:', error);
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  // Apply the update
+  const applyUpdate = async () => {
+    setIsUpdating(true);
+    
+    try {
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        
+        if (registration?.waiting) {
+          // Tell the waiting service worker to skip waiting and activate
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          
+          // Reload once the new service worker takes control
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            window.location.reload();
+          });
+        } else {
+          // No waiting worker, just reload
+          window.location.reload();
+        }
+      } else {
+        // Fallback: just reload the page
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Update failed:', error);
+      // Fallback: reload anyway
+      window.location.reload();
+    }
+  };
+
+  // Format last checked time
+  const formatLastChecked = () => {
+    if (!lastChecked) return 'Never';
+    
+    const now = new Date();
+    const diff = now - lastChecked;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes} min ago`;
+    if (hours < 24) return `${hours} hr ago`;
+    return `${days} days ago`;
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Version Info */}
+      <div className="text-center">
+        <p className="text-sm text-zinc-400 font-mono font-medium">
+          Speed Alert
+        </p>
+        <p className="text-2xl text-zinc-200 font-mono font-bold">
+          v{APP_VERSION}
+        </p>
+      </div>
+
+      {/* Update Status */}
+      {updateAvailable && (
+        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
+          <p className="text-green-400 text-sm font-mono mb-2">
+            ✨ New version available!
+          </p>
+          <button
+            onClick={applyUpdate}
+            disabled={isUpdating}
+            className="w-full py-2 px-4 bg-green-500 hover:bg-green-600 text-white font-mono text-sm rounded transition-colors disabled:opacity-50"
+          >
+            {isUpdating ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Updating...
+              </span>
+            ) : (
+              'Update Now'
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Check for Updates Button */}
+      <button
+        onClick={checkForUpdates}
+        disabled={isChecking}
+        className={cn(
+          "w-full py-2 px-4 rounded transition-colors font-mono text-sm",
+          "border border-zinc-700 hover:border-zinc-600",
+          "bg-zinc-800/50 hover:bg-zinc-800 text-zinc-300",
+          "disabled:opacity-50 disabled:cursor-not-allowed"
+        )}
+      >
+        {isChecking ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+            Checking...
+          </span>
+        ) : (
+          'Check for Updates'
+        )}
+      </button>
+
+      {/* Last Checked */}
+      <p className="text-xs text-zinc-600 font-mono text-center">
+        Last checked: {formatLastChecked()}
+      </p>
+
+      {/* Copyright */}
+      <p className="text-xs text-zinc-700 font-mono text-center pt-2 border-t border-zinc-800">
+        © 2025 All rights reserved
+      </p>
+    </div>
+  );
+}
