@@ -110,20 +110,17 @@ const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 const wakeBackendServers = async () => {
   try {
     console.log('[App] Waking up backend servers...');
-    // Try multiple endpoints to ensure server wakes up
-    const wakePromises = [
-      fetch(`${API}/speed-limit?lat=0&lon=0`, { method: 'GET' }).catch(() => null),
-      fetch(`${BACKEND_URL}/api/health`, { method: 'GET' }).catch(() => null),
-    ];
+    // Use health endpoint for fast wake-up
+    const response = await fetch(`${BACKEND_URL}/api/health`, { 
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    });
     
-    await Promise.race([
-      Promise.all(wakePromises),
-      new Promise(resolve => setTimeout(resolve, 10000)) // 10s timeout
-    ]);
-    
-    console.log('[App] Backend wake-up request sent');
+    if (response.ok) {
+      console.log('[App] Backend is already awake!');
+    }
   } catch (error) {
-    console.log('[App] Backend wake-up failed, will retry on user action');
+    console.log('[App] Backend wake-up ping sent, server may be starting...');
   }
 };
 
