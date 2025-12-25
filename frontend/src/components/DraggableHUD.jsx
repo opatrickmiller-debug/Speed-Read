@@ -295,7 +295,15 @@ export function DraggableContainer({
       {/* Tap area to show/hide controls */}
       <div 
         onClick={handleTap}
-        className="relative"
+        onTouchEnd={(e) => {
+          // Only toggle if not dragging
+          if (!isDragging) {
+            e.preventDefault();
+            handleTap();
+          }
+        }}
+        className="relative cursor-pointer"
+        style={{ touchAction: 'manipulation' }}
       >
         {/* Dragging indicator ring */}
         {isDragging && (
