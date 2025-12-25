@@ -1150,9 +1150,9 @@ export default function SpeedMap() {
           </Button>
         </div>
         
-        {/* Speed HUD */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 md:bottom-auto md:top-24 md:left-8 md:translate-x-0 pointer-events-auto">
-          <div className="flex flex-col md:flex-row gap-4 items-center md:items-start">
+        {/* Speed HUD - positioned high for driver visibility */}
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 pointer-events-auto z-10">
+          <div className="flex flex-col items-center gap-3">
             <SpeedometerPro
               speed={displaySpeed}
               speedLimit={speedLimit}
