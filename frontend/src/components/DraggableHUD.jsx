@@ -75,11 +75,12 @@ export function useDraggable(storageKey, defaultPosition = { x: 0, y: 0 }) {
     }
     hasMoved.current = true;
 
-    // Get viewport bounds - allow full screen movement with small padding
-    const minX = -100;  // Allow slight off-screen left
-    const maxX = window.innerWidth - 80;  // Keep most visible on right
+    // Allow full screen movement - minimal constraints
+    // Component starts at center (left-1/2), so negative X moves left
+    const minX = -(window.innerWidth / 2) + 40;  // Allow full left (keep 40px visible)
+    const maxX = (window.innerWidth / 2) - 40;   // Allow full right (keep 40px visible)
     const minY = 50;    // Below toolbar
-    const maxY = window.innerHeight - 100;  // Allow near bottom of screen
+    const maxY = window.innerHeight - 80;  // Near bottom, leave room for nav
 
     const newX = Math.max(minX, Math.min(maxX, startOffsetRef.current.x + deltaX));
     const newY = Math.max(minY, Math.min(maxY, startOffsetRef.current.y + deltaY));
