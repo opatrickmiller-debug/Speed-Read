@@ -302,3 +302,15 @@ async function refreshSpeedCache() {
   console.log('[SW] Periodic cache refresh...');
   // This could prefetch commonly used routes
 }
+
+// Handle messages from the app (e.g., SKIP_WAITING for updates)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log(`[SW ${SW_VERSION}] Received SKIP_WAITING message, activating new version...`);
+    self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'GET_VERSION') {
+    event.ports[0].postMessage({ version: SW_VERSION });
+  }
+});
