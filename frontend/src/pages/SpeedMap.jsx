@@ -52,7 +52,8 @@ const checkAppVersion = () => {
       'alertVolume',          // Alert volume level
       'speedPredictionEnabled', // AI speed prediction toggle
       'dataSaverEnabled',     // Mobile data saver mode
-      'lowPowerMode'          // Battery saver mode
+      'lowPowerMode',         // Battery saver mode
+      'auth_token'            // Keep user signed in
     ];
     const preserved = {};
     
