@@ -204,6 +204,10 @@ export default function SpeedMap() {
   const [currentPosition, setCurrentPosition] = useState(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   
+  // Backend wake state
+  const [backendAwake, setBackendAwake] = useState(false);
+  const [wakingUp, setWakingUp] = useState(true);
+  
   // Speed state
   const [currentSpeed, setCurrentSpeed] = useState(0);
   const [speedLimit, setSpeedLimit] = useState(null);
@@ -211,6 +215,48 @@ export default function SpeedMap() {
   const [isLoadingSpeedLimit, setIsLoadingSpeedLimit] = useState(false);
   const [isUsingCache, setIsUsingCache] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  
+  // Auto-wake backend on component mount
+  useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 5;
+    
+    const checkBackend = async () => {
+      try {
+        const response = await fetch(`${API}/speed-limit?lat=37.7749&lon=-122.4194`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' },
+        });
+        
+        if (response.ok) {
+          setBackendAwake(true);
+          setWakingUp(false);
+          console.log('[App] Backend is awake!');
+          return true;
+        }
+      } catch (error) {
+        console.log(`[App] Backend check failed (attempt ${retryCount + 1}/${maxRetries})`);
+      }
+      return false;
+    };
+    
+    const wakeUp = async () => {
+      setWakingUp(true);
+      
+      while (retryCount < maxRetries) {
+        const isAwake = await checkBackend();
+        if (isAwake) break;
+        
+        retryCount++;
+        // Wait 3 seconds between retries
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      }
+      
+      setWakingUp(false);
+    };
+    
+    wakeUp();
+  }, []);
   
   // HUD Mode state
   const [hudMode, setHudMode] = useState(false);
