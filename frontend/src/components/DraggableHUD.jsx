@@ -304,6 +304,7 @@ export function DraggableContainer({
               ? "bg-zinc-800/80 border-zinc-600 opacity-50"
               : "bg-black/70 border-white/20 hover:border-cyan-500/50"
           )}
+          style={{ touchAction: 'none' }}
           {...(isLocked ? {} : dragHandlers)}
         >
           <Move className={cn(
