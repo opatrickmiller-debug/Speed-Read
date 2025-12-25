@@ -798,7 +798,7 @@ function AppVersionSection() {
     return saved ? new Date(saved) : null;
   });
 
-  const APP_VERSION = "1.6.2";
+  const APP_VERSION = "1.7.0";
 
   // Check for service worker updates
   const checkForUpdates = async () => {
