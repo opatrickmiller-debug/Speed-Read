@@ -198,6 +198,35 @@ export const SettingsPanel = ({
               </button>
             </div>
           </div>
+          
+          {/* Display Position */}
+          <div className="space-y-2 pt-4 border-t border-zinc-800">
+            <div className="flex items-center gap-3">
+              <Move className="w-5 h-5 text-purple-400" />
+              <span className="text-sm font-medium text-zinc-200 font-mono uppercase tracking-wider">
+                Display Position
+              </span>
+            </div>
+            <p className="text-xs text-zinc-500 font-mono pl-8 mb-2">
+              Drag the speedometer to reposition it on screen
+            </p>
+            <button
+              onClick={() => {
+                localStorage.removeItem('speedHudPosition');
+                window.location.reload();
+              }}
+              className={cn(
+                "w-full flex items-center justify-center gap-2 px-3 py-2 ml-8",
+                "text-xs font-mono uppercase tracking-wider rounded",
+                "bg-purple-500/10 border border-purple-500/30 text-purple-400",
+                "hover:bg-purple-500/20 transition-colors"
+              )}
+              style={{ width: 'calc(100% - 2rem)' }}
+            >
+              <RotateCcw className="w-3 h-3" />
+              Reset to Default Position
+            </button>
+          </div>
 
           {/* Keep Screen On (Wake Lock) */}
           <div className="space-y-2 pt-4 border-t border-zinc-800">
