@@ -226,14 +226,12 @@ export function OnboardingFlow({ onComplete }) {
 
 // Hook to check if onboarding is needed
 export function useOnboarding() {
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
-
-  useEffect(() => {
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    // Check localStorage immediately on init
     const completed = localStorage.getItem('onboardingComplete');
-    setShowOnboarding(!completed);
-    setIsChecking(false);
-  }, []);
+    return !completed;
+  });
+  const [isChecking, setIsChecking] = useState(false);
 
   const completeOnboarding = () => {
     setShowOnboarding(false);
