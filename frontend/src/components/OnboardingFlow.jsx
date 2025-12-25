@@ -16,7 +16,7 @@ const ONBOARDING_STEPS = [
   {
     id: "welcome",
     icon: Gauge,
-    title: "Welcome to Speed Alert",
+    title: "Welcome to SpeedShield",
     description: "Your intelligent driving companion that helps you stay safe and avoid speeding tickets.",
     color: "text-sky-400",
     bgColor: "bg-sky-500/20"

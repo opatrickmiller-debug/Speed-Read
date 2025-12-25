@@ -893,7 +893,7 @@ function AppVersionSection() {
       {/* Version Info */}
       <div className="text-center">
         <p className="text-sm text-zinc-400 font-mono font-medium">
-          Speed Alert
+          SpeedShield
         </p>
         <p className="text-2xl text-zinc-200 font-mono font-bold">
           v{APP_VERSION}
