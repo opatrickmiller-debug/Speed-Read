@@ -242,10 +242,11 @@ export function DraggableContainer({
       {/* Large touch-friendly drag handle - MOBILE OPTIMIZED */}
       <div 
         className={cn(
-          "absolute -top-12 left-1/2 -translate-x-1/2",
+          "absolute -top-14 left-1/2 -translate-x-1/2",
           "flex items-center gap-2",
           "transition-all duration-200",
-          showControls || isDragging ? "opacity-100" : "opacity-0"
+          "z-[9999]", // Ensure controls are above toasts
+          showControls || isDragging ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
       >
         {/* Lock/Unlock button */}
