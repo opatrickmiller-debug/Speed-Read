@@ -1,7 +1,7 @@
 {
-  "name": "Speed Alert",
-  "short_name": "SpeedAlert",
-  "description": "Real-time speed alert app with Google Maps overlay",
+  "name": "SpeedShield",
+  "short_name": "SpeedShield",
+  "description": "AI-powered speed alert app - Your shield against speed traps",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
