@@ -18,6 +18,7 @@ import { useAlertSound } from "@/components/SoundCustomization";
 import { useWakeLock } from "@/components/WakeLock";
 import { SpeedPredictionBanner, SpeedPredictionIndicator, useBearing, useSpeedPrediction } from "@/components/SpeedPrediction";
 import { NetworkStatusBadge, BatteryWarningBadge } from "@/components/MobileSettings";
+import { DraggableContainer } from "@/components/DraggableHUD";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,7 +30,7 @@ import {
 } from "@/utils/speedLimitCache";
 
 // App version - increment this when you want to clear user caches on update
-const APP_VERSION = "2.0.0";
+const APP_VERSION = "2.1.0";
 
 // Check for app updates and clear stale caches
 const checkAppVersion = () => {
