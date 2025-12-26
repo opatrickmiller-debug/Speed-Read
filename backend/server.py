@@ -310,7 +310,7 @@ async def change_password(data: PasswordChange, user: dict = Depends(require_aut
         raise HTTPException(status_code=400, detail="Current password is incorrect.")
     
     # Update to new password
-    hashed_password = hash_password(data.new_password)
+    hashed_password = get_password_hash(data.new_password)
     result = await users_collection.update_one(
         {"_id": user["_id"]},
         {"$set": {"password_hash": hashed_password}}
