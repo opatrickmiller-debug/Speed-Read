@@ -388,8 +388,23 @@ export const SettingsPanel = ({
                     <div className="space-y-2 bg-zinc-500/30 p-3 rounded">
                       <div className="text-xs text-white font-medium">Zone 3</div>
                       <div className="flex justify-between text-xs">
-                        <span className="text-zinc-300">Range: {thresholdRanges[1]?.maxLimit || 65}+ {speedUnit}</span>
+                        <span className="text-zinc-300">Range: {thresholdRanges[1]?.maxLimit || 65} - {thresholdRanges[2]?.maxLimit === 999 ? '∞' : thresholdRanges[2]?.maxLimit} {speedUnit}</span>
                         <span className="text-cyan-400">+{thresholdRanges[2]?.offset || 10} {speedUnit}</span>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-xs text-zinc-400">Upper limit</span>
+                        <Slider
+                          value={[thresholdRanges[2]?.maxLimit === 999 ? 100 : (thresholdRanges[2]?.maxLimit || 100)]}
+                          onValueChange={([v]) => {
+                            const minVal = (thresholdRanges[1]?.maxLimit || 65) + 5;
+                            const newVal = Math.max(minVal, v);
+                            const newRanges = [...thresholdRanges];
+                            newRanges[2] = { ...newRanges[2], maxLimit: newVal >= 100 ? 999 : newVal };
+                            setThresholdRanges(newRanges);
+                          }}
+                          min={50} max={100} step={5}
+                        />
+                        <span className="text-xs text-zinc-500">Slide to max for unlimited</span>
                       </div>
                       <div className="space-y-1">
                         <span className="text-xs text-zinc-400">Buffer</span>
