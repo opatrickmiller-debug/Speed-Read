@@ -1,4 +1,4 @@
-import { Settings, Volume2, VolumeX, Gauge, Mic, MicOff, Globe, Database, Trash2, Zap, Timer, CloudRain, Music, Smartphone, Signal, RotateCcw, Move, ChevronDown, ChevronUp, Sliders, Eye, Sun, Moon } from "lucide-react";
+import { Settings, Volume2, VolumeX, Gauge, Mic, MicOff, Globe, Database, Trash2, Zap, Timer, CloudRain, Music, Smartphone, Signal, RotateCcw, Move, ChevronDown, ChevronUp, Sliders, Eye, Sun, Moon, Navigation } from "lucide-react";
 import React, { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
