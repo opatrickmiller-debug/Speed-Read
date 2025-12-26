@@ -383,14 +383,14 @@ export default function SpeedMap() {
         return [
           { minLimit: 0, maxLimit: 45, offset: 0 },
           { minLimit: 45, maxLimit: 65, offset: 5 },
-          { minLimit: 65, maxLimit: 999, offset: 10 },
+          { minLimit: 65, maxLimit: 80, offset: 10 },
         ];
       }
     }
     return [
       { minLimit: 0, maxLimit: 45, offset: 0 },
       { minLimit: 45, maxLimit: 65, offset: 5 },
-      { minLimit: 65, maxLimit: 999, offset: 10 },
+      { minLimit: 65, maxLimit: 80, offset: 10 },
     ];
   });
   
