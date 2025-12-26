@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User, LogOut, LogIn, UserPlus, Key, Mail, ArrowLeft } from "lucide-react";
+import { User, LogOut, LogIn, UserPlus, Key, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,19 +18,17 @@ import axios from "axios";
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export const AuthPanel = () => {
-  const { user, isAuthenticated, login, register, logout, isLoading } = useAuth();
-  const [mode, setMode] = useState("login"); // login, register, forgot, reset, change
+  const { user, isAuthenticated, login, register, logout, isLoading, token } = useAuth();
+  const [mode, setMode] = useState("login"); // login, register, change
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [resetCode, setResetCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const resetForm = () => {
     setEmail("");
     setPassword("");
     setNewPassword("");
-    setResetCode("");
   };
 
   const handleLogin = async (e) => {
@@ -73,55 +71,15 @@ export const AuthPanel = () => {
     }
   };
 
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    if (!email) {
-      toast.error("Please enter your email");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await axios.post(`${API}/auth/forgot-password`, { email });
-      toast.success("Reset code sent! Check your email.");
-      setMode("reset");
-    } catch (error) {
-      const message = error.response?.data?.detail || "Failed to send reset code";
-      toast.error(message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    if (!email || !resetCode || !newPassword) {
-      toast.error("Please fill in all fields");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await axios.post(`${API}/auth/reset-password`, {
-        email,
-        code: resetCode,
-        new_password: newPassword
-      });
-      toast.success("Password reset! You can now sign in.");
-      resetForm();
-      setMode("login");
-    } catch (error) {
-      const message = error.response?.data?.detail || "Failed to reset password";
-      toast.error(message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleChangePassword = async (e) => {
     e.preventDefault();
     if (!password || !newPassword) {
       toast.error("Please fill in all fields");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters");
       return;
     }
 
@@ -130,10 +88,12 @@ export const AuthPanel = () => {
       await axios.post(`${API}/auth/change-password`, {
         current_password: password,
         new_password: newPassword
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("Password changed successfully!");
       resetForm();
-      setMode("login");
+      setMode("account");
     } catch (error) {
       const message = error.response?.data?.detail || "Failed to change password";
       toast.error(message);
@@ -144,6 +104,7 @@ export const AuthPanel = () => {
 
   const handleLogout = () => {
     logout();
+    setMode("login");
     toast.info("Logged out");
   };
 
@@ -163,8 +124,6 @@ export const AuthPanel = () => {
   const renderTitle = () => {
     switch (mode) {
       case "register": return "Create Account";
-      case "forgot": return "Forgot Password";
-      case "reset": return "Reset Password";
       case "change": return "Change Password";
       default: return isAuthenticated ? "Account" : "Sign In";
     }
@@ -173,10 +132,8 @@ export const AuthPanel = () => {
   const renderDescription = () => {
     switch (mode) {
       case "register": return "Create a new account to save your trips";
-      case "forgot": return "Enter your email to receive a reset code";
-      case "reset": return "Enter the code from your email";
       case "change": return "Update your account password";
-      default: return isAuthenticated ? "Manage your account and trip data" : "Sign in to save your trips";
+      default: return isAuthenticated ? "Manage your account" : "Sign in to save your trips";
     }
   };
 
@@ -215,6 +172,7 @@ export const AuthPanel = () => {
 
         <div className="mt-6">
           {isAuthenticated && mode !== "change" ? (
+            // Logged In - Account View
             <div className="space-y-4">
               {/* User Info */}
               <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded">
@@ -234,7 +192,7 @@ export const AuthPanel = () => {
                 <ul className="text-zinc-400 text-xs font-mono space-y-1">
                   <li>• Trip history saved securely</li>
                   <li>• Access from any device</li>
-                  <li>• Data synced to cloud</li>
+                  <li>• Stay signed in for 30 days</li>
                 </ul>
               </div>
 
@@ -262,12 +220,18 @@ export const AuthPanel = () => {
             <div className="space-y-4">
               <button
                 type="button"
-                onClick={() => setMode("login")}
+                onClick={() => { setMode("account"); resetForm(); }}
                 className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 font-mono transition-colors"
               >
                 <ArrowLeft className="w-3 h-3" />
                 Back to Account
               </button>
+
+              <div className="p-3 bg-sky-500/10 border border-sky-500/30 rounded">
+                <div className="text-sky-400 text-xs font-mono">
+                  Enter your current password and choose a new one (min 6 characters).
+                </div>
+              </div>
 
               <form onSubmit={handleChangePassword} className="space-y-4">
                 <div className="space-y-2">
@@ -304,127 +268,6 @@ export const AuthPanel = () => {
                   {isSubmitting ? "Updating..." : "Update Password"}
                 </Button>
               </form>
-            </div>
-          ) : mode === "forgot" ? (
-            // Forgot Password Form
-            <div className="space-y-4">
-              <button
-                type="button"
-                onClick={() => { setMode("login"); resetForm(); }}
-                className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 font-mono transition-colors"
-              >
-                <ArrowLeft className="w-3 h-3" />
-                Back to Sign In
-              </button>
-
-              <div className="p-3 bg-sky-500/10 border border-sky-500/30 rounded">
-                <div className="text-sky-400 text-xs font-mono">
-                  We'll send a 6-digit code to your email to reset your password.
-                </div>
-              </div>
-
-              <form onSubmit={handleForgotPassword} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs text-zinc-500 font-mono uppercase tracking-wider">
-                    Email
-                  </label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    className="bg-zinc-900 border-zinc-700 text-zinc-200"
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 border border-sky-500/50"
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  {isSubmitting ? "Sending..." : "Send Reset Code"}
-                </Button>
-              </form>
-            </div>
-          ) : mode === "reset" ? (
-            // Reset Password Form
-            <div className="space-y-4">
-              <button
-                type="button"
-                onClick={() => { setMode("forgot"); setResetCode(""); setNewPassword(""); }}
-                className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 font-mono transition-colors"
-              >
-                <ArrowLeft className="w-3 h-3" />
-                Back
-              </button>
-
-              <div className="p-3 bg-green-500/10 border border-green-500/30 rounded">
-                <div className="text-green-400 text-xs font-mono">
-                  Check your email for a 6-digit code. It expires in 15 minutes.
-                </div>
-              </div>
-
-              <form onSubmit={handleResetPassword} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs text-zinc-500 font-mono uppercase tracking-wider">
-                    Email
-                  </label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    className="bg-zinc-900 border-zinc-700 text-zinc-200"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs text-zinc-500 font-mono uppercase tracking-wider">
-                    Reset Code
-                  </label>
-                  <Input
-                    type="text"
-                    value={resetCode}
-                    onChange={(e) => setResetCode(e.target.value)}
-                    placeholder="123456"
-                    maxLength={6}
-                    className="bg-zinc-900 border-zinc-700 text-zinc-200 text-center text-2xl tracking-widest font-mono"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs text-zinc-500 font-mono uppercase tracking-wider">
-                    New Password
-                  </label>
-                  <Input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="bg-zinc-900 border-zinc-700 text-zinc-200"
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/50"
-                >
-                  {isSubmitting ? "Resetting..." : "Reset Password"}
-                </Button>
-              </form>
-
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={handleForgotPassword}
-                  disabled={isSubmitting}
-                  className="text-xs text-zinc-500 hover:text-zinc-300 font-mono transition-colors"
-                >
-                  Didn't receive code? Resend
-                </button>
-              </div>
             </div>
           ) : (
             // Login / Register Form
@@ -493,24 +336,11 @@ export const AuthPanel = () => {
                 </Button>
               </form>
 
-              {/* Forgot Password Link */}
-              {mode === "login" && (
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => setMode("forgot")}
-                    className="text-xs text-cyan-500 hover:text-cyan-400 font-mono transition-colors"
-                  >
-                    Forgot your password?
-                  </button>
-                </div>
-              )}
-
               {/* Toggle Login/Register */}
               <div className="text-center">
                 <button
                   type="button"
-                  onClick={() => setMode(mode === "register" ? "login" : "register")}
+                  onClick={() => { setMode(mode === "register" ? "login" : "register"); resetForm(); }}
                   className="text-xs text-zinc-500 hover:text-zinc-300 font-mono transition-colors"
                 >
                   {mode === "register"
