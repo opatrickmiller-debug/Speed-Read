@@ -424,6 +424,11 @@ export default function SpeedMap() {
     localStorage.setItem('lowPowerMode', lowPowerMode.toString());
   }, [lowPowerMode]);
   
+  // Save speedometer opacity
+  useEffect(() => {
+    localStorage.setItem('speedometerOpacity', speedometerOpacity.toString());
+  }, [speedometerOpacity]);
+  
   // Save last known position to localStorage
   useEffect(() => {
     if (currentPosition && !demoMode) {
