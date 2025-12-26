@@ -350,28 +350,6 @@ async def change_password(data: PasswordChange, user: dict = Depends(require_aut
         raise HTTPException(status_code=400, detail="Failed to update password.")
     
     return {"message": "Password changed successfully."}
-    await password_resets_collection.delete_one({"email": email})
-    
-    return {"message": "Password reset successfully. You can now sign in with your new password."}
-
-@api_router.post("/auth/change-password")
-async def change_password(data: PasswordChange, user: dict = Depends(require_auth)):
-    """Change password for authenticated user"""
-    # Verify current password
-    if not verify_password(data.current_password, user["password_hash"]):
-        raise HTTPException(status_code=400, detail="Current password is incorrect.")
-    
-    # Update to new password
-    hashed_password = hash_password(data.new_password)
-    result = await users_collection.update_one(
-        {"_id": user["_id"]},
-        {"$set": {"password_hash": hashed_password}}
-    )
-    
-    if result.modified_count == 0:
-        raise HTTPException(status_code=400, detail="Failed to update password.")
-    
-    return {"message": "Password changed successfully."}
 
 # ==================== PUBLIC ENDPOINTS ====================
 
