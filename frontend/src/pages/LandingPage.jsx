@@ -213,6 +213,9 @@ const FAQS = [
 export default function LandingPage({ onEnterApp }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
+  
+  // Auto-wake backend while user views landing page
+  const { isAwake } = useAutoWake();
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
