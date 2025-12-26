@@ -117,7 +117,7 @@ export const SettingsPanel = ({
             <Settings className="w-5 h-5" />
             Settings
           </SheetTitle>
-          <SheetDescription className="text-white/80 text-xs">
+          <SheetDescription className="text-zinc-200 text-xs">
             Configure your SpeedShield experience
           </SheetDescription>
         </SheetHeader>
@@ -130,7 +130,7 @@ export const SettingsPanel = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {audioEnabled ? <Volume2 className="w-5 h-5 text-cyan-500" /> : <VolumeX className="w-5 h-5 text-white/80" />}
+                {audioEnabled ? <Volume2 className="w-5 h-5 text-cyan-500" /> : <VolumeX className="w-5 h-5 text-zinc-200" />}
                 <span className="text-sm font-medium text-white">Sound Alerts</span>
               </div>
               <Switch checked={audioEnabled} onCheckedChange={setAudioEnabled} />
@@ -155,7 +155,7 @@ export const SettingsPanel = ({
           <div className="space-y-3 pt-3 border-t border-zinc-400">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {voiceEnabled ? <Mic className="w-5 h-5 text-green-500" /> : <MicOff className="w-5 h-5 text-white/80" />}
+                {voiceEnabled ? <Mic className="w-5 h-5 text-green-500" /> : <MicOff className="w-5 h-5 text-zinc-200" />}
                 <span className="text-sm font-medium text-white">Voice Alerts</span>
               </div>
               <Switch checked={voiceEnabled} onCheckedChange={setVoiceEnabled} />
@@ -222,7 +222,7 @@ export const SettingsPanel = ({
                 onValueChange={([v]) => { setAlertDelay(v); localStorage.setItem('alertDelay', v.toString()); }}
                 min={0} max={10} step={1}
               />
-              <p className="text-xs text-white/80 mt-1">Wait before alerting</p>
+              <p className="text-xs text-zinc-200 mt-1">Wait before alerting</p>
             </div>
           </div>
 
@@ -230,7 +230,7 @@ export const SettingsPanel = ({
           <div className="space-y-2 pt-3 border-t border-zinc-400">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Smartphone className={cn("w-5 h-5", wakeLockActive ? "text-cyan-500" : "text-white/80")} />
+                <Smartphone className={cn("w-5 h-5", wakeLockActive ? "text-cyan-500" : "text-zinc-200")} />
                 <span className="text-sm font-medium text-white">Keep Screen On</span>
               </div>
               <Switch checked={wakeLockEnabled} onCheckedChange={onWakeLockToggle} />
@@ -327,7 +327,7 @@ export const SettingsPanel = ({
                 )}
                 
                 {currentSpeedLimit && (
-                  <p className="text-xs text-white/80">
+                  <p className="text-xs text-zinc-200">
                     Alert at: {currentSpeedLimit + currentThreshold} {speedUnit}
                   </p>
                 )}
@@ -356,7 +356,7 @@ export const SettingsPanel = ({
                   </div>
                   <Switch checked={speedPredictionEnabled} onCheckedChange={setSpeedPredictionEnabled} />
                 </div>
-                <p className="text-xs text-white/80">Warns before entering lower speed zones</p>
+                <p className="text-xs text-zinc-200">Warns before entering lower speed zones</p>
               </div>
 
               {/* Weather Alerts */}
@@ -398,7 +398,7 @@ export const SettingsPanel = ({
                   <div className="space-y-2">
                     <div className="text-xs space-y-1 bg-zinc-500/50 p-2 rounded">
                       <div className="flex justify-between">
-                        <span className="text-white/80">Cached:</span>
+                        <span className="text-zinc-200">Cached:</span>
                         <span className="text-white">{cacheStats.validEntries} / {cacheStats.maxEntries || 500}</span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -419,7 +419,7 @@ export const SettingsPanel = ({
                         "w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
                         cacheStats.validEntries > 0
                           ? "bg-zinc-500/50 border border-zinc-400 text-white hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400"
-                          : "bg-zinc-500/30 border border-zinc-400 text-white/80 cursor-not-allowed"
+                          : "bg-zinc-500/30 border border-zinc-400 text-zinc-200 cursor-not-allowed"
                       )}
                     >
                       <Trash2 className="w-3 h-3" />
@@ -465,7 +465,7 @@ export const SettingsPanel = ({
                   <RotateCcw className="w-3 h-3" />
                   Check for Updates
                 </button>
-                <p className="text-xs text-white/80">Force refresh to get latest version</p>
+                <p className="text-xs text-zinc-200">Force refresh to get latest version</p>
               </div>
 
               {/* Theme */}
@@ -528,7 +528,7 @@ export const SettingsPanel = ({
           )}
 
           {/* Version */}
-          <p className="text-xs text-white/80 text-center pt-4 border-t border-zinc-400">
+          <p className="text-xs text-zinc-200 text-center pt-4 border-t border-zinc-400">
             SpeedShield v{APP_VERSION}
           </p>
         </div>
