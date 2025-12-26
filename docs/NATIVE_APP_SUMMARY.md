@@ -214,16 +214,16 @@ Or: I/O → External Displays → CarPlay
 ### Clone & Run Backend (Already Done)
 ```bash
 # Your backend is already running at:
-# https://speed-guard-app.preview.emergentagent.com/api
+# https://drag-speed-app.preview.emergentagent.com/api
 ```
 
 ### Test API Compatibility
 ```bash
 # Test speed limit endpoint (will be used by native apps)
-curl "https://speed-guard-app.preview.emergentagent.com/api/speed-limit?lat=37.7749&lon=-122.4194"
+curl "https://drag-speed-app.preview.emergentagent.com/api/speed-limit?lat=37.7749&lon=-122.4194"
 
 # Test auth endpoint
-curl -X POST "https://speed-guard-app.preview.emergentagent.com/api/auth/login" \
+curl -X POST "https://drag-speed-app.preview.emergentagent.com/api/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"email":"test@test.com","password":"password123"}'
 ```

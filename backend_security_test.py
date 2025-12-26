@@ -13,7 +13,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 
 class SecurityAPITester:
-    def __init__(self, base_url="https://speed-guard-app.preview.emergentagent.com"):
+    def __init__(self, base_url="https://drag-speed-app.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
