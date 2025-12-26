@@ -212,6 +212,27 @@ export const SettingsPanel = ({
             <p className="text-xs text-zinc-500 font-mono pl-8 mb-2">
               Drag the speedometer to reposition it on screen
             </p>
+            
+            {/* Opacity Slider */}
+            <div className="pl-8 pr-2 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-zinc-400 font-mono">Transparency</span>
+                <span className="text-xs text-cyan-400 font-mono">{Math.round((1 - speedometerOpacity) * 100)}%</span>
+              </div>
+              <Slider
+                value={[speedometerOpacity]}
+                onValueChange={([value]) => setSpeedometerOpacity(value)}
+                min={0.2}
+                max={1}
+                step={0.05}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-zinc-600 font-mono">
+                <span>See-through</span>
+                <span>Solid</span>
+              </div>
+            </div>
+            
             <button
               onClick={() => {
                 // Clear position from localStorage
