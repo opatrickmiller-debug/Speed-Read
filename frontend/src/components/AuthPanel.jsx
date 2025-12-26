@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User, LogOut, LogIn, UserPlus, Key, ArrowLeft } from "lucide-react";
+import { User, LogOut, LogIn, UserPlus, Key, Mail, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,16 +19,18 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export const AuthPanel = () => {
   const { user, isAuthenticated, login, register, logout, isLoading, token } = useAuth();
-  const [mode, setMode] = useState("login"); // login, register, change
+  const [mode, setMode] = useState("login"); // login, register, change, forgot, reset
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [resetCode, setResetCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const resetForm = () => {
     setEmail("");
     setPassword("");
     setNewPassword("");
+    setResetCode("");
   };
 
   const handleLogin = async (e) => {
@@ -102,6 +104,56 @@ export const AuthPanel = () => {
     }
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!email) {
+      toast.error("Please enter your email");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await axios.post(`${API}/auth/forgot-password`, { email });
+      toast.success("Reset code sent! Check your email.");
+      setMode("reset");
+    } catch (error) {
+      const message = error.response?.data?.detail || "Failed to send reset code";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (!email || !resetCode || !newPassword) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await axios.post(`${API}/auth/reset-password`, {
+        email,
+        code: resetCode,
+        new_password: newPassword
+      });
+      toast.success("Password reset! You can now sign in.");
+      resetForm();
+      setMode("login");
+    } catch (error) {
+      const message = error.response?.data?.detail || "Failed to reset password";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     setMode("login");
@@ -125,6 +177,8 @@ export const AuthPanel = () => {
     switch (mode) {
       case "register": return "Create Account";
       case "change": return "Change Password";
+      case "forgot": return "Forgot Password";
+      case "reset": return "Reset Password";
       default: return isAuthenticated ? "Account" : "Sign In";
     }
   };
@@ -133,6 +187,8 @@ export const AuthPanel = () => {
     switch (mode) {
       case "register": return "Create a new account to save your trips";
       case "change": return "Update your account password";
+      case "forgot": return "We'll send a code to your email";
+      case "reset": return "Enter the code from your email";
       default: return isAuthenticated ? "Manage your account" : "Sign in to save your trips";
     }
   };
@@ -269,6 +325,127 @@ export const AuthPanel = () => {
                 </Button>
               </form>
             </div>
+          ) : mode === "forgot" ? (
+            // Forgot Password Form
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={() => { setMode("login"); resetForm(); }}
+                className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 font-mono transition-colors"
+              >
+                <ArrowLeft className="w-3 h-3" />
+                Back to Sign In
+              </button>
+
+              <div className="p-3 bg-sky-500/10 border border-sky-500/30 rounded">
+                <div className="text-sky-400 text-xs font-mono">
+                  Enter your email address and we'll send you a 6-digit code to reset your password.
+                </div>
+              </div>
+
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs text-zinc-500 font-mono uppercase tracking-wider">
+                    Email Address
+                  </label>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="bg-zinc-900 border-zinc-700 text-zinc-200"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 border border-sky-500/50"
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  {isSubmitting ? "Sending..." : "Send Reset Code"}
+                </Button>
+              </form>
+            </div>
+          ) : mode === "reset" ? (
+            // Reset Password Form (enter code)
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={() => { setMode("forgot"); setResetCode(""); setNewPassword(""); }}
+                className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 font-mono transition-colors"
+              >
+                <ArrowLeft className="w-3 h-3" />
+                Back
+              </button>
+
+              <div className="p-3 bg-green-500/10 border border-green-500/30 rounded">
+                <div className="text-green-400 text-xs font-mono">
+                  Check your email for a 6-digit code. It expires in 15 minutes.
+                </div>
+              </div>
+
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs text-zinc-500 font-mono uppercase tracking-wider">
+                    Email Address
+                  </label>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="bg-zinc-900 border-zinc-700 text-zinc-200"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs text-zinc-500 font-mono uppercase tracking-wider">
+                    Reset Code
+                  </label>
+                  <Input
+                    type="text"
+                    value={resetCode}
+                    onChange={(e) => setResetCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="123456"
+                    maxLength={6}
+                    className="bg-zinc-900 border-zinc-700 text-zinc-200 text-center text-2xl tracking-[0.5em] font-mono"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs text-zinc-500 font-mono uppercase tracking-wider">
+                    New Password
+                  </label>
+                  <Input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="bg-zinc-900 border-zinc-700 text-zinc-200"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/50"
+                >
+                  {isSubmitting ? "Resetting..." : "Reset Password"}
+                </Button>
+              </form>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={isSubmitting}
+                  className="text-xs text-zinc-500 hover:text-zinc-300 font-mono transition-colors"
+                >
+                  Didn't receive code? Resend
+                </button>
+              </div>
+            </div>
           ) : (
             // Login / Register Form
             <div className="space-y-4">
@@ -335,6 +512,19 @@ export const AuthPanel = () => {
                   )}
                 </Button>
               </form>
+
+              {/* Forgot Password Link */}
+              {mode === "login" && (
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => setMode("forgot")}
+                    className="text-xs text-cyan-500 hover:text-cyan-400 font-mono transition-colors"
+                  >
+                    Forgot your password?
+                  </button>
+                </div>
+              )}
 
               {/* Toggle Login/Register */}
               <div className="text-center">
