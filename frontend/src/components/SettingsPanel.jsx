@@ -85,6 +85,8 @@ export const SettingsPanel = ({
   setDataSaverEnabled,
   lowPowerMode,
   setLowPowerMode,
+  speedometerOpacity,
+  setSpeedometerOpacity,
 }) => {
   const [cacheStats, setCacheStats] = useState(() => getCacheStats());
   
