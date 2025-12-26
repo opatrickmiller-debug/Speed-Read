@@ -412,6 +412,10 @@ export default function SpeedMap() {
   }, [thresholdRanges]);
   
   useEffect(() => {
+    localStorage.setItem('useDynamicThreshold', useDynamicThreshold.toString());
+  }, [useDynamicThreshold]);
+  
+  useEffect(() => {
     localStorage.setItem('weatherAlertsEnabled', weatherAlertsEnabled.toString());
   }, [weatherAlertsEnabled]);
   
