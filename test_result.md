@@ -390,9 +390,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Mobile Drag-and-Drop Speedometer - Final Verification"
+    - "End-to-End Mobile Testing - All Features"
   stuck_tasks: []
-  test_all: false
+  test_all: true
   test_priority: "high_first"
 
 agent_communication:
@@ -402,3 +402,5 @@ agent_communication:
     message: "PRIORITY: Testing mobile drag-and-drop functionality for speedometer. The DraggableHUD.jsx component has touch event handlers (onTouchStart, onTouchMove, onTouchEnd) implemented. Need to verify: 1) Tap on speedometer shows drag controls, 2) Touch-drag gesture moves the component, 3) Position persists to localStorage, 4) Lock/Unlock functionality works, 5) Reset Position button works from settings."
   - agent: "main"
     message: "FIXED: Mobile drag-and-drop is now working. Changes made: 1) Added isDraggingRef for immediate state updates (React stale closure fix). 2) Moved toast notifications from top-center to bottom-left to prevent blocking drag. 3) Added window-level touch event listeners for mobile. 4) Added touch-action:none inline style to drag handle. Verified via screenshot that drag changes position from {x:0,y:80} to {x:-50,y:434}. Ready for final verification test."
+  - agent: "main"
+    message: "NEW FORK SESSION - Comprehensive End-to-End Mobile Testing requested. Testing all features on mobile viewport including: 1) Draggable speedometer with touch gestures, 2) Settings panel (basic/advanced), 3) Authentication flows (login, register, change/forgot password), 4) HUD Mode, 5) Opacity slider, 6) All toggles and controls. Using iPhone 14 Pro viewport (390x844)."
