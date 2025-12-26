@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-globals */
 
 // VERSION - increment this to force cache refresh on all clients
-const SW_VERSION = '1.2.0';
+const SW_VERSION = '1.3.0';
 const CACHE_NAME = `speedshield-v${SW_VERSION}`;
 const STATIC_CACHE = `speedshield-static-v${SW_VERSION}`;
 const DYNAMIC_CACHE = `speedshield-dynamic-v${SW_VERSION}`;
