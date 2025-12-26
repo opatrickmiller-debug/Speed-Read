@@ -1168,7 +1168,10 @@ export default function SpeedMap() {
           showHandle={true}
           className="left-1/2 -translate-x-1/2 pointer-events-auto"
         >
-          <div className="flex flex-col items-center gap-3">
+          <div 
+            className="flex flex-col items-center gap-3 transition-opacity duration-200"
+            style={{ opacity: speedometerOpacity }}
+          >
             <SpeedometerPro
               speed={displaySpeed}
               speedLimit={speedLimit}
