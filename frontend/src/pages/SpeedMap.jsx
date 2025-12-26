@@ -335,7 +335,7 @@ export default function SpeedMap() {
   const [demoMode, setDemoMode] = useState(false);
   const [offlineCacheEnabled, setOfflineCacheEnabled] = useState(true);
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('theme') || 'dark';
+    return localStorage.getItem('theme') || 'light';
   });
   const [alertDelay, setAlertDelay] = useState(() => {
     const saved = localStorage.getItem('alertDelay');
