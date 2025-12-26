@@ -57,6 +57,49 @@
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     
+    <!-- AUTO-WAKE BACKEND SERVERS - Runs immediately on page load -->
+    <script>
+      (function() {
+        // Get backend URL from meta tag or use default
+        var backendUrl = 'https://drag-speed-app.preview.emergentagent.com';
+        
+        console.log('[AutoWake] Starting immediate backend wake...');
+        
+        // Fire wake-up requests immediately
+        var endpoints = ['/api/health', '/api/'];
+        endpoints.forEach(function(endpoint) {
+          fetch(backendUrl + endpoint, { method: 'GET', mode: 'cors' })
+            .then(function(r) { 
+              if (r.ok) console.log('[AutoWake] ✓ ' + endpoint + ' awake'); 
+            })
+            .catch(function() { 
+              console.log('[AutoWake] Waking ' + endpoint + '...'); 
+            });
+        });
+        
+        // Retry health check a few times
+        var retries = 0;
+        var maxRetries = 5;
+        var checkHealth = function() {
+          if (retries >= maxRetries) return;
+          retries++;
+          fetch(backendUrl + '/api/health', { method: 'GET', mode: 'cors' })
+            .then(function(r) { 
+              if (r.ok) {
+                console.log('[AutoWake] ✓ Backend confirmed awake!');
+                window.backendAwake = true;
+              } else {
+                setTimeout(checkHealth, 1500);
+              }
+            })
+            .catch(function() { 
+              setTimeout(checkHealth, 1500); 
+            });
+        };
+        setTimeout(checkHealth, 500);
+      })();
+    </script>
+    
     <!-- Register Service Worker -->
     <script>
       if ('serviceWorker' in navigator) {
