@@ -178,6 +178,26 @@ class PasswordChange(BaseModel):
             raise ValueError('Password must be at least 6 characters')
         return v
 
+class PasswordResetRequest(BaseModel):
+    email: str
+    
+    @validator('email')
+    def validate_email(cls, v):
+        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', v):
+            raise ValueError('Invalid email format')
+        return v.lower().strip()
+
+class PasswordResetConfirm(BaseModel):
+    email: str
+    code: str
+    new_password: str
+    
+    @validator('new_password')
+    def validate_password(cls, v):
+        if len(v) < 6:
+            raise ValueError('Password must be at least 6 characters')
+        return v
+
 class SpeedLimitResponse(BaseModel):
     speed_limit: int | None
     unit: str
