@@ -60,6 +60,7 @@ export const SettingsPanel = ({
   dataSaverEnabled, setDataSaverEnabled,
   lowPowerMode, setLowPowerMode,
   speedometerOpacity, setSpeedometerOpacity,
+  compassEnabled, setCompassEnabled,
 }) => {
   const [cacheStats, setCacheStats] = useState(() => getCacheStats());
   const [showAdvanced, setShowAdvanced] = useState(() => {
