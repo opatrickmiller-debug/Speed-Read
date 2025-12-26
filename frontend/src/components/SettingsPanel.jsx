@@ -341,8 +341,9 @@ export const SettingsPanel = ({
                 </div>
                 <SoundSelector
                   selectedSound={alertSound}
-                  onSoundChange={setAlertSound}
+                  onSelect={setAlertSound}
                   volume={alertVolume}
+                  onVolumeChange={setAlertVolume}
                 />
               </div>
 
