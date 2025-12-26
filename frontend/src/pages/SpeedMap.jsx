@@ -1098,6 +1098,8 @@ export default function SpeedMap() {
             setDataSaverEnabled={setDataSaverEnabled}
             lowPowerMode={lowPowerMode}
             setLowPowerMode={setLowPowerMode}
+            speedometerOpacity={speedometerOpacity}
+            setSpeedometerOpacity={setSpeedometerOpacity}
           />
           <AuthPanel />
         </div>
