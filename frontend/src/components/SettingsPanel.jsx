@@ -197,7 +197,7 @@ export const SettingsPanel = ({
                   className={cn(
                     "px-4 py-2 text-xs font-mono uppercase rounded transition-colors",
                     speedUnit === unit
-                      ? "bg-orange-500/20 border border-orange-500/50 text-orange-400"
+                      ? "bg-orange-100 border border-orange-400 text-orange-400"
                       : "bg-gray-200/50 border border-gray-300 text-gray-600 hover:border-zinc-500"
                   )}
                 >
@@ -264,7 +264,7 @@ export const SettingsPanel = ({
           {/* ============ ADVANCED SETTINGS (COLLAPSIBLE) ============ */}
           
           {showAdvanced && (
-            <div className="space-y-6 pl-2 border-l-2 border-purple-500/30">
+            <div className="space-y-6 pl-2 border-l-2 border-purple-400">
               
               {/* Display Options */}
               <div className="space-y-3">
@@ -418,7 +418,7 @@ export const SettingsPanel = ({
                       className={cn(
                         "w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
                         cacheStats.validEntries > 0
-                          ? "bg-gray-200/50 border border-gray-300 text-gray-600 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400"
+                          ? "bg-gray-200/50 border border-gray-300 text-gray-600 hover:bg-red-50 hover:border-red-300 hover:text-red-400"
                           : "bg-gray-200/30 border border-gray-200 text-gray-400 cursor-not-allowed"
                       )}
                     >
@@ -460,7 +460,7 @@ export const SettingsPanel = ({
                       window.location.reload(true);
                     }
                   }}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 rounded transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-cyan-50 border border-cyan-400 text-cyan-400 hover:bg-cyan-100 rounded transition-colors"
                 >
                   <RotateCcw className="w-3 h-3" />
                   Check for Updates
@@ -480,7 +480,7 @@ export const SettingsPanel = ({
                     className={cn(
                       "flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
                       theme === 'dark'
-                        ? "bg-purple-500/20 border border-purple-500/50 text-purple-400"
+                        ? "bg-purple-100 border border-purple-500/50 text-purple-400"
                         : "bg-gray-200/50 border border-gray-300 text-gray-600 hover:border-zinc-500"
                     )}
                   >
@@ -492,7 +492,7 @@ export const SettingsPanel = ({
                     className={cn(
                       "flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
                       theme === 'light'
-                        ? "bg-yellow-500/20 border border-yellow-500/50 text-yellow-400"
+                        ? "bg-yellow-100 border border-yellow-400 text-yellow-400"
                         : "bg-gray-200/50 border border-gray-300 text-gray-600 hover:border-zinc-500"
                     )}
                   >
@@ -519,7 +519,7 @@ export const SettingsPanel = ({
                     window.location.href = window.location.origin + '/?cleared=' + Date.now();
                   }
                 }}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 rounded transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-red-50 border border-red-300 text-red-400 hover:bg-red-500/20 rounded transition-colors"
               >
                 <Trash2 className="w-3 h-3" />
                 Clear All App Data
