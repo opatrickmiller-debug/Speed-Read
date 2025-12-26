@@ -11,11 +11,15 @@ import os
 import logging
 import secrets
 import re
+import asyncio
+import random
+import string
 from pathlib import Path
 from pydantic import BaseModel, Field, validator
 from typing import Optional, List
 from datetime import datetime, timezone, timedelta
 import httpx
+import resend
 from bson import ObjectId
 from jose import JWTError, jwt
 from passlib.context import CryptContext
