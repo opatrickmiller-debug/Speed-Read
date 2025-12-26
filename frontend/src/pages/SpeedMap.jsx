@@ -1230,6 +1230,9 @@ export default function SpeedMap() {
           </div>
         </DraggableContainer>
         
+        {/* Draggable Compass */}
+        <DraggableCompass theme={theme} enabled={compassEnabled} />
+        
         {/* Loading indicator */}
         {isLoadingLocation && !demoMode && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto">
