@@ -328,7 +328,8 @@ export const SettingsPanel = ({
                 
                 {currentSpeedLimit && (
                   <p className="text-xs text-zinc-200">
-                    Alert at: {currentSpeedLimit + currentThreshold} {speedUnit}
+                    Alert at: {currentSpeedLimit + currentThreshold + 1} {speedUnit}
+                    <span className="text-zinc-400 ml-1">(+1 buffer)</span>
                   </p>
                 )}
               </div>
