@@ -330,7 +330,10 @@ export default function SpeedMap() {
   const [speedUnit, setSpeedUnit] = useState(() => {
     return localStorage.getItem('speedUnit') || 'mph';
   });
-  const [useDynamicThreshold, setUseDynamicThreshold] = useState(true);
+  const [useDynamicThreshold, setUseDynamicThreshold] = useState(() => {
+    const saved = localStorage.getItem('useDynamicThreshold');
+    return saved !== null ? saved === 'true' : false; // Default OFF
+  });
   const [thresholdOffset, setThresholdOffset] = useState(5); // Used when dynamic is off
   const [demoMode, setDemoMode] = useState(false);
   const [offlineCacheEnabled, setOfflineCacheEnabled] = useState(true);
