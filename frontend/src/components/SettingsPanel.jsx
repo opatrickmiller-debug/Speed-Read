@@ -286,18 +286,29 @@ export const SettingsPanel = ({
                     min={0.2} max={1} step={0.05}
                   />
                 </div>
+                
+                {/* Compass Toggle */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Navigation className="w-4 h-4 text-cyan-400" />
+                    <span className="text-xs text-white">Compass</span>
+                  </div>
+                  <Switch checked={compassEnabled} onCheckedChange={setCompassEnabled} />
+                </div>
 
                 {/* Reset Position */}
                 <button
                   onClick={() => {
                     localStorage.removeItem('speedHudPosition');
                     localStorage.removeItem('speedHudPosition_locked');
+                    localStorage.removeItem('compassPosition');
+                    localStorage.removeItem('compassPosition_locked');
                     window.location.reload();
                   }}
                   className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-zinc-500/50 border border-zinc-400 text-white hover:text-purple-400 hover:border-purple-500/50 rounded transition-colors"
                 >
                   <RotateCcw className="w-3 h-3" />
-                  Reset Position
+                  Reset Positions
                 </button>
               </div>
 
