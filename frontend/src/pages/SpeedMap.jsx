@@ -346,13 +346,13 @@ export default function SpeedMap() {
   });
   const [weatherAlertsEnabled, setWeatherAlertsEnabled] = useState(() => {
     const saved = localStorage.getItem('weatherAlertsEnabled');
-    return saved !== null ? saved === 'true' : true; // Default to enabled
+    return saved !== null ? saved === 'true' : false; // Default OFF
   });
   
   // Speed Prediction (AI look-ahead)
   const [speedPredictionEnabled, setSpeedPredictionEnabled] = useState(() => {
     const saved = localStorage.getItem('speedPredictionEnabled');
-    return saved !== null ? saved === 'true' : true; // Default to enabled
+    return saved !== null ? saved === 'true' : false; // Default OFF
   });
   const [showPredictionBanner, setShowPredictionBanner] = useState(false);
   const { bearing, updateBearing } = useBearing();
