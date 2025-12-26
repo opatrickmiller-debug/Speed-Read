@@ -110,7 +110,7 @@ export const SettingsPanel = ({
 
       <SheetContent 
         side="right" 
-        className="bg-zinc-900 border-l border-zinc-700 w-[320px] overflow-y-auto"
+        className="bg-zinc-600 border-l border-zinc-500 w-[320px] overflow-y-auto"
       >
         <SheetHeader>
           <SheetTitle className="text-white font-bold uppercase tracking-wider flex items-center gap-2">
