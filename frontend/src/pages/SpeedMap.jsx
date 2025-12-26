@@ -438,6 +438,11 @@ export default function SpeedMap() {
     localStorage.setItem('lowPowerMode', lowPowerMode.toString());
   }, [lowPowerMode]);
   
+  // Save compass enabled state
+  useEffect(() => {
+    localStorage.setItem('compassEnabled', compassEnabled.toString());
+  }, [compassEnabled]);
+  
   // Save speedometer opacity
   useEffect(() => {
     localStorage.setItem('speedometerOpacity', speedometerOpacity.toString());
