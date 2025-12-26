@@ -166,8 +166,10 @@ export const SettingsPanel = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-700">
-                    {Object.entries(AVAILABLE_LANGUAGES).map(([code, name]) => (
-                      <SelectItem key={code} value={code} className="text-zinc-200">{name}</SelectItem>
+                    {AVAILABLE_LANGUAGES.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code} className="text-zinc-200">
+                        {lang.flag} {lang.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
