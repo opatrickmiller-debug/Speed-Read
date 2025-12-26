@@ -110,14 +110,14 @@ export const SettingsPanel = ({
 
       <SheetContent 
         side="right" 
-        className="backdrop-blur-xl bg-zinc-950/95 border-l border-white/10 w-[320px] overflow-y-auto"
+        className="bg-white border-l border-gray-200 w-[320px] overflow-y-auto"
       >
         <SheetHeader>
-          <SheetTitle className="text-white font-bold uppercase tracking-wider flex items-center gap-2">
+          <SheetTitle className="text-gray-900 font-bold uppercase tracking-wider flex items-center gap-2">
             <Settings className="w-5 h-5" />
             Settings
           </SheetTitle>
-          <SheetDescription className="text-zinc-500 text-xs">
+          <SheetDescription className="text-gray-500 text-xs">
             Configure your SpeedShield experience
           </SheetDescription>
         </SheetHeader>
