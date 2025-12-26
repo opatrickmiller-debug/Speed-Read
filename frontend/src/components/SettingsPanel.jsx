@@ -152,7 +152,7 @@ export const SettingsPanel = ({
           </div>
 
           {/* Voice Alerts */}
-          <div className="space-y-3 pt-3 border-t border-zinc-700">
+          <div className="space-y-3 pt-3 border-t border-zinc-400">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {voiceEnabled ? <Mic className="w-5 h-5 text-green-500" /> : <MicOff className="w-5 h-5 text-white/80" />}
@@ -164,11 +164,11 @@ export const SettingsPanel = ({
             {voiceEnabled && (
               <div className="pl-8 space-y-2">
                 <Select value={voiceLanguage} onValueChange={setVoiceLanguage}>
-                  <SelectTrigger className="bg-zinc-800 border-zinc-600 text-white h-9">
+                  <SelectTrigger className="bg-zinc-500 border-zinc-400 text-white h-9">
                     <Globe className="w-4 h-4 mr-2 text-white" />
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-800 border-zinc-600">
+                  <SelectContent className="bg-zinc-500 border-zinc-400">
                     {AVAILABLE_LANGUAGES.map((lang) => (
                       <SelectItem key={lang.code} value={lang.code} className="text-white">
                         {lang.flag} {lang.name}
@@ -184,7 +184,7 @@ export const SettingsPanel = ({
           </div>
 
           {/* Speed Unit */}
-          <div className="space-y-2 pt-3 border-t border-zinc-700">
+          <div className="space-y-2 pt-3 border-t border-zinc-400">
             <div className="flex items-center gap-3">
               <Gauge className="w-5 h-5 text-orange-500" />
               <span className="text-sm font-medium text-white">Speed Unit</span>
@@ -198,7 +198,7 @@ export const SettingsPanel = ({
                     "px-4 py-2 text-xs font-mono uppercase rounded transition-colors",
                     speedUnit === unit
                       ? "bg-orange-500/20 border border-orange-500/50 text-orange-400"
-                      : "bg-zinc-700/50 border border-zinc-600 text-white hover:border-zinc-500"
+                      : "bg-zinc-500/50 border border-zinc-400 text-white hover:border-zinc-500"
                   )}
                 >
                   {unit}
@@ -208,7 +208,7 @@ export const SettingsPanel = ({
           </div>
 
           {/* Alert Delay */}
-          <div className="space-y-3 pt-3 border-t border-zinc-700">
+          <div className="space-y-3 pt-3 border-t border-zinc-400">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Timer className="w-5 h-5 text-yellow-500" />
@@ -227,7 +227,7 @@ export const SettingsPanel = ({
           </div>
 
           {/* Keep Screen On */}
-          <div className="space-y-2 pt-3 border-t border-zinc-700">
+          <div className="space-y-2 pt-3 border-t border-zinc-400">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Smartphone className={cn("w-5 h-5", wakeLockActive ? "text-cyan-500" : "text-white/80")} />
@@ -246,7 +246,7 @@ export const SettingsPanel = ({
             onClick={toggleAdvanced}
             className={cn(
               "w-full flex items-center justify-between px-4 py-3 rounded-lg",
-              "bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600",
+              "bg-zinc-500/50 border border-zinc-400 hover:border-zinc-400",
               "transition-colors"
             )}
           >
@@ -293,7 +293,7 @@ export const SettingsPanel = ({
                     localStorage.removeItem('speedHudPosition_locked');
                     window.location.reload();
                   }}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-zinc-700/50 border border-zinc-600 text-white hover:text-purple-400 hover:border-purple-500/50 rounded transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-zinc-500/50 border border-zinc-400 text-white hover:text-purple-400 hover:border-purple-500/50 rounded transition-colors"
                 >
                   <RotateCcw className="w-3 h-3" />
                   Reset Position
@@ -301,7 +301,7 @@ export const SettingsPanel = ({
               </div>
 
               {/* Alert Threshold */}
-              <div className="space-y-3 pt-3 border-t border-zinc-700/50">
+              <div className="space-y-3 pt-3 border-t border-zinc-400/50">
                 <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
                   <Zap className="w-4 h-4" />
                   Alert Threshold
@@ -334,7 +334,7 @@ export const SettingsPanel = ({
               </div>
 
               {/* Sound Customization */}
-              <div className="space-y-3 pt-3 border-t border-zinc-700/50">
+              <div className="space-y-3 pt-3 border-t border-zinc-400/50">
                 <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
                   <Music className="w-4 h-4" />
                   Alert Sound
@@ -348,7 +348,7 @@ export const SettingsPanel = ({
               </div>
 
               {/* AI Prediction */}
-              <div className="space-y-2 pt-3 border-t border-zinc-700/50">
+              <div className="space-y-2 pt-3 border-t border-zinc-400/50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-cyan-400" />
@@ -360,7 +360,7 @@ export const SettingsPanel = ({
               </div>
 
               {/* Weather Alerts */}
-              <div className="space-y-2 pt-3 border-t border-zinc-700/50">
+              <div className="space-y-2 pt-3 border-t border-zinc-400/50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CloudRain className="w-4 h-4 text-blue-400" />
@@ -371,7 +371,7 @@ export const SettingsPanel = ({
               </div>
 
               {/* Mobile Optimization */}
-              <div className="space-y-3 pt-3 border-t border-zinc-700/50">
+              <div className="space-y-3 pt-3 border-t border-zinc-400/50">
                 <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
                   <Signal className="w-4 h-4" />
                   Mobile
@@ -385,7 +385,7 @@ export const SettingsPanel = ({
               </div>
 
               {/* Offline Cache */}
-              <div className="space-y-3 pt-3 border-t border-zinc-700/50">
+              <div className="space-y-3 pt-3 border-t border-zinc-400/50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Database className="w-4 h-4 text-yellow-400" />
@@ -396,7 +396,7 @@ export const SettingsPanel = ({
                 
                 {offlineCacheEnabled && (
                   <div className="space-y-2">
-                    <div className="text-xs space-y-1 bg-zinc-800/50 p-2 rounded">
+                    <div className="text-xs space-y-1 bg-zinc-500/50 p-2 rounded">
                       <div className="flex justify-between">
                         <span className="text-white/80">Cached:</span>
                         <span className="text-white">{cacheStats.validEntries} / {cacheStats.maxEntries || 500}</span>
@@ -418,8 +418,8 @@ export const SettingsPanel = ({
                       className={cn(
                         "w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
                         cacheStats.validEntries > 0
-                          ? "bg-zinc-700/50 border border-zinc-600 text-white hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400"
-                          : "bg-zinc-700/30 border border-zinc-700 text-white/80 cursor-not-allowed"
+                          ? "bg-zinc-500/50 border border-zinc-400 text-white hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400"
+                          : "bg-zinc-500/30 border border-zinc-400 text-white/80 cursor-not-allowed"
                       )}
                     >
                       <Trash2 className="w-3 h-3" />
@@ -430,7 +430,7 @@ export const SettingsPanel = ({
               </div>
 
               {/* App Updates */}
-              <div className="space-y-3 pt-3 border-t border-zinc-700/50">
+              <div className="space-y-3 pt-3 border-t border-zinc-400/50">
                 <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
                   <RotateCcw className="w-4 h-4" />
                   App Updates
@@ -469,7 +469,7 @@ export const SettingsPanel = ({
               </div>
 
               {/* Theme */}
-              <div className="space-y-3 pt-3 border-t border-zinc-700/50">
+              <div className="space-y-3 pt-3 border-t border-zinc-400/50">
                 <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
                   {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
                   Theme
@@ -481,7 +481,7 @@ export const SettingsPanel = ({
                       "flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
                       theme === 'dark'
                         ? "bg-purple-500/20 border border-purple-500/50 text-purple-400"
-                        : "bg-zinc-700/50 border border-zinc-600 text-white hover:border-zinc-500"
+                        : "bg-zinc-500/50 border border-zinc-400 text-white hover:border-zinc-500"
                     )}
                   >
                     <Moon className="w-3 h-3" />
@@ -493,7 +493,7 @@ export const SettingsPanel = ({
                       "flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
                       theme === 'light'
                         ? "bg-yellow-500/20 border border-yellow-500/50 text-yellow-400"
-                        : "bg-zinc-700/50 border border-zinc-600 text-white hover:border-zinc-500"
+                        : "bg-zinc-500/50 border border-zinc-400 text-white hover:border-zinc-500"
                     )}
                   >
                     <Sun className="w-3 h-3" />
@@ -503,7 +503,7 @@ export const SettingsPanel = ({
               </div>
 
               {/* Demo Mode */}
-              <div className="space-y-2 pt-3 border-t border-zinc-700/50">
+              <div className="space-y-2 pt-3 border-t border-zinc-400/50">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-white">Demo Mode</span>
                   <Switch checked={demoMode} onCheckedChange={setDemoMode} />
@@ -528,7 +528,7 @@ export const SettingsPanel = ({
           )}
 
           {/* Version */}
-          <p className="text-xs text-white/80 text-center pt-4 border-t border-zinc-700">
+          <p className="text-xs text-white/80 text-center pt-4 border-t border-zinc-400">
             SpeedShield v{APP_VERSION}
           </p>
         </div>
