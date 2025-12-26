@@ -266,8 +266,11 @@ async def login(request: Request, user_data: UserLogin):
     """Login and get access token."""
     user = await users_collection.find_one({"email": user_data.email.lower().strip()})
     
-    if not user or not verify_password(user_data.password, user["password_hash"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+    if not user:
+        raise HTTPException(status_code=401, detail="No account found with this email. Please register first.")
+    
+    if not verify_password(user_data.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Incorrect password. Please try again.")
     
     user_id = str(user["_id"])
     token = create_access_token({"sub": user_id})
