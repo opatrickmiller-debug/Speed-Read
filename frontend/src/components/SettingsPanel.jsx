@@ -104,7 +104,7 @@ export const SettingsPanel = ({
             "transition-colors duration-200"
           )}
         >
-          <Settings className="w-5 h-5 text-gray-700" />
+          <Settings className="w-5 h-5 text-zinc-200" />
         </button>
       </SheetTrigger>
 
@@ -130,8 +130,8 @@ export const SettingsPanel = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {audioEnabled ? <Volume2 className="w-5 h-5 text-cyan-500" /> : <VolumeX className="w-5 h-5 text-gray-500" />}
-                <span className="text-sm font-medium text-gray-800">Sound Alerts</span>
+                {audioEnabled ? <Volume2 className="w-5 h-5 text-cyan-500" /> : <VolumeX className="w-5 h-5 text-zinc-400" />}
+                <span className="text-sm font-medium text-white">Sound Alerts</span>
               </div>
               <Switch checked={audioEnabled} onCheckedChange={setAudioEnabled} />
             </div>
@@ -139,7 +139,7 @@ export const SettingsPanel = ({
             {audioEnabled && (
               <div className="pl-8 space-y-3">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">Volume</span>
+                  <span className="text-zinc-300">Volume</span>
                   <span className="text-cyan-400">{Math.round(alertVolume * 100)}%</span>
                 </div>
                 <Slider
@@ -152,11 +152,11 @@ export const SettingsPanel = ({
           </div>
 
           {/* Voice Alerts */}
-          <div className="space-y-3 pt-3 border-t border-gray-200">
+          <div className="space-y-3 pt-3 border-t border-zinc-700">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {voiceEnabled ? <Mic className="w-5 h-5 text-green-500" /> : <MicOff className="w-5 h-5 text-gray-500" />}
-                <span className="text-sm font-medium text-gray-800">Voice Alerts</span>
+                {voiceEnabled ? <Mic className="w-5 h-5 text-green-500" /> : <MicOff className="w-5 h-5 text-zinc-400" />}
+                <span className="text-sm font-medium text-white">Voice Alerts</span>
               </div>
               <Switch checked={voiceEnabled} onCheckedChange={setVoiceEnabled} />
             </div>
@@ -164,13 +164,13 @@ export const SettingsPanel = ({
             {voiceEnabled && (
               <div className="pl-8 space-y-2">
                 <Select value={voiceLanguage} onValueChange={setVoiceLanguage}>
-                  <SelectTrigger className="bg-gray-100 border-gray-300 text-gray-800 h-9">
-                    <Globe className="w-4 h-4 mr-2 text-gray-600" />
+                  <SelectTrigger className="bg-zinc-800 border-zinc-600 text-white h-9">
+                    <Globe className="w-4 h-4 mr-2 text-zinc-300" />
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-100 border-gray-300">
+                  <SelectContent className="bg-zinc-800 border-zinc-600">
                     {AVAILABLE_LANGUAGES.map((lang) => (
-                      <SelectItem key={lang.code} value={lang.code} className="text-gray-800">
+                      <SelectItem key={lang.code} value={lang.code} className="text-white">
                         {lang.flag} {lang.name}
                       </SelectItem>
                     ))}
@@ -184,10 +184,10 @@ export const SettingsPanel = ({
           </div>
 
           {/* Speed Unit */}
-          <div className="space-y-2 pt-3 border-t border-gray-200">
+          <div className="space-y-2 pt-3 border-t border-zinc-700">
             <div className="flex items-center gap-3">
               <Gauge className="w-5 h-5 text-orange-500" />
-              <span className="text-sm font-medium text-gray-800">Speed Unit</span>
+              <span className="text-sm font-medium text-white">Speed Unit</span>
             </div>
             <div className="pl-8 flex gap-2">
               {['mph', 'km/h'].map(unit => (
@@ -197,8 +197,8 @@ export const SettingsPanel = ({
                   className={cn(
                     "px-4 py-2 text-xs font-mono uppercase rounded transition-colors",
                     speedUnit === unit
-                      ? "bg-orange-100 border border-orange-400 text-orange-400"
-                      : "bg-gray-200/50 border border-gray-300 text-gray-600 hover:border-zinc-500"
+                      ? "bg-orange-500/20 border border-orange-500/50 text-orange-400"
+                      : "bg-zinc-700/50 border border-zinc-600 text-zinc-300 hover:border-zinc-500"
                   )}
                 >
                   {unit}
@@ -208,11 +208,11 @@ export const SettingsPanel = ({
           </div>
 
           {/* Alert Delay */}
-          <div className="space-y-3 pt-3 border-t border-gray-200">
+          <div className="space-y-3 pt-3 border-t border-zinc-700">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Timer className="w-5 h-5 text-yellow-500" />
-                <span className="text-sm font-medium text-gray-800">Alert Delay</span>
+                <span className="text-sm font-medium text-white">Alert Delay</span>
               </div>
               <span className="text-yellow-400 text-sm font-mono">{alertDelay}s</span>
             </div>
@@ -222,16 +222,16 @@ export const SettingsPanel = ({
                 onValueChange={([v]) => { setAlertDelay(v); localStorage.setItem('alertDelay', v.toString()); }}
                 min={0} max={10} step={1}
               />
-              <p className="text-xs text-gray-500 mt-1">Wait before alerting</p>
+              <p className="text-xs text-zinc-400 mt-1">Wait before alerting</p>
             </div>
           </div>
 
           {/* Keep Screen On */}
-          <div className="space-y-2 pt-3 border-t border-gray-200">
+          <div className="space-y-2 pt-3 border-t border-zinc-700">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Smartphone className={cn("w-5 h-5", wakeLockActive ? "text-cyan-500" : "text-gray-500")} />
-                <span className="text-sm font-medium text-gray-800">Keep Screen On</span>
+                <Smartphone className={cn("w-5 h-5", wakeLockActive ? "text-cyan-500" : "text-zinc-400")} />
+                <span className="text-sm font-medium text-white">Keep Screen On</span>
               </div>
               <Switch checked={wakeLockEnabled} onCheckedChange={onWakeLockToggle} />
             </div>
@@ -246,25 +246,25 @@ export const SettingsPanel = ({
             onClick={toggleAdvanced}
             className={cn(
               "w-full flex items-center justify-between px-4 py-3 rounded-lg",
-              "bg-gray-100/50 border border-gray-200 hover:border-gray-300",
+              "bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600",
               "transition-colors"
             )}
           >
             <div className="flex items-center gap-3">
               <Sliders className="w-5 h-5 text-purple-400" />
-              <span className="text-sm font-medium text-gray-800">Advanced Settings</span>
+              <span className="text-sm font-medium text-white">Advanced Settings</span>
             </div>
             {showAdvanced ? (
-              <ChevronUp className="w-5 h-5 text-gray-600" />
+              <ChevronUp className="w-5 h-5 text-zinc-300" />
             ) : (
-              <ChevronDown className="w-5 h-5 text-gray-600" />
+              <ChevronDown className="w-5 h-5 text-zinc-300" />
             )}
           </button>
 
           {/* ============ ADVANCED SETTINGS (COLLAPSIBLE) ============ */}
           
           {showAdvanced && (
-            <div className="space-y-6 pl-2 border-l-2 border-purple-400">
+            <div className="space-y-6 pl-2 border-l-2 border-purple-500/50">
               
               {/* Display Options */}
               <div className="space-y-3">
@@ -276,7 +276,7 @@ export const SettingsPanel = ({
                 {/* Opacity */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-600">Transparency</span>
+                    <span className="text-zinc-300">Transparency</span>
                     <span className="text-cyan-400">{Math.round((1 - speedometerOpacity) * 100)}%</span>
                   </div>
                   <Slider
@@ -293,7 +293,7 @@ export const SettingsPanel = ({
                     localStorage.removeItem('speedHudPosition_locked');
                     window.location.reload();
                   }}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-gray-200/50 border border-gray-300 text-gray-600 hover:text-purple-400 hover:border-purple-500/50 rounded transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-zinc-700/50 border border-zinc-600 text-zinc-300 hover:text-purple-400 hover:border-purple-500/50 rounded transition-colors"
                 >
                   <RotateCcw className="w-3 h-3" />
                   Reset Position
@@ -301,21 +301,21 @@ export const SettingsPanel = ({
               </div>
 
               {/* Alert Threshold */}
-              <div className="space-y-3 pt-3 border-t border-gray-200/50">
+              <div className="space-y-3 pt-3 border-t border-zinc-700/50">
                 <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
                   <Zap className="w-4 h-4" />
                   Alert Threshold
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-600">Smart Threshold</span>
+                  <span className="text-xs text-zinc-300">Smart Threshold</span>
                   <Switch checked={useDynamicThreshold} onCheckedChange={setUseDynamicThreshold} />
                 </div>
                 
                 {!useDynamicThreshold && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-600">Buffer</span>
+                      <span className="text-zinc-300">Buffer</span>
                       <span className="text-cyan-400">+{thresholdOffset} {speedUnit}</span>
                     </div>
                     <Slider
@@ -327,14 +327,14 @@ export const SettingsPanel = ({
                 )}
                 
                 {currentSpeedLimit && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-zinc-400">
                     Alert at: {currentSpeedLimit + currentThreshold} {speedUnit}
                   </p>
                 )}
               </div>
 
               {/* Sound Customization */}
-              <div className="space-y-3 pt-3 border-t border-gray-200/50">
+              <div className="space-y-3 pt-3 border-t border-zinc-700/50">
                 <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
                   <Music className="w-4 h-4" />
                   Alert Sound
@@ -348,30 +348,30 @@ export const SettingsPanel = ({
               </div>
 
               {/* AI Prediction */}
-              <div className="space-y-2 pt-3 border-t border-gray-200/50">
+              <div className="space-y-2 pt-3 border-t border-zinc-700/50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-cyan-400" />
-                    <span className="text-xs text-gray-700">AI Speed Prediction</span>
+                    <span className="text-xs text-zinc-200">AI Speed Prediction</span>
                   </div>
                   <Switch checked={speedPredictionEnabled} onCheckedChange={setSpeedPredictionEnabled} />
                 </div>
-                <p className="text-xs text-gray-400">Warns before entering lower speed zones</p>
+                <p className="text-xs text-zinc-400">Warns before entering lower speed zones</p>
               </div>
 
               {/* Weather Alerts */}
-              <div className="space-y-2 pt-3 border-t border-gray-200/50">
+              <div className="space-y-2 pt-3 border-t border-zinc-700/50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CloudRain className="w-4 h-4 text-blue-400" />
-                    <span className="text-xs text-gray-700">Weather Alerts</span>
+                    <span className="text-xs text-zinc-200">Weather Alerts</span>
                   </div>
                   <Switch checked={weatherAlertsEnabled} onCheckedChange={setWeatherAlertsEnabled} />
                 </div>
               </div>
 
               {/* Mobile Optimization */}
-              <div className="space-y-3 pt-3 border-t border-gray-200/50">
+              <div className="space-y-3 pt-3 border-t border-zinc-700/50">
                 <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
                   <Signal className="w-4 h-4" />
                   Mobile
@@ -385,21 +385,21 @@ export const SettingsPanel = ({
               </div>
 
               {/* Offline Cache */}
-              <div className="space-y-3 pt-3 border-t border-gray-200/50">
+              <div className="space-y-3 pt-3 border-t border-zinc-700/50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Database className="w-4 h-4 text-yellow-400" />
-                    <span className="text-xs text-gray-700">Offline Cache</span>
+                    <span className="text-xs text-zinc-200">Offline Cache</span>
                   </div>
                   <Switch checked={offlineCacheEnabled} onCheckedChange={setOfflineCacheEnabled} />
                 </div>
                 
                 {offlineCacheEnabled && (
                   <div className="space-y-2">
-                    <div className="text-xs space-y-1 bg-gray-100/50 p-2 rounded">
+                    <div className="text-xs space-y-1 bg-zinc-800/50 p-2 rounded">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Cached:</span>
-                        <span className="text-gray-700">{cacheStats.validEntries} / {cacheStats.maxEntries || 500}</span>
+                        <span className="text-zinc-400">Cached:</span>
+                        <span className="text-zinc-200">{cacheStats.validEntries} / {cacheStats.maxEntries || 500}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-green-500"></div>
@@ -418,8 +418,8 @@ export const SettingsPanel = ({
                       className={cn(
                         "w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
                         cacheStats.validEntries > 0
-                          ? "bg-gray-200/50 border border-gray-300 text-gray-600 hover:bg-red-50 hover:border-red-300 hover:text-red-400"
-                          : "bg-gray-200/30 border border-gray-200 text-gray-400 cursor-not-allowed"
+                          ? "bg-zinc-700/50 border border-zinc-600 text-zinc-300 hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400"
+                          : "bg-zinc-700/30 border border-zinc-700 text-zinc-400 cursor-not-allowed"
                       )}
                     >
                       <Trash2 className="w-3 h-3" />
@@ -430,7 +430,7 @@ export const SettingsPanel = ({
               </div>
 
               {/* App Updates */}
-              <div className="space-y-3 pt-3 border-t border-gray-200/50">
+              <div className="space-y-3 pt-3 border-t border-zinc-700/50">
                 <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
                   <RotateCcw className="w-4 h-4" />
                   App Updates
@@ -460,16 +460,16 @@ export const SettingsPanel = ({
                       window.location.reload(true);
                     }
                   }}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-cyan-50 border border-cyan-400 text-cyan-400 hover:bg-cyan-100 rounded transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-cyan-500/10 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/100/20 rounded transition-colors"
                 >
                   <RotateCcw className="w-3 h-3" />
                   Check for Updates
                 </button>
-                <p className="text-xs text-gray-400">Force refresh to get latest version</p>
+                <p className="text-xs text-zinc-400">Force refresh to get latest version</p>
               </div>
 
               {/* Theme */}
-              <div className="space-y-3 pt-3 border-t border-gray-200/50">
+              <div className="space-y-3 pt-3 border-t border-zinc-700/50">
                 <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
                   {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
                   Theme
@@ -480,8 +480,8 @@ export const SettingsPanel = ({
                     className={cn(
                       "flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
                       theme === 'dark'
-                        ? "bg-purple-100 border border-purple-500/50 text-purple-400"
-                        : "bg-gray-200/50 border border-gray-300 text-gray-600 hover:border-zinc-500"
+                        ? "bg-purple-500/20 border border-purple-500/50 text-purple-400"
+                        : "bg-zinc-700/50 border border-zinc-600 text-zinc-300 hover:border-zinc-500"
                     )}
                   >
                     <Moon className="w-3 h-3" />
@@ -492,8 +492,8 @@ export const SettingsPanel = ({
                     className={cn(
                       "flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
                       theme === 'light'
-                        ? "bg-yellow-100 border border-yellow-400 text-yellow-400"
-                        : "bg-gray-200/50 border border-gray-300 text-gray-600 hover:border-zinc-500"
+                        ? "bg-yellow-500/20 border border-yellow-500/50 text-yellow-400"
+                        : "bg-zinc-700/50 border border-zinc-600 text-zinc-300 hover:border-zinc-500"
                     )}
                   >
                     <Sun className="w-3 h-3" />
@@ -503,9 +503,9 @@ export const SettingsPanel = ({
               </div>
 
               {/* Demo Mode */}
-              <div className="space-y-2 pt-3 border-t border-gray-200/50">
+              <div className="space-y-2 pt-3 border-t border-zinc-700/50">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-600">Demo Mode</span>
+                  <span className="text-xs text-zinc-300">Demo Mode</span>
                   <Switch checked={demoMode} onCheckedChange={setDemoMode} />
                 </div>
               </div>
@@ -519,7 +519,7 @@ export const SettingsPanel = ({
                     window.location.href = window.location.origin + '/?cleared=' + Date.now();
                   }
                 }}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-red-50 border border-red-300 text-red-400 hover:bg-red-500/20 rounded transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-red-500/20 border border-red-500/50 text-red-400 hover:bg-red-500/200/20 rounded transition-colors"
               >
                 <Trash2 className="w-3 h-3" />
                 Clear All App Data
@@ -528,7 +528,7 @@ export const SettingsPanel = ({
           )}
 
           {/* Version */}
-          <p className="text-xs text-gray-400 text-center pt-4 border-t border-gray-200">
+          <p className="text-xs text-zinc-400 text-center pt-4 border-t border-zinc-700">
             SpeedShield v{APP_VERSION}
           </p>
         </div>
