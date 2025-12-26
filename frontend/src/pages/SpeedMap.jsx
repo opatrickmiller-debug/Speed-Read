@@ -1135,6 +1135,8 @@ export default function SpeedMap() {
             setLowPowerMode={setLowPowerMode}
             speedometerOpacity={speedometerOpacity}
             setSpeedometerOpacity={setSpeedometerOpacity}
+            compassEnabled={compassEnabled}
+            setCompassEnabled={setCompassEnabled}
           />
           <AuthPanel />
         </div>
