@@ -3,218 +3,218 @@
     "total_tests": 35,
     "passed_tests": 35,
     "success_rate": 100.0,
-    "timestamp": "2025-12-24T20:09:41.667894"
+    "timestamp": "2025-12-26T14:33:58.842788"
   },
   "test_results": [
     {
       "test": "API Root Endpoint",
       "success": true,
       "details": "Status: 200, Response: {'message': 'Speed Alert API', 'version': '1.0.0'}",
-      "timestamp": "2025-12-24T20:08:36.653641"
+      "timestamp": "2025-12-26T14:32:56.694620"
     },
     {
       "test": "User Registration",
       "success": true,
-      "details": "Status: 200, User ID: 694c48449cba24a40ff9ff7e, Email: test_user_1766606916@example.com",
-      "timestamp": "2025-12-24T20:08:36.953847"
+      "details": "Status: 200, User ID: 694e9c983bab7360d162e4b6, Email: test_user_1766759576@example.com",
+      "timestamp": "2025-12-26T14:32:57.041074"
     },
     {
       "test": "User Login",
       "success": true,
-      "details": "Status: 200, Token received, User ID: 694c48449cba24a40ff9ff7e",
-      "timestamp": "2025-12-24T20:08:37.215897"
+      "details": "Status: 200, Token received, User ID: 694e9c983bab7360d162e4b6",
+      "timestamp": "2025-12-26T14:32:57.307340"
     },
     {
       "test": "Get User Profile",
       "success": true,
-      "details": "Status: 200, User ID: 694c48449cba24a40ff9ff7e, Email: test_user_1766606916@example.com",
-      "timestamp": "2025-12-24T20:08:37.252290"
+      "details": "Status: 200, User ID: 694e9c983bab7360d162e4b6, Email: test_user_1766759576@example.com",
+      "timestamp": "2025-12-26T14:32:57.349561"
     },
     {
       "test": "Speed Limit - Valid Location",
       "success": true,
       "details": "Status: 200, Speed Limit: 25, Unit: mph, Road: South Van Ness Avenue, Source: openstreetmap",
-      "timestamp": "2025-12-24T20:08:38.011659"
+      "timestamp": "2025-12-26T14:32:58.028867"
     },
     {
       "test": "Speed Limit - Invalid Parameters",
       "success": true,
       "details": "Status: 422 (expected 422 for invalid params)",
-      "timestamp": "2025-12-24T20:08:38.051010"
+      "timestamp": "2025-12-26T14:32:58.068661"
     },
     {
       "test": "Speed Limit - Missing Parameters",
       "success": true,
       "details": "Status: 422 (expected 422 for missing params)",
-      "timestamp": "2025-12-24T20:08:38.088422"
+      "timestamp": "2025-12-26T14:32:58.148257"
     },
     {
       "test": "Speed Limit - Remote Location",
       "success": true,
       "details": "Status: 200, Speed Limit: None (should be null), Source: openstreetmap",
-      "timestamp": "2025-12-24T20:08:39.351267"
+      "timestamp": "2025-12-26T14:32:58.806227"
     },
     {
       "test": "API Response Time",
       "success": true,
-      "details": "Response time: 4.78s, Status: 200",
-      "timestamp": "2025-12-24T20:08:44.135941"
+      "details": "Response time: 4.69s, Status: 200",
+      "timestamp": "2025-12-26T14:33:03.496042"
     },
     {
       "test": "Speed Prediction - Valid Location",
       "success": true,
-      "details": "Status: 200, Upcoming limits: 2, Direction: N, Warning: \u26a0\ufe0f SLOW DOWN: 25 mph zone in 200m",
-      "timestamp": "2025-12-24T20:08:51.426183"
+      "details": "Status: 200, Upcoming limits: 1, Direction: N, Warning: Lower speed zone (20 mph) approaching",
+      "timestamp": "2025-12-26T14:33:09.357259"
     },
     {
       "test": "Speed Prediction - Invalid Parameters",
       "success": true,
       "details": "Status: 422 (expected 422 for invalid params)",
-      "timestamp": "2025-12-24T20:08:51.480701"
+      "timestamp": "2025-12-26T14:33:09.406379"
     },
     {
       "test": "Speed Prediction - Missing Parameters",
       "success": true,
       "details": "Status: 422 (expected 422 for missing params)",
-      "timestamp": "2025-12-24T20:08:51.569526"
+      "timestamp": "2025-12-26T14:33:09.445505"
     },
     {
       "test": "Speed Prediction - Different Bearings",
       "success": true,
       "details": "Bearing 0\u00b0 \u2192 N \u2713, Bearing 90\u00b0 \u2192 E \u2713, Bearing 180\u00b0 \u2192 S \u2713, Bearing 270\u00b0 \u2192 W \u2713",
-      "timestamp": "2025-12-24T20:09:27.953634"
+      "timestamp": "2025-12-26T14:33:47.106668"
     },
     {
       "test": "Speed Prediction - Response Time",
       "success": true,
-      "details": "Response time: 11.34s, Status: 200",
-      "timestamp": "2025-12-24T20:09:39.292336"
+      "details": "Response time: 9.45s, Status: 200",
+      "timestamp": "2025-12-26T14:33:56.555762"
     },
     {
       "test": "Get User Stats",
       "success": true,
       "details": "Status: 200, Trips: 0, Distance: 0.0, Badges: 0",
-      "timestamp": "2025-12-24T20:09:39.355738"
+      "timestamp": "2025-12-26T14:33:56.612916"
     },
     {
       "test": "Get All Badges",
       "success": true,
       "details": "Status: 200, Badge count: 10, Found expected badges: ['first_trip', 'safe_week', 'road_warrior']",
-      "timestamp": "2025-12-24T20:09:39.393683"
+      "timestamp": "2025-12-26T14:33:56.644859"
     },
     {
       "test": "Generate Report",
       "success": true,
       "details": "Status: 200, No trips found for the specified period",
-      "timestamp": "2025-12-24T20:09:39.430397"
+      "timestamp": "2025-12-26T14:33:56.680588"
     },
     {
       "test": "Create Family",
       "success": true,
-      "details": "Status: 200, Family ID: 694c48839cba24a40ff9ff7f, Invite Code: SJ2eqP5go2I",
-      "timestamp": "2025-12-24T20:09:39.472063"
+      "details": "Status: 200, Family ID: 694e9cd43bab7360d162e4b7, Invite Code: 03S9c9G2Urg",
+      "timestamp": "2025-12-26T14:33:56.723904"
     },
     {
       "test": "Get Family",
       "success": true,
-      "details": "Status: 200, Family Name: Test Family 1766606979, Members: 1, Is Owner: True",
-      "timestamp": "2025-12-24T20:09:39.514149"
+      "details": "Status: 200, Family Name: Test Family 1766759636, Members: 1, Is Owner: True",
+      "timestamp": "2025-12-26T14:33:56.761488"
     },
     {
       "test": "Join Family - Invalid Code",
       "success": true,
       "details": "Status: 404 (expected 404 for invalid code)",
-      "timestamp": "2025-12-24T20:09:39.551299"
+      "timestamp": "2025-12-26T14:33:56.801180"
     },
     {
       "test": "Leave Family",
       "success": true,
       "details": "Status: 200, Message: Family deleted",
-      "timestamp": "2025-12-24T20:09:39.590341"
+      "timestamp": "2025-12-26T14:33:56.834784"
     },
     {
       "test": "Get Nearby Traps",
       "success": true,
       "details": "Status: 200, Trap count: 0",
-      "timestamp": "2025-12-24T20:09:39.625214"
+      "timestamp": "2025-12-26T14:33:56.871855"
     },
     {
       "test": "Report Speed Trap",
       "success": true,
-      "details": "Status: 200, Trap ID: 694c48839cba24a40ff9ff80, New: True",
-      "timestamp": "2025-12-24T20:09:39.662165"
+      "details": "Status: 200, Trap ID: 694e9cd43bab7360d162e4b8, New: True",
+      "timestamp": "2025-12-26T14:33:56.906554"
     },
     {
       "test": "Dismiss Speed Trap",
       "success": true,
       "details": "Status: 200, Message: Trap dismissed and deactivated",
-      "timestamp": "2025-12-24T20:09:39.700680"
+      "timestamp": "2025-12-26T14:33:56.939356"
     },
     {
       "test": "Speed Trap - Invalid Parameters",
       "success": true,
       "details": "Status: 422 (expected 422 for invalid params)",
-      "timestamp": "2025-12-24T20:09:39.741898"
+      "timestamp": "2025-12-26T14:33:56.973547"
     },
     {
       "test": "Start Trip",
       "success": true,
-      "details": "Status: 200, Trip ID: 694c48839cba24a40ff9ff81",
-      "timestamp": "2025-12-24T20:09:39.783788"
+      "details": "Status: 200, Trip ID: 694e9cd53bab7360d162e4b9",
+      "timestamp": "2025-12-26T14:33:57.010605"
     },
     {
       "test": "Add Data Point",
       "success": true,
       "details": "Status: 200, Response: {'message': 'Data point added'}",
-      "timestamp": "2025-12-24T20:09:39.823173"
+      "timestamp": "2025-12-26T14:33:57.045204"
     },
     {
       "test": "Add Data Point",
       "success": true,
       "details": "Status: 200, Response: {'message': 'Data point added'}",
-      "timestamp": "2025-12-24T20:09:40.361061"
+      "timestamp": "2025-12-26T14:33:57.585701"
     },
     {
       "test": "Add Data Point",
       "success": true,
       "details": "Status: 200, Response: {'message': 'Data point added'}",
-      "timestamp": "2025-12-24T20:09:40.896994"
+      "timestamp": "2025-12-26T14:33:58.121439"
     },
     {
       "test": "End Trip",
       "success": true,
       "details": "Status: 200, Max Speed: 45.5, Alerts: 3",
-      "timestamp": "2025-12-24T20:09:41.473846"
+      "timestamp": "2025-12-26T14:33:58.657869"
     },
     {
       "test": "Get Trips List",
       "success": true,
       "details": "Status: 200, Trip count: 1, Total: 1",
-      "timestamp": "2025-12-24T20:09:41.511218"
+      "timestamp": "2025-12-26T14:33:58.693542"
     },
     {
       "test": "Get Trip Detail",
       "success": true,
       "details": "Status: 200, Data points: 3, Max speed: 45.5",
-      "timestamp": "2025-12-24T20:09:41.547561"
+      "timestamp": "2025-12-26T14:33:58.731131"
     },
     {
       "test": "Invalid Trip ID (Add Data Point)",
       "success": true,
       "details": "Status: 400 (expected 400)",
-      "timestamp": "2025-12-24T20:09:41.585489"
+      "timestamp": "2025-12-26T14:33:58.766198"
     },
     {
       "test": "Non-existent Trip Detail",
       "success": true,
       "details": "Status: 404 (expected 404)",
-      "timestamp": "2025-12-24T20:09:41.624596"
+      "timestamp": "2025-12-26T14:33:58.801334"
     },
     {
       "test": "Delete Trip",
       "success": true,
       "details": "Status: 200, Response: {'message': 'Trip deleted'}",
-      "timestamp": "2025-12-24T20:09:41.667174"
+      "timestamp": "2025-12-26T14:33:58.842107"
     }
   ]
 }
