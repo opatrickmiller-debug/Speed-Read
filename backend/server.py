@@ -332,122 +332,24 @@ async def get_me(user: dict = Depends(require_auth)):
 
 # ==================== PASSWORD MANAGEMENT ====================
 
-def generate_reset_code():
-    """Generate a 6-digit reset code"""
-    return ''.join(random.choices(string.digits, k=6))
-
-async def send_reset_email(email: str, code: str):
-    """Send password reset email with code"""
-    html_content = f"""
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-            <h1 style="color: white; margin: 0; font-size: 28px;">SpeedShield</h1>
-            <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">Password Reset Request</p>
-        </div>
-        <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px;">
-            <p style="color: #334155; font-size: 16px; line-height: 1.6;">
-                You requested to reset your password. Use the code below to complete the reset:
-            </p>
-            <div style="background: #0f172a; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
-                <span style="color: #22d3ee; font-size: 32px; font-weight: bold; letter-spacing: 8px; font-family: monospace;">{code}</span>
-            </div>
-            <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
-                This code expires in <strong>15 minutes</strong>. If you didn't request this reset, you can safely ignore this email.
-            </p>
-            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
-            <p style="color: #94a3b8; font-size: 12px; text-align: center;">
-                © 2025 SpeedShield - Your intelligent driving companion
-            </p>
-        </div>
-    </div>
-    """
+@api_router.post("/auth/change-password")
+async def change_password(data: PasswordChange, user: dict = Depends(require_auth)):
+    """Change password for authenticated user"""
+    # Verify current password
+    if not verify_password(data.current_password, user["password_hash"]):
+        raise HTTPException(status_code=400, detail="Current password is incorrect.")
     
-    params = {
-        "from": SENDER_EMAIL,
-        "to": [email],
-        "subject": "SpeedShield - Password Reset Code",
-        "html": html_content
-    }
-    
-    try:
-        result = await asyncio.to_thread(resend.Emails.send, params)
-        logger.info(f"Password reset email sent to {email}")
-        return True
-    except Exception as e:
-        logger.error(f"Failed to send reset email: {str(e)}")
-        return False
-
-@api_router.post("/auth/forgot-password")
-@limiter.limit("5/minute")
-async def forgot_password(request: Request, data: PasswordResetRequest):
-    """Request a password reset code via email"""
-    email = data.email.lower().strip()
-    
-    # Check if user exists
-    user = await users_collection.find_one({"email": email})
-    if not user:
-        # Don't reveal if email exists for security
-        return {"message": "If an account exists with this email, a reset code has been sent."}
-    
-    # Generate reset code
-    code = generate_reset_code()
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
-    
-    # Store reset code (replace any existing)
-    await password_resets_collection.update_one(
-        {"email": email},
-        {
-            "$set": {
-                "email": email,
-                "code": code,
-                "expires_at": expires_at.isoformat(),
-                "created_at": datetime.now(timezone.utc).isoformat()
-            }
-        },
-        upsert=True
-    )
-    
-    # Send email
-    email_sent = await send_reset_email(email, code)
-    
-    if not email_sent:
-        raise HTTPException(status_code=500, detail="Failed to send reset email. Please try again.")
-    
-    return {"message": "If an account exists with this email, a reset code has been sent."}
-
-@api_router.post("/auth/reset-password")
-@limiter.limit("10/minute")
-async def reset_password(request: Request, data: PasswordResetConfirm):
-    """Reset password using the code sent via email"""
-    email = data.email.lower().strip()
-    
-    # Find the reset request
-    reset_request = await password_resets_collection.find_one({"email": email})
-    
-    if not reset_request:
-        raise HTTPException(status_code=400, detail="No reset request found. Please request a new code.")
-    
-    # Check if code matches
-    if reset_request["code"] != data.code:
-        raise HTTPException(status_code=400, detail="Invalid reset code. Please check and try again.")
-    
-    # Check if code expired
-    expires_at = datetime.fromisoformat(reset_request["expires_at"])
-    if datetime.now(timezone.utc) > expires_at:
-        await password_resets_collection.delete_one({"email": email})
-        raise HTTPException(status_code=400, detail="Reset code has expired. Please request a new one.")
-    
-    # Update password
+    # Update to new password
     hashed_password = hash_password(data.new_password)
     result = await users_collection.update_one(
-        {"email": email},
+        {"_id": user["_id"]},
         {"$set": {"password_hash": hashed_password}}
     )
     
     if result.modified_count == 0:
         raise HTTPException(status_code=400, detail="Failed to update password.")
     
-    # Delete the reset request
+    return {"message": "Password changed successfully."}
     await password_resets_collection.delete_one({"email": email})
     
     return {"message": "Password reset successfully. You can now sign in with your new password."}
