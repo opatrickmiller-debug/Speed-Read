@@ -220,8 +220,8 @@ export default function SpeedMap() {
   useEffect(() => {
     let isMounted = true;
     let retryCount = 0;
-    const maxRetries = 5;
-    const timeout = 8000; // 8 second timeout per request
+    const maxRetries = 3;  // Reduced from 5
+    const timeout = 5000;  // 5 second timeout (reduced from 8)
     
     const checkBackend = async () => {
       try {
@@ -263,8 +263,8 @@ export default function SpeedMap() {
         
         retryCount++;
         if (retryCount < maxRetries) {
-          // Wait 1.5 seconds between retries (faster)
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          // Wait 1 second between retries
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
       
