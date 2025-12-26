@@ -467,6 +467,40 @@ export const SettingsPanel = ({
                 <p className="text-xs text-zinc-600">Force refresh to get latest version</p>
               </div>
 
+              {/* Theme */}
+              <div className="space-y-3 pt-3 border-t border-zinc-800/50">
+                <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
+                  {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                  Theme
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setTheme('dark')}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
+                      theme === 'dark'
+                        ? "bg-purple-500/20 border border-purple-500/50 text-purple-400"
+                        : "bg-zinc-800/50 border border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                    )}
+                  >
+                    <Moon className="w-3 h-3" />
+                    Dark
+                  </button>
+                  <button
+                    onClick={() => setTheme('light')}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
+                      theme === 'light'
+                        ? "bg-yellow-500/20 border border-yellow-500/50 text-yellow-400"
+                        : "bg-zinc-800/50 border border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                    )}
+                  >
+                    <Sun className="w-3 h-3" />
+                    Light
+                  </button>
+                </div>
+              </div>
+
               {/* Demo Mode */}
               <div className="space-y-2 pt-3 border-t border-zinc-800/50">
                 <div className="flex items-center justify-between">
