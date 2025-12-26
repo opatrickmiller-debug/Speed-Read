@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Gauge, 
   Shield, 
@@ -24,6 +24,45 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+// Auto-wake backend while user views landing page
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
+const useAutoWake = () => {
+  const [isWaking, setIsWaking] = useState(true);
+  const [isAwake, setIsAwake] = useState(false);
+  
+  useEffect(() => {
+    let mounted = true;
+    
+    const wakeServers = async () => {
+      for (let i = 0; i < 5; i++) {
+        if (!mounted) return;
+        try {
+          const response = await fetch(`${BACKEND_URL}/api/health`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+          });
+          if (response.ok && mounted) {
+            setIsAwake(true);
+            setIsWaking(false);
+            console.log('[LandingPage] Backend is awake!');
+            return;
+          }
+        } catch (e) {
+          // Keep trying
+        }
+        await new Promise(r => setTimeout(r, 1500));
+      }
+      if (mounted) setIsWaking(false);
+    };
+    
+    wakeServers();
+    return () => { mounted = false; };
+  }, []);
+  
+  return { isWaking, isAwake };
+};
 
 // Feature data
 const FEATURES = [
