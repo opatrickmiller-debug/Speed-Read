@@ -528,7 +528,7 @@ export const SettingsPanel = ({
 
           {/* Version */}
           <p className="text-xs text-zinc-700 text-center pt-4 border-t border-zinc-800">
-            SpeedShield v2.1.0
+            SpeedShield v{APP_VERSION}
           </p>
         </div>
       </SheetContent>
