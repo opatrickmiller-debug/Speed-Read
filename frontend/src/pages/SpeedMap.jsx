@@ -368,6 +368,12 @@ export default function SpeedMap() {
     return saved !== null ? saved === 'true' : false;
   });
   
+  // Compass enabled state
+  const [compassEnabled, setCompassEnabled] = useState(() => {
+    const saved = localStorage.getItem('compassEnabled');
+    return saved !== null ? saved === 'true' : true; // Default ON
+  });
+  
   // Speedometer opacity (0.2 to 1.0)
   const [speedometerOpacity, setSpeedometerOpacity] = useState(() => {
     const saved = localStorage.getItem('speedometerOpacity');
