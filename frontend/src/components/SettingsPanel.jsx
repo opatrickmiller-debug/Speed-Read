@@ -391,17 +391,77 @@ export const SettingsPanel = ({
                 </div>
                 
                 {offlineCacheEnabled && (
-                  <div className="text-xs space-y-1 bg-zinc-900/50 p-2 rounded">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Cached:</span>
-                      <span className="text-zinc-300">{cacheStats.validEntries} / {cacheStats.maxEntries || 500}</span>
+                  <div className="space-y-2">
+                    <div className="text-xs space-y-1 bg-zinc-900/50 p-2 rounded">
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Cached:</span>
+                        <span className="text-zinc-300">{cacheStats.validEntries} / {cacheStats.maxEntries || 500}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        <span className="text-green-400/70">Auto-managed</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                      <span className="text-green-400/70">Auto-managed</span>
-                    </div>
+                    
+                    {/* Clear Cache Button */}
+                    <button
+                      onClick={() => {
+                        clearCache();
+                        setCacheStats(getCacheStats());
+                        alert('Cache cleared!');
+                      }}
+                      disabled={cacheStats.validEntries === 0}
+                      className={cn(
+                        "w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
+                        cacheStats.validEntries > 0
+                          ? "bg-zinc-800/50 border border-zinc-700 text-zinc-400 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400"
+                          : "bg-zinc-800/30 border border-zinc-800 text-zinc-600 cursor-not-allowed"
+                      )}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Clear Cache
+                    </button>
                   </div>
                 )}
+              </div>
+
+              {/* App Updates */}
+              <div className="space-y-3 pt-3 border-t border-zinc-800/50">
+                <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
+                  <RotateCcw className="w-4 h-4" />
+                  App Updates
+                </div>
+                <button
+                  onClick={() => {
+                    if ('serviceWorker' in navigator) {
+                      navigator.serviceWorker.getRegistrations().then(registrations => {
+                        registrations.forEach(reg => {
+                          reg.update();
+                          if (reg.waiting) {
+                            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                          }
+                        });
+                      });
+                      // Clear caches and reload
+                      if ('caches' in window) {
+                        caches.keys().then(names => {
+                          Promise.all(names.map(name => caches.delete(name))).then(() => {
+                            window.location.reload(true);
+                          });
+                        });
+                      } else {
+                        window.location.reload(true);
+                      }
+                    } else {
+                      window.location.reload(true);
+                    }
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 rounded transition-colors"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  Check for Updates
+                </button>
+                <p className="text-xs text-zinc-600">Force refresh to get latest version</p>
               </div>
 
               {/* Demo Mode */}
