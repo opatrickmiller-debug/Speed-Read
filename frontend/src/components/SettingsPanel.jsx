@@ -314,92 +314,95 @@ export const SettingsPanel = ({
                 
                 {useDynamicThreshold ? (
                   <div className="space-y-4">
-                    <p className="text-xs text-zinc-300">Adjust zones and buffers:</p>
-                    
                     {/* Zone 1 */}
                     <div className="space-y-2 bg-zinc-500/30 p-3 rounded">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-xs text-white">
-                          <span>0</span>
-                          <span className="text-zinc-400">to</span>
-                          <input
-                            type="number"
-                            value={thresholdRanges[0]?.maxLimit || 50}
-                            onChange={(e) => {
-                              const val = Math.max(10, Math.min(80, parseInt(e.target.value) || 50));
-                              const newRanges = [...thresholdRanges];
-                              newRanges[0] = { ...newRanges[0], maxLimit: val };
-                              newRanges[1] = { ...newRanges[1], minLimit: val };
-                              setThresholdRanges(newRanges);
-                            }}
-                            className="w-12 bg-zinc-600 border border-zinc-500 rounded px-1 py-0.5 text-center text-white text-xs"
-                          />
-                          <span>{speedUnit}</span>
-                        </div>
-                        <span className="text-cyan-400 text-xs">+{thresholdRanges[0]?.offset || 0} {speedUnit}</span>
+                      <div className="text-xs text-white font-medium">Zone 1</div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-zinc-300">Range: 0 - {thresholdRanges[0]?.maxLimit || 50} {speedUnit}</span>
+                        <span className="text-cyan-400">+{thresholdRanges[0]?.offset || 0} {speedUnit}</span>
                       </div>
-                      <Slider
-                        value={[thresholdRanges[0]?.offset || 0]}
-                        onValueChange={([v]) => {
-                          const newRanges = [...thresholdRanges];
-                          newRanges[0] = { ...newRanges[0], offset: v };
-                          setThresholdRanges(newRanges);
-                        }}
-                        min={0} max={15} step={1}
-                      />
+                      <div className="space-y-1">
+                        <span className="text-xs text-zinc-400">Upper limit</span>
+                        <Slider
+                          value={[thresholdRanges[0]?.maxLimit || 50]}
+                          onValueChange={([v]) => {
+                            const newRanges = [...thresholdRanges];
+                            newRanges[0] = { ...newRanges[0], maxLimit: v };
+                            newRanges[1] = { ...newRanges[1], minLimit: v };
+                            setThresholdRanges(newRanges);
+                          }}
+                          min={20} max={70} step={5}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-xs text-zinc-400">Buffer</span>
+                        <Slider
+                          value={[thresholdRanges[0]?.offset || 0]}
+                          onValueChange={([v]) => {
+                            const newRanges = [...thresholdRanges];
+                            newRanges[0] = { ...newRanges[0], offset: v };
+                            setThresholdRanges(newRanges);
+                          }}
+                          min={0} max={15} step={1}
+                        />
+                      </div>
                     </div>
                     
                     {/* Zone 2 */}
                     <div className="space-y-2 bg-zinc-500/30 p-3 rounded">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-xs text-white">
-                          <span>{thresholdRanges[0]?.maxLimit || 50}</span>
-                          <span className="text-zinc-400">to</span>
-                          <input
-                            type="number"
-                            value={thresholdRanges[1]?.maxLimit || 65}
-                            onChange={(e) => {
-                              const val = Math.max(thresholdRanges[0]?.maxLimit + 5 || 55, Math.min(90, parseInt(e.target.value) || 65));
-                              const newRanges = [...thresholdRanges];
-                              newRanges[1] = { ...newRanges[1], maxLimit: val };
-                              newRanges[2] = { ...newRanges[2], minLimit: val };
-                              setThresholdRanges(newRanges);
-                            }}
-                            className="w-12 bg-zinc-600 border border-zinc-500 rounded px-1 py-0.5 text-center text-white text-xs"
-                          />
-                          <span>{speedUnit}</span>
-                        </div>
-                        <span className="text-cyan-400 text-xs">+{thresholdRanges[1]?.offset || 5} {speedUnit}</span>
+                      <div className="text-xs text-white font-medium">Zone 2</div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-zinc-300">Range: {thresholdRanges[0]?.maxLimit || 50} - {thresholdRanges[1]?.maxLimit || 65} {speedUnit}</span>
+                        <span className="text-cyan-400">+{thresholdRanges[1]?.offset || 5} {speedUnit}</span>
                       </div>
-                      <Slider
-                        value={[thresholdRanges[1]?.offset || 5]}
-                        onValueChange={([v]) => {
-                          const newRanges = [...thresholdRanges];
-                          newRanges[1] = { ...newRanges[1], offset: v };
-                          setThresholdRanges(newRanges);
-                        }}
-                        min={0} max={15} step={1}
-                      />
+                      <div className="space-y-1">
+                        <span className="text-xs text-zinc-400">Upper limit</span>
+                        <Slider
+                          value={[thresholdRanges[1]?.maxLimit || 65]}
+                          onValueChange={([v]) => {
+                            const minVal = (thresholdRanges[0]?.maxLimit || 50) + 5;
+                            const newVal = Math.max(minVal, v);
+                            const newRanges = [...thresholdRanges];
+                            newRanges[1] = { ...newRanges[1], maxLimit: newVal };
+                            newRanges[2] = { ...newRanges[2], minLimit: newVal };
+                            setThresholdRanges(newRanges);
+                          }}
+                          min={35} max={85} step={5}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-xs text-zinc-400">Buffer</span>
+                        <Slider
+                          value={[thresholdRanges[1]?.offset || 5]}
+                          onValueChange={([v]) => {
+                            const newRanges = [...thresholdRanges];
+                            newRanges[1] = { ...newRanges[1], offset: v };
+                            setThresholdRanges(newRanges);
+                          }}
+                          min={0} max={15} step={1}
+                        />
+                      </div>
                     </div>
                     
                     {/* Zone 3 */}
                     <div className="space-y-2 bg-zinc-500/30 p-3 rounded">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-xs text-white">
-                          <span>{thresholdRanges[1]?.maxLimit || 65}+</span>
-                          <span>{speedUnit}</span>
-                        </div>
-                        <span className="text-cyan-400 text-xs">+{thresholdRanges[2]?.offset || 10} {speedUnit}</span>
+                      <div className="text-xs text-white font-medium">Zone 3</div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-zinc-300">Range: {thresholdRanges[1]?.maxLimit || 65}+ {speedUnit}</span>
+                        <span className="text-cyan-400">+{thresholdRanges[2]?.offset || 10} {speedUnit}</span>
                       </div>
-                      <Slider
-                        value={[thresholdRanges[2]?.offset || 10]}
-                        onValueChange={([v]) => {
-                          const newRanges = [...thresholdRanges];
-                          newRanges[2] = { ...newRanges[2], offset: v };
-                          setThresholdRanges(newRanges);
-                        }}
-                        min={0} max={20} step={1}
-                      />
+                      <div className="space-y-1">
+                        <span className="text-xs text-zinc-400">Buffer</span>
+                        <Slider
+                          value={[thresholdRanges[2]?.offset || 10]}
+                          onValueChange={([v]) => {
+                            const newRanges = [...thresholdRanges];
+                            newRanges[2] = { ...newRanges[2], offset: v };
+                            setThresholdRanges(newRanges);
+                          }}
+                          min={0} max={20} step={1}
+                        />
+                      </div>
                     </div>
                     
                     {/* Reset to defaults button */}
