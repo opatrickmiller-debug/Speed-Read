@@ -227,13 +227,23 @@ export function OnboardingFlow({ onComplete }) {
 // Hook to check if onboarding is needed
 export function useOnboarding() {
   const [showOnboarding, setShowOnboarding] = useState(() => {
-    // Check localStorage immediately on init
+    // Check multiple flags - user might have cleared one
     const completed = localStorage.getItem('onboardingComplete');
-    return !completed;
+    const hasUsedApp = localStorage.getItem('hasUsedApp');
+    const hasVisitedApp = localStorage.getItem('hasVisitedApp');
+    const authToken = localStorage.getItem('authToken');
+    
+    // If ANY of these exist, user has used app before - skip onboarding
+    if (completed || hasUsedApp || hasVisitedApp || authToken) {
+      return false;
+    }
+    return true;
   });
   const [isChecking, setIsChecking] = useState(false);
 
   const completeOnboarding = () => {
+    localStorage.setItem('onboardingComplete', 'true');
+    localStorage.setItem('hasUsedApp', 'true');
     setShowOnboarding(false);
   };
 
