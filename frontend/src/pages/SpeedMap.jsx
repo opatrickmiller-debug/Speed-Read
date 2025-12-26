@@ -527,8 +527,17 @@ export default function SpeedMap() {
   // Calculate if over speed limit (raw)
   const displaySpeed = demoMode ? demoSpeed : currentSpeed;
   const currentThreshold = getDynamicThreshold(speedLimit);
+  
+  // BUFFER: Add 1 MPH buffer before alert timer starts
+  // Example: If limit is 45 + threshold 0 = 45, driver must exceed 46 MPH to trigger
+  // This gives drivers a 1 MPH grace zone before any alerts begin
+  const ALERT_BUFFER = 1; // 1 MPH buffer over the effective limit
   const effectiveLimit = speedLimit ? speedLimit + currentThreshold : null;
-  const isOverLimit = effectiveLimit !== null && displaySpeed > effectiveLimit;
+  const alertTriggerLimit = effectiveLimit !== null ? effectiveLimit + ALERT_BUFFER : null;
+  
+  // isOverLimit now requires exceeding the buffer (e.g., 46+ when limit is 45)
+  // If driver drops back to 45 or below, timers and alerts reset
+  const isOverLimit = alertTriggerLimit !== null && displaySpeed > alertTriggerLimit;
   
   // Alert delay tracking
   const speedingStartTimeRef = useRef(null);
