@@ -1,4 +1,4 @@
-import { Settings, Volume2, VolumeX, Gauge, Mic, MicOff, Globe, Database, Trash2, Zap, Timer, CloudRain, Music, Smartphone, Signal, RotateCcw, Move, ChevronDown, ChevronUp, Sliders, Eye } from "lucide-react";
+import { Settings, Volume2, VolumeX, Gauge, Mic, MicOff, Globe, Database, Trash2, Zap, Timer, CloudRain, Music, Smartphone, Signal, RotateCcw, Move, ChevronDown, ChevronUp, Sliders, Eye, Sun, Moon } from "lucide-react";
 import React, { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -22,6 +22,9 @@ import { AVAILABLE_LANGUAGES } from "@/components/AlertOverlay";
 import { getCacheStats, clearCache } from "@/utils/speedLimitCache";
 import { SoundSelector } from "@/components/SoundCustomization";
 import { MobileSettingsSection } from "@/components/MobileSettings";
+
+// App version
+const APP_VERSION = "2.2.0";
 
 // Test messages for voice
 const TEST_MESSAGES = {
