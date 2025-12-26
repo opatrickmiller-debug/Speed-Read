@@ -44,11 +44,6 @@ ALLOWED_ORIGINS = os.environ.get('CORS_ORIGINS', '').split(',')
 if not ALLOWED_ORIGINS or ALLOWED_ORIGINS == ['']:
     ALLOWED_ORIGINS = ['http://localhost:3000']  # Fallback for local dev only
 
-# ==================== EMAIL CONFIGURATION ====================
-
-resend.api_key = os.environ.get('RESEND_API_KEY', '')
-SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
-
 # ==================== DATABASE ====================
 
 mongo_url = os.environ['MONGO_URL']
@@ -62,7 +57,6 @@ speed_traps_collection = db.speed_traps
 families_collection = db.families
 badges_collection = db.badges
 stats_collection = db.user_stats
-password_resets_collection = db.password_resets  # New collection for reset codes
 
 # Create the main app
 app = FastAPI(
