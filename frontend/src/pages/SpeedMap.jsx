@@ -19,6 +19,7 @@ import { useWakeLock } from "@/components/WakeLock";
 import { SpeedPredictionBanner, SpeedPredictionIndicator, useBearing, useSpeedPrediction } from "@/components/SpeedPrediction";
 import { NetworkStatusBadge, BatteryWarningBadge } from "@/components/MobileSettings";
 import { DraggableContainer } from "@/components/DraggableHUD";
+import { DraggableCompass } from "@/components/Compass";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
