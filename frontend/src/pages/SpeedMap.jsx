@@ -364,6 +364,12 @@ export default function SpeedMap() {
     return saved !== null ? saved === 'true' : false;
   });
   
+  // Speedometer opacity (0.2 to 1.0)
+  const [speedometerOpacity, setSpeedometerOpacity] = useState(() => {
+    const saved = localStorage.getItem('speedometerOpacity');
+    return saved !== null ? parseFloat(saved) : 0.85; // Default 85% opacity
+  });
+  
   // Dynamic threshold ranges (speed limit -> allowed over)
   const [thresholdRanges, setThresholdRanges] = useState(() => {
     const saved = localStorage.getItem('thresholdRanges');
