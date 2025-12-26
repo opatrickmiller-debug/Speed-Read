@@ -89,6 +89,7 @@ export const SettingsPanel = ({
   setSpeedometerOpacity,
 }) => {
   const [cacheStats, setCacheStats] = useState(() => getCacheStats());
+  const [showAdvanced, setShowAdvanced] = useState(false);
   
   // Refresh cache stats every 2 seconds when panel is open
   React.useEffect(() => {
