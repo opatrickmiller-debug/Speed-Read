@@ -924,10 +924,10 @@ export default function SpeedMap() {
   // Show waking up indicator
   if (wakingUp) {
     return (
-      <div className="h-screen w-screen bg-zinc-950 flex flex-col items-center justify-center">
-        <div className="text-center space-y-6">
+      <div className="h-screen w-screen bg-zinc-950 flex flex-col items-center justify-center p-6">
+        <div className="text-center space-y-6 max-w-sm">
           {/* Animated logo/icon */}
-          <div className="relative">
+          <div className="relative w-20 h-20 mx-auto">
             <div className="w-20 h-20 border-4 border-cyan-500/30 rounded-full animate-ping absolute inset-0" />
             <div className="w-20 h-20 border-4 border-cyan-500 rounded-full flex items-center justify-center">
               <Smartphone className="w-10 h-10 text-cyan-500 animate-pulse" />
@@ -937,10 +937,10 @@ export default function SpeedMap() {
           {/* Status text */}
           <div className="space-y-2">
             <h2 className="text-xl font-mono text-zinc-200 uppercase tracking-wider">
-              Starting Up
+              Connecting
             </h2>
             <p className="text-sm text-zinc-500 font-mono">
-              Connecting to servers...
+              Waking up servers...
             </p>
           </div>
           
@@ -951,13 +951,20 @@ export default function SpeedMap() {
             <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
           </div>
           
-          {/* Skip button */}
+          {/* Skip button - more prominent */}
           <button
-            onClick={() => setWakingUp(false)}
-            className="mt-8 px-6 py-2 text-zinc-500 hover:text-zinc-300 font-mono text-sm transition-colors"
+            onClick={() => {
+              setBackendAwake(true);
+              setWakingUp(false);
+            }}
+            className="mt-4 w-full px-6 py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-cyan-500/50 text-zinc-300 hover:text-cyan-400 font-mono text-sm rounded-lg transition-all"
           >
-            Skip →
+            Skip & Continue →
           </button>
+          
+          <p className="text-xs text-zinc-600 font-mono">
+            Tap skip if this takes too long
+          </p>
         </div>
       </div>
     );
