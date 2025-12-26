@@ -779,7 +779,18 @@ export const SettingsPanel = ({
                 <div className="bg-zinc-900/50 border border-zinc-800 p-3 rounded space-y-2">
                   <div className="flex justify-between text-xs font-mono">
                     <span className="text-zinc-500">Cached locations:</span>
-                    <span data-testid="cache-count" className="text-yellow-400">{cacheStats.validEntries}</span>
+                    <span data-testid="cache-count" className="text-yellow-400">
+                      {cacheStats.validEntries} / {cacheStats.maxEntries || 500}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs font-mono">
+                    <span className="text-zinc-500">Capacity:</span>
+                    <span className={cn(
+                      "font-mono",
+                      cacheStats.capacityPercent > 80 ? "text-orange-400" : "text-green-400"
+                    )}>
+                      {cacheStats.capacityPercent || 0}%
+                    </span>
                   </div>
                   {cacheStats.validEntries > 0 && (
                     <>
@@ -787,30 +798,35 @@ export const SettingsPanel = ({
                         <span className="text-zinc-500">Oldest entry:</span>
                         <span className="text-zinc-400">{cacheStats.oldestEntry} days ago</span>
                       </div>
-                      <div className="flex justify-between text-xs font-mono">
-                        <span className="text-zinc-500">Newest entry:</span>
-                        <span className="text-zinc-400">{cacheStats.newestEntry} min ago</span>
-                      </div>
                     </>
                   )}
+                  {/* Auto-managed indicator */}
+                  <div className="flex items-center gap-2 pt-2 border-t border-zinc-700/50">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span className="text-xs text-green-400/80 font-mono">Auto-managed</span>
+                  </div>
                 </div>
                 
-                {/* Clear cache button */}
+                <p className="text-xs text-zinc-600 font-mono">
+                  Cache automatically cleans up old entries. Manual clear only if needed.
+                </p>
+                
+                {/* Clear cache button - now less prominent */}
                 <button
                   data-testid="clear-cache-btn"
                   onClick={handleClearCache}
                   disabled={cacheStats.validEntries === 0}
                   className={cn(
                     "w-full flex items-center justify-center gap-2 px-3 py-2",
-                    "text-xs font-mono uppercase tracking-wider",
+                    "text-xs font-mono uppercase tracking-wider rounded",
                     "border transition-colors",
                     cacheStats.validEntries > 0
-                      ? "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
+                      ? "bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400"
                       : "bg-zinc-800/50 border-zinc-700 text-zinc-600 cursor-not-allowed"
                   )}
                 >
                   <Trash2 className="w-3 h-3" />
-                  Clear Cache
+                  Clear Cache Manually
                 </button>
               </div>
             )}
