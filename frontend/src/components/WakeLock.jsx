@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
  * Falls back to video-based approach for older browsers
  */
 export function useWakeLock() {
-  const [isSupported, setIsSupported] = useState(false);
+  const [isSupported] = useState(() => 'wakeLock' in navigator);
   const [isActive, setIsActive] = useState(false);
   const [error, setError] = useState(null);
   const wakeLockRef = useRef(null);
