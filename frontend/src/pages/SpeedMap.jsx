@@ -284,6 +284,19 @@ export default function SpeedMap() {
     };
   }, []);
   
+  // Keep-alive ping to prevent server sleep (every 30 seconds)
+  useEffect(() => {
+    const keepAlive = setInterval(async () => {
+      try {
+        await fetch(`${API}/health`, { method: 'GET' });
+      } catch (e) {
+        // Silently ignore - server might be temporarily unavailable
+      }
+    }, 30000); // Every 30 seconds
+    
+    return () => clearInterval(keepAlive);
+  }, []);
+  
   // HUD Mode state
   const [hudMode, setHudMode] = useState(false);
   
