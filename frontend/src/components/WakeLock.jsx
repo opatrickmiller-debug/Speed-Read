@@ -14,11 +14,6 @@ export function useWakeLock() {
   const retryIntervalRef = useRef(null);
   const shouldBeActiveRef = useRef(false);
 
-  // Check if Wake Lock API is supported
-  useEffect(() => {
-    setIsSupported('wakeLock' in navigator);
-  }, []);
-
   // Request wake lock
   const requestWakeLock = useCallback(async () => {
     setError(null);
