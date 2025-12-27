@@ -34,11 +34,17 @@ export function useWakeLock() {
         wakeLockRef.current.addEventListener('release', () => {
           console.log('Wake Lock released, will try to reacquire...');
           setIsActive(false);
-          // Auto-reacquire if it should be active
+          // Auto-reacquire if it should be active - use setTimeout to break out of callback
           if (shouldBeActiveRef.current && document.visibilityState === 'visible') {
-            setTimeout(() => {
-              if (shouldBeActiveRef.current) {
-                requestWakeLock();
+            setTimeout(async () => {
+              if (shouldBeActiveRef.current && 'wakeLock' in navigator) {
+                try {
+                  wakeLockRef.current = await navigator.wakeLock.request('screen');
+                  setIsActive(true);
+                  console.log('Wake Lock reacquired');
+                } catch (e) {
+                  console.log('Failed to reacquire wake lock:', e);
+                }
               }
             }, 1000);
           }
