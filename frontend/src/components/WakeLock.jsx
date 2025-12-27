@@ -11,6 +11,8 @@ export function useWakeLock() {
   const [error, setError] = useState(null);
   const wakeLockRef = useRef(null);
   const videoRef = useRef(null);
+  const retryIntervalRef = useRef(null);
+  const shouldBeActiveRef = useRef(false);
 
   // Check if Wake Lock API is supported
   useEffect(() => {
@@ -20,6 +22,7 @@ export function useWakeLock() {
   // Request wake lock
   const requestWakeLock = useCallback(async () => {
     setError(null);
+    shouldBeActiveRef.current = true;
 
     // Try native Wake Lock API first
     if ('wakeLock' in navigator) {
@@ -27,10 +30,18 @@ export function useWakeLock() {
         wakeLockRef.current = await navigator.wakeLock.request('screen');
         setIsActive(true);
         
-        // Listen for release
+        // Listen for release and auto-reacquire
         wakeLockRef.current.addEventListener('release', () => {
+          console.log('Wake Lock released, will try to reacquire...');
           setIsActive(false);
-          console.log('Wake Lock released');
+          // Auto-reacquire if it should be active
+          if (shouldBeActiveRef.current && document.visibilityState === 'visible') {
+            setTimeout(() => {
+              if (shouldBeActiveRef.current) {
+                requestWakeLock();
+              }
+            }, 1000);
+          }
         });
         
         console.log('Wake Lock acquired');
@@ -56,6 +67,7 @@ export function useWakeLock() {
         video.style.width = '1px';
         video.style.height = '1px';
         video.style.opacity = '0.01';
+        video.style.pointerEvents = 'none';
         
         // Tiny black video (base64 encoded 1x1 pixel MP4)
         video.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAA0NtZGF0AAACrQYF//+p3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE1NSByMjkwMSA3ZDBmZjIyIC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxOCAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTMgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0zIGJfcHlyYW1pZD0yIGJfYWRhcHQ9MSBiX2JpYXM9MCBkaXJlY3Q9MSB3ZWlnaHRiPTEgb3Blbl9nb3A9MCB3ZWlnaHRwPTIga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAAD2WIhAA3//728P4FNjuZQQAAAu5tb292AAAAbG12aGQAAAAAAAAAAAAAAAAAAAPoAAAAZAABAAABAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAACGHRyYWsAAABcdGtoZAAAAAMAAAAAAAAAAAAAAAEAAAAAAAAAZAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAEAAAAAAAgAAAAIAAAAAACRlZHRzAAAAHGVsc3QAAAAAAAAAAQAAAGQAAAAAAAEAAAAAAZBtZGlhAAAAIG1kaGQAAAAAAAAAAAAAAAAAACgAAAAEAFXEAAAAAAAtaGRscgAAAAAAAAAAdmlkZQAAAAAAAAAAAAAAAFZpZGVvSGFuZGxlcgAAAAE7bWluZgAAABR2bWhkAAAAAQAAAAAAAAAAAAAAJGRpbmYAAAAcZHJlZgAAAAAAAAABAAAADHVybCAAAAABAAAA+3N0YmwAAACXc3RzZAAAAAAAAAABAAAAh2F2YzEAAAAAAAAAAQACAAAAAAAAAAAAAAAAAAAAAgACAEgAAABIAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY//8AAAAxYXZjQwFkAAr/4QAYZ2QACqzZX4iIhAAAAwAEAAADAFA8SJZYAQAGaOvjyyLAAAAAGHN0dHMAAAAAAAAAAQAAAAEAAAQAAAAAHHN0c2MAAAAAAAAAAQAAAAEAAAABAAAAAQAAABRzdHN6AAAAAAAAAsUAAAABAAAAFHN0Y28AAAAAAAAAAQAAADAAAABidWR0YQAAAFptZXRhAAAAAAAAACFoZGxyAAAAAAAAAABtZGlyYXBwbAAAAAAAAAAAAAAAAC1pbHN0AAAAJal0b28AAAAdZGF0YQAAAAEAAAAATGF2ZjU4LjI5LjEwMA==';
@@ -77,6 +89,13 @@ export function useWakeLock() {
 
   // Release wake lock
   const releaseWakeLock = useCallback(async () => {
+    shouldBeActiveRef.current = false;
+    
+    if (retryIntervalRef.current) {
+      clearInterval(retryIntervalRef.current);
+      retryIntervalRef.current = null;
+    }
+    
     if (wakeLockRef.current) {
       try {
         await wakeLockRef.current.release();
@@ -98,15 +117,33 @@ export function useWakeLock() {
   // Re-acquire wake lock when page becomes visible again
   useEffect(() => {
     const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible' && isActive) {
-        // Re-acquire if it was active before
+      if (document.visibilityState === 'visible' && shouldBeActiveRef.current) {
+        console.log('Page visible, reacquiring wake lock...');
         await requestWakeLock();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [isActive, requestWakeLock]);
+  }, [requestWakeLock]);
+
+  // Periodic check to ensure wake lock is still active
+  useEffect(() => {
+    if (shouldBeActiveRef.current) {
+      retryIntervalRef.current = setInterval(async () => {
+        if (shouldBeActiveRef.current && !wakeLockRef.current && document.visibilityState === 'visible') {
+          console.log('Wake lock lost, reacquiring...');
+          await requestWakeLock();
+        }
+      }, 10000); // Check every 10 seconds
+    }
+    
+    return () => {
+      if (retryIntervalRef.current) {
+        clearInterval(retryIntervalRef.current);
+      }
+    };
+  }, [requestWakeLock]);
 
   // Cleanup on unmount
   useEffect(() => {
