@@ -137,7 +137,7 @@ export function WeatherAlertBanner({ currentPosition, theme = "dark" }) {
     return (
       <div 
         className={cn(
-          "fixed top-0 left-0 right-0 z-50",
+          "fixed top-16 left-4 right-4 z-40 rounded-lg shadow-lg",
           getSeverityColor(topAlert.severity)
         )}
       >
