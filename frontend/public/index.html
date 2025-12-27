@@ -60,48 +60,38 @@
     <!-- AUTO-WAKE BACKEND SERVERS - Runs immediately on page load -->
     <script>
       (function() {
-        // Get backend URL from meta tag or use default
         var backendUrl = 'https://drag-speed-app.preview.emergentagent.com';
         
-        console.log('[AutoWake] Starting immediate backend wake...');
-        
-        // Fire wake-up requests immediately
-        var endpoints = ['/api/health', '/api/'];
-        endpoints.forEach(function(endpoint) {
-          fetch(backendUrl + endpoint, { method: 'GET', mode: 'cors' })
-            .then(function(r) { 
-              if (r.ok) console.log('[AutoWake] ✓ ' + endpoint + ' awake'); 
-            })
-            .catch(function() { 
-              console.log('[AutoWake] Waking ' + endpoint + '...'); 
-            });
-        });
-        
-        // Retry health check a few times
-        var retries = 0;
-        var maxRetries = 10;
-        var checkHealth = function() {
-          if (retries >= maxRetries) return;
-          retries++;
-          fetch(backendUrl + '/api/health', { method: 'GET', mode: 'cors' })
-            .then(function(r) { 
-              if (r.ok) {
-                console.log('[AutoWake] ✓ Backend confirmed awake!');
-                window.backendAwake = true;
-              } else {
-                setTimeout(checkHealth, 1000);
-              }
-            })
-            .catch(function() { 
-              setTimeout(checkHealth, 1000); 
-            });
+        // Detect if we're in the platform's wake overlay (iframe or injected content)
+        var isInWakeOverlay = function() {
+          // Check if there's an overlay blocking our app
+          var overlay = document.querySelector('[class*="preview"]') || 
+                       document.querySelector('[class*="wake"]') ||
+                       document.querySelector('[class*="overlay"]');
+          return overlay && overlay !== document.getElementById('root');
         };
-        setTimeout(checkHealth, 300);
         
-        // Keep-alive ping every 25 seconds
-        setInterval(function() {
-          fetch(backendUrl + '/api/health', { method: 'GET', mode: 'cors' }).catch(function(){});
-        }, 25000);
+        // Continuous backend ping to keep it warm
+        var pingBackend = function() {
+          fetch(backendUrl + '/api/health', { 
+            method: 'GET', 
+            mode: 'cors',
+            cache: 'no-store'
+          }).then(function(r) {
+            if (r.ok) {
+              window.backendAwake = true;
+              console.log('[KeepAlive] Backend responding');
+            }
+          }).catch(function() {});
+        };
+        
+        // Initial burst of requests to wake backend fast
+        for (var i = 0; i < 3; i++) {
+          setTimeout(pingBackend, i * 200);
+        }
+        
+        // Then keep pinging every 15 seconds
+        setInterval(pingBackend, 15000);
       })();
     </script>
     
