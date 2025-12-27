@@ -65,6 +65,21 @@
         
         console.log('[AutoWake] Starting immediate backend wake...');
         
+        // Auto-click wake button if platform overlay appears
+        var checkForWakeButton = function() {
+          var wakeBtn = document.querySelector('button[class*="wake"]') || 
+                        document.querySelector('button:contains("Wake")') ||
+                        Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Wake'));
+          if (wakeBtn) {
+            console.log('[AutoWake] Found wake button, clicking...');
+            wakeBtn.click();
+          }
+        };
+        
+        // Check for wake button periodically
+        var wakeInterval = setInterval(checkForWakeButton, 500);
+        setTimeout(function() { clearInterval(wakeInterval); }, 10000); // Stop after 10 seconds
+        
         // Fire wake-up requests immediately
         var endpoints = ['/api/health', '/api/'];
         endpoints.forEach(function(endpoint) {
@@ -79,7 +94,7 @@
         
         // Retry health check a few times
         var retries = 0;
-        var maxRetries = 5;
+        var maxRetries = 10;
         var checkHealth = function() {
           if (retries >= maxRetries) return;
           retries++;
@@ -89,14 +104,19 @@
                 console.log('[AutoWake] ✓ Backend confirmed awake!');
                 window.backendAwake = true;
               } else {
-                setTimeout(checkHealth, 1500);
+                setTimeout(checkHealth, 1000);
               }
             })
             .catch(function() { 
-              setTimeout(checkHealth, 1500); 
+              setTimeout(checkHealth, 1000); 
             });
         };
-        setTimeout(checkHealth, 500);
+        setTimeout(checkHealth, 300);
+        
+        // Keep-alive ping every 25 seconds
+        setInterval(function() {
+          fetch(backendUrl + '/api/health', { method: 'GET', mode: 'cors' }).catch(function(){});
+        }, 25000);
       })();
     </script>
     
