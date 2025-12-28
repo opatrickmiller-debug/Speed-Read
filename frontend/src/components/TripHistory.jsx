@@ -22,18 +22,21 @@ export const TripHistory = ({
   onStopRecording,
   currentTripStats 
 }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, token } = useAuth();
   const [trips, setTrips] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState(null);
 
-  // Fetch trips on mount (only if authenticated)
+  // Fetch trips on mount (only if authenticated with valid token)
   const fetchTrips = useCallback(async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !token) return;
     
     setIsLoading(true);
     try {
-      const response = await axios.get(`${API}/trips?limit=50`);
+      // Explicitly include the token to avoid race condition with axios interceptor
+      const response = await axios.get(`${API}/trips?limit=50`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setTrips(response.data.trips || []);
     } catch (error) {
       console.error("Error fetching trips:", error);
@@ -43,7 +46,7 @@ export const TripHistory = ({
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, token]);
 
   useEffect(() => {
     fetchTrips();
