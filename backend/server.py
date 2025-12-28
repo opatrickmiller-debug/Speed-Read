@@ -758,12 +758,20 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
                             set_cached_speed_limit(lat, lon, result)
                             return SpeedLimitResponse(**result)
                 
-                # No road found - cache the null result too (shorter TTL handled by source)
+                # No road found from OpenStreetMap - try Google Roads API as fallback
+                logger.info(f"No OSM data for {lat}, {lon} - trying Google Roads API")
+                google_result = await get_speed_limit_from_google_roads(lat, lon)
+                
+                if google_result and google_result.get("speed_limit"):
+                    set_cached_speed_limit(lat, lon, google_result)
+                    return SpeedLimitResponse(**google_result)
+                
+                # No data from any source - cache the null result
                 result = {
                     "speed_limit": None,
                     "unit": "mph",
                     "road_name": None,
-                    "source": "openstreetmap"
+                    "source": "none"
                 }
                 set_cached_speed_limit(lat, lon, result)
                 return SpeedLimitResponse(**result)
@@ -782,8 +790,15 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
             last_error = e
             break
     
-    logger.warning(f"Speed limit fetch failed for {lat}, {lon}")
-    # Return last known limit from cache if available with nearby coords
+    # OpenStreetMap failed completely - try Google Roads API as last resort
+    logger.warning(f"OSM speed limit fetch failed for {lat}, {lon} - trying Google Roads API")
+    google_result = await get_speed_limit_from_google_roads(lat, lon)
+    
+    if google_result and google_result.get("speed_limit"):
+        set_cached_speed_limit(lat, lon, google_result)
+        return SpeedLimitResponse(**google_result)
+    
+    logger.warning(f"All speed limit sources failed for {lat}, {lon}")
     return SpeedLimitResponse(
         speed_limit=None,
         unit="mph",
