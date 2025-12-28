@@ -390,9 +390,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "End-to-End Mobile Testing - All Features"
+    - "Trip History UI Improvements"
   stuck_tasks: []
-  test_all: true
+  test_all: false
   test_priority: "high_first"
 
 agent_communication:
@@ -404,3 +404,5 @@ agent_communication:
     message: "FIXED: Mobile drag-and-drop is now working. Changes made: 1) Added isDraggingRef for immediate state updates (React stale closure fix). 2) Moved toast notifications from top-center to bottom-left to prevent blocking drag. 3) Added window-level touch event listeners for mobile. 4) Added touch-action:none inline style to drag handle. Verified via screenshot that drag changes position from {x:0,y:80} to {x:-50,y:434}. Ready for final verification test."
   - agent: "main"
     message: "NEW FORK SESSION - Comprehensive End-to-End Mobile Testing requested. Testing all features on mobile viewport including: 1) Draggable speedometer with touch gestures, 2) Settings panel (basic/advanced), 3) Authentication flows (login, register, change/forgot password), 4) HUD Mode, 5) Opacity slider, 6) All toggles and controls. Using iPhone 14 Pro viewport (390x844)."
+  - agent: "main"
+    message: "TRIP HISTORY UI IMPROVEMENTS - Completely redesigned TripHistory.jsx with: 1) Trips grouped by date (Today, Yesterday, specific dates), 2) Safety rating badges (Perfect/Great/Good/Fair/Poor) with color coding, 3) Enhanced stat cards with icons (Max Speed, Avg Speed, Alerts, Miles), 4) Expandable trip details with safety rating progress bar, 5) Better visual hierarchy and cleaner design. Test credentials: triptest@example.com / Test123! (has 2 test trips created)."
