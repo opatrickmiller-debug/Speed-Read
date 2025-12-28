@@ -1072,13 +1072,18 @@ async def get_trips(request: Request, limit: int = 20, skip: int = 0, user: dict
     
     trips = []
     async for trip in cursor:
+        # Calculate avg_speed dynamically if not stored or is 0
+        avg_speed = trip.get("avg_speed", 0)
+        if (avg_speed == 0 or avg_speed is None) and trip.get("speed_count", 0) > 0:
+            avg_speed = trip.get("total_speed", 0) / trip.get("speed_count", 1)
+        
         trips.append(TripResponse(
             id=str(trip["_id"]),
             start_time=trip["start_time"],
             end_time=trip.get("end_time"),
             duration_minutes=trip.get("duration_minutes"),
             max_speed=trip.get("max_speed", 0),
-            avg_speed=trip.get("avg_speed", 0),
+            avg_speed=round(avg_speed, 1) if avg_speed else 0,
             total_alerts=trip.get("total_alerts", 0),
             speed_unit=trip.get("speed_unit", "mph"),
             distance_miles=trip.get("distance_miles"),
