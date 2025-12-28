@@ -62,7 +62,9 @@ export const TripHistory = ({
   const handleDeleteTrip = async (tripId, e) => {
     e.stopPropagation();
     try {
-      await axios.delete(`${API}/trips/${tripId}`);
+      await axios.delete(`${API}/trips/${tripId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setTrips(trips.filter(t => t.id !== tripId));
       toast.success("Trip deleted");
     } catch (error) {
