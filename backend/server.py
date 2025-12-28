@@ -669,33 +669,41 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
                         estimated_limit = HIGHWAY_SPEED_DEFAULTS.get(highway_type)
                         
                         if estimated_limit:
-                            return SpeedLimitResponse(
-                                speed_limit=estimated_limit,
-                                unit="mph",
-                                road_name=road_name,
-                                source="estimated"  # Mark as estimated
-                            )
+                            result = {
+                                "speed_limit": estimated_limit,
+                                "unit": "mph",
+                                "road_name": road_name,
+                                "source": "estimated"
+                            }
+                            set_cached_speed_limit(lat, lon, result)
+                            return SpeedLimitResponse(**result)
                 
-                return SpeedLimitResponse(
-                    speed_limit=None,
-                    unit="mph",
-                    road_name=None,
-                    source="openstreetmap"
-                )
+                # No road found - cache the null result too (shorter TTL handled by source)
+                result = {
+                    "speed_limit": None,
+                    "unit": "mph",
+                    "road_name": None,
+                    "source": "openstreetmap"
+                }
+                set_cached_speed_limit(lat, lon, result)
+                return SpeedLimitResponse(**result)
                 
         except httpx.TimeoutException as e:
             last_error = e
             if attempt < max_retries - 1:
+                await asyncio.sleep(0.5)  # Brief pause before retry
                 continue
         except httpx.HTTPStatusError as e:
             last_error = e
             if attempt < max_retries - 1:
+                await asyncio.sleep(0.5)
                 continue
         except Exception as e:
             last_error = e
             break
     
     logger.warning(f"Speed limit fetch failed for {lat}, {lon}")
+    # Return last known limit from cache if available with nearby coords
     return SpeedLimitResponse(
         speed_limit=None,
         unit="mph",
