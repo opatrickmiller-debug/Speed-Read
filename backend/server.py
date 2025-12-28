@@ -1247,7 +1247,7 @@ class UserStatsResponse(BaseModel):
 @api_router.get("/stats")
 @limiter.limit("30/minute")
 async def get_user_stats(request: Request, user: dict = Depends(require_auth)):
-    """Get user's gamification stats and badges."""
+    """Get gamification stats and badges for authenticated user."""
     user_id = str(user["_id"])
     
     # Get all user trips (exclude data_points for performance)
