@@ -382,6 +382,21 @@ frontend:
         agent: "main"
         comment: "Fixed: 1) Added isDraggingRef for immediate state updates. 2) Moved toast notifications from top-center to bottom-left to prevent blocking drag. 3) Added window-level touch event listeners. 4) Added touch-action:none to drag handle. Drag successfully changes position from {x:0,y:80} to {x:-50,y:434}."
 
+  - task: "Trip History UI Improvements"
+    implemented: true
+    working: false
+    file: "frontend/src/components/TripHistory.jsx"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "TRIP HISTORY UI IMPROVEMENTS - Completely redesigned TripHistory.jsx with: 1) Trips grouped by date (Today, Yesterday, specific dates), 2) Safety rating badges (Perfect/Great/Good/Fair/Poor) with color coding, 3) Enhanced stat cards with icons (Max Speed, Avg Speed, Alerts, Miles), 4) Expandable trip details with safety rating progress bar, 5) Better visual hierarchy and cleaner design. Test credentials: triptest@example.com / Test123! (has 2 test trips created)."
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL AUTHENTICATION BUG: Trip History UI works correctly for unauthenticated state (shows sign-in prompts), and login flow works (auth button turns green). However, after successful login, the trips API call fails with 401 Unauthorized. Backend has 2 test trips for triptest@example.com (verified via direct API test), but frontend axios interceptor has race condition - trips API call happens before Authorization header is properly set up. TripHistory.jsx line 36 relies on interceptor but timing issue causes 401 error. Need to fix auth token timing in API calls."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
