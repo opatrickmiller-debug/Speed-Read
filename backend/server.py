@@ -1124,7 +1124,7 @@ async def end_trip(request: Request, end_request: EndTripRequest, user: dict = D
 @api_router.get("/trips")
 @limiter.limit("30/minute")
 async def get_trips(request: Request, limit: int = 20, skip: int = 0, user: dict = Depends(require_auth)):
-    """Get trip history list. Only returns user's own trips."""
+    """Get trip history list for authenticated user."""
     # Validate pagination
     limit = min(max(1, limit), 100)
     skip = max(0, skip)
