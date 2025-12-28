@@ -408,21 +408,17 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Trip History UI Improvements"
+    - "Final End-to-End Testing - All Features"
   stuck_tasks: []
-  test_all: false
+  test_all: true
   test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
-    message: "Implemented HUD Mode and AI Speed Prediction features. HUD Mode has full-screen mirrored display with brightness control - verified via screenshots. AI Speed Prediction: new backend /api/speed-ahead endpoint looks ahead at 200m, 500m, 1000m for speed limit changes. Frontend has SpeedPrediction component with warning banner. Settings toggle added. Need to test the prediction API and verify warnings display when approaching lower speed zones."
-  - agent: "main"
-    message: "PRIORITY: Testing mobile drag-and-drop functionality for speedometer. The DraggableHUD.jsx component has touch event handlers (onTouchStart, onTouchMove, onTouchEnd) implemented. Need to verify: 1) Tap on speedometer shows drag controls, 2) Touch-drag gesture moves the component, 3) Position persists to localStorage, 4) Lock/Unlock functionality works, 5) Reset Position button works from settings."
-  - agent: "main"
-    message: "FIXED: Mobile drag-and-drop is now working. Changes made: 1) Added isDraggingRef for immediate state updates (React stale closure fix). 2) Moved toast notifications from top-center to bottom-left to prevent blocking drag. 3) Added window-level touch event listeners for mobile. 4) Added touch-action:none inline style to drag handle. Verified via screenshot that drag changes position from {x:0,y:80} to {x:-50,y:434}. Ready for final verification test."
-  - agent: "main"
-    message: "NEW FORK SESSION - Comprehensive End-to-End Mobile Testing requested. Testing all features on mobile viewport including: 1) Draggable speedometer with touch gestures, 2) Settings panel (basic/advanced), 3) Authentication flows (login, register, change/forgot password), 4) HUD Mode, 5) Opacity slider, 6) All toggles and controls. Using iPhone 14 Pro viewport (390x844)."
-  - agent: "main"
     message: "TRIP HISTORY UI IMPROVEMENTS - Completely redesigned TripHistory.jsx with: 1) Trips grouped by date (Today, Yesterday, specific dates), 2) Safety rating badges (Perfect/Great/Good/Fair/Poor) with color coding, 3) Enhanced stat cards with icons (Max Speed, Avg Speed, Alerts, Miles), 4) Expandable trip details with safety rating progress bar, 5) Better visual hierarchy and cleaner design. Test credentials: triptest@example.com / Test123! (has 2 test trips created)."
   - agent: "testing"
     message: "CRITICAL BUG FOUND: Trip History UI testing reveals authentication integration issue. Unauthenticated state works correctly (shows sign-in prompts). Login flow works (credentials accepted, auth button turns green). However, after login, trips API call fails with 401 Unauthorized due to race condition in axios interceptor setup. Backend has 2 test trips for triptest@example.com (verified via direct API), but frontend TripHistory.jsx line 36 makes API call before Authorization header is ready. Need to fix timing issue in auth token attachment to API requests."
+  - agent: "main"
+    message: "FIXED: Authentication race condition in TripHistory.jsx resolved by explicitly passing token to API calls. Verified via screenshots - trips now display correctly after login with all features working (expansion, stats, delete)."
+  - agent: "main"
+    message: "FINAL E2E TESTING REQUESTED: Comprehensive test of all SpeedShield features including: 1) Authentication (login/register/logout), 2) Trip History with new UI, 3) Speed Limit Display, 4) Settings Panel (all toggles), 5) Features Panel (Gamification, Export Reports, Family Mode, Speed Traps), 6) HUD Mode, 7) Draggable Speedometer, 8) Sound Customization. Test credentials: triptest@example.com / Test123!"
