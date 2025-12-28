@@ -14,9 +14,11 @@ import re
 import asyncio
 import random
 import string
+import time
+from functools import lru_cache
 from pathlib import Path
 from pydantic import BaseModel, Field, validator
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone, timedelta
 import httpx
 import resend
@@ -26,6 +28,44 @@ from passlib.context import CryptContext
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# ==================== SPEED LIMIT CACHE ====================
+# In-memory cache for speed limits to reduce API calls
+speed_limit_cache: Dict[str, Any] = {}
+CACHE_TTL = 300  # 5 minutes cache
+CACHE_MAX_SIZE = 1000
+
+def get_cache_key(lat: float, lon: float) -> str:
+    """Round coordinates to ~100m precision for cache key"""
+    return f"{round(lat, 3)},{round(lon, 3)}"
+
+def get_cached_speed_limit(lat: float, lon: float) -> Optional[dict]:
+    """Get cached speed limit if available and not expired"""
+    key = get_cache_key(lat, lon)
+    if key in speed_limit_cache:
+        entry = speed_limit_cache[key]
+        if time.time() - entry['timestamp'] < CACHE_TTL:
+            return entry['data']
+        else:
+            del speed_limit_cache[key]
+    return None
+
+def set_cached_speed_limit(lat: float, lon: float, data: dict):
+    """Cache speed limit result"""
+    global speed_limit_cache
+    # Limit cache size
+    if len(speed_limit_cache) > CACHE_MAX_SIZE:
+        # Remove oldest entries
+        sorted_keys = sorted(speed_limit_cache.keys(), 
+                           key=lambda k: speed_limit_cache[k]['timestamp'])
+        for k in sorted_keys[:100]:
+            del speed_limit_cache[k]
+    
+    key = get_cache_key(lat, lon)
+    speed_limit_cache[key] = {
+        'timestamp': time.time(),
+        'data': data
+    }
 
 # ==================== SECURITY CONFIGURATION ====================
 
