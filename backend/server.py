@@ -622,12 +622,14 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
                                 speed_limit = int(digits)
                                 unit = "km/h"
                     
-                    return SpeedLimitResponse(
-                        speed_limit=speed_limit,
-                        unit=unit,
-                        road_name=road_name,
-                        source="openstreetmap"
-                    )
+                    result = {
+                        "speed_limit": speed_limit,
+                        "unit": unit,
+                        "road_name": road_name,
+                        "source": "openstreetmap"
+                    }
+                    set_cached_speed_limit(lat, lon, result)
+                    return SpeedLimitResponse(**result)
                 
                 # No explicit maxspeed found - try to get highway type for fallback
                 response2 = await http_client.post(
