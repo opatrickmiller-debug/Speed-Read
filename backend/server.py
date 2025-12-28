@@ -532,6 +532,11 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
     if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
         raise HTTPException(status_code=400, detail="Invalid coordinates")
     
+    # Check cache first
+    cached = get_cached_speed_limit(lat, lon)
+    if cached:
+        return SpeedLimitResponse(**cached)
+    
     # US Highway type to typical speed limit mapping (in mph)
     HIGHWAY_SPEED_DEFAULTS = {
         "motorway": 70,      # Interstate highways
