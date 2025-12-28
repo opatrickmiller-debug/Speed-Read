@@ -755,7 +755,7 @@ async def get_speed_ahead(
 ):
     """
     Look ahead for upcoming speed limit changes along the travel direction.
-    Returns speed limits at 200m, 500m, and 1000m ahead.
+    Returns speed limits at multiple distances ahead (200, 500, 1000 meters).
     """
     if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
         raise HTTPException(status_code=400, detail="Invalid coordinates")
