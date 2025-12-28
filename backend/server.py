@@ -67,6 +67,90 @@ def set_cached_speed_limit(lat: float, lon: float, data: dict):
         'data': data
     }
 
+# ==================== GOOGLE ROADS API SERVICE ====================
+GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', '')
+GOOGLE_ROADS_BASE_URL = "https://roads.googleapis.com/v1"
+
+async def get_speed_limit_from_google_roads(lat: float, lon: float) -> Optional[dict]:
+    """
+    Fetch speed limit using Google Roads API as a fallback.
+    Returns speed limit data or None if unavailable.
+    """
+    if not GOOGLE_MAPS_API_KEY:
+        logger.warning("Google Maps API key not configured")
+        return None
+    
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as http_client:
+            # Step 1: Snap to roads to get place ID
+            snap_url = f"{GOOGLE_ROADS_BASE_URL}/snapToRoads"
+            snap_params = {
+                "path": f"{lat},{lon}",
+                "key": GOOGLE_MAPS_API_KEY
+            }
+            
+            snap_response = await http_client.get(snap_url, params=snap_params)
+            
+            if snap_response.status_code != 200:
+                logger.warning(f"Google Roads snap failed: {snap_response.status_code}")
+                return None
+            
+            snap_data = snap_response.json()
+            
+            if not snap_data.get("snappedPoints"):
+                logger.debug(f"No snapped points for {lat}, {lon}")
+                return None
+            
+            place_id = snap_data["snappedPoints"][0].get("placeId")
+            
+            if not place_id:
+                logger.debug(f"No place ID for {lat}, {lon}")
+                return None
+            
+            # Step 2: Get speed limit using place ID
+            speed_url = f"{GOOGLE_ROADS_BASE_URL}/speedLimits"
+            speed_params = {
+                "placeId": place_id,
+                "key": GOOGLE_MAPS_API_KEY
+            }
+            
+            speed_response = await http_client.get(speed_url, params=speed_params)
+            
+            if speed_response.status_code != 200:
+                logger.warning(f"Google Roads speed limit failed: {speed_response.status_code}")
+                return None
+            
+            speed_data = speed_response.json()
+            
+            if speed_data.get("speedLimits"):
+                speed_info = speed_data["speedLimits"][0]
+                speed_limit = speed_info.get("speedLimit")
+                unit_raw = speed_info.get("units", "KPH")
+                
+                # Convert KPH to mph if needed (Google returns KPH by default)
+                if unit_raw == "KPH":
+                    speed_limit_mph = round(speed_limit * 0.621371)
+                    unit = "mph"
+                else:
+                    speed_limit_mph = speed_limit
+                    unit = "mph"
+                
+                return {
+                    "speed_limit": speed_limit_mph,
+                    "unit": unit,
+                    "road_name": None,  # Google Roads doesn't provide road name in speed limit response
+                    "source": "google_roads"
+                }
+            
+            return None
+            
+    except httpx.TimeoutException:
+        logger.warning(f"Google Roads API timeout for {lat}, {lon}")
+        return None
+    except Exception as e:
+        logger.error(f"Google Roads API error: {str(e)}")
+        return None
+
 # ==================== SECURITY CONFIGURATION ====================
 
 # JWT Configuration
