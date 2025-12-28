@@ -572,10 +572,6 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
     way(around:{SEARCH_RADIUS_HIGHWAY},{lat},{lon})["highway"];
     out body;
     """
-    [out:json][timeout:10];
-    way(around:50,{lat},{lon})["highway"];
-    out body;
-    """
     
     max_retries = 2
     last_error = None
