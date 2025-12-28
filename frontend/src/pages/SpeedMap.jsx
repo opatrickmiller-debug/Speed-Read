@@ -765,12 +765,20 @@ export default function SpeedMap() {
         setRoadName(road_name);
         setIsUsingCache(false);
       } else {
-        setSpeedLimit(null);
-        setRoadName(null);
+        // Keep last known speed limit if API returns null (don't reset to null)
+        // This prevents the speed limit from disappearing during brief API gaps
+        if (!speedLimit) {
+          // Only set to null if we don't have a previous value
+          setSpeedLimit(null);
+          setRoadName(null);
+        }
         setIsUsingCache(false);
       }
     } catch (error) {
       console.error("Error fetching speed limit:", error);
+      
+      // Keep last known speed limit on error (don't reset)
+      // This prevents the display from flickering
       
       // Fallback to cache on error
       if (offlineCacheEnabled) {
