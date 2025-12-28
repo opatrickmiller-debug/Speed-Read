@@ -486,14 +486,40 @@ async def root(request: Request):
 async def get_speed_limit(request: Request, lat: float, lon: float):
     """
     Fetch speed limit for a given location using OpenStreetMap Overpass API.
+    Falls back to highway type-based estimation if no explicit speed limit is found.
     """
     # Validate coordinates
     if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
         raise HTTPException(status_code=400, detail="Invalid coordinates")
     
-    query = f"""
+    # US Highway type to typical speed limit mapping (in mph)
+    HIGHWAY_SPEED_DEFAULTS = {
+        "motorway": 70,      # Interstate highways
+        "motorway_link": 45, # On/off ramps
+        "trunk": 65,         # US highways
+        "trunk_link": 40,
+        "primary": 55,       # State highways
+        "primary_link": 35,
+        "secondary": 45,     # County roads
+        "secondary_link": 30,
+        "tertiary": 35,      # Local through roads
+        "residential": 25,   # Residential streets
+        "unclassified": 30,  # Rural roads
+        "living_street": 15,
+        "service": 15,
+    }
+    
+    # First try to get explicit maxspeed
+    query_with_maxspeed = f"""
     [out:json][timeout:10];
     way(around:30,{lat},{lon})["highway"]["maxspeed"];
+    out body;
+    """
+    
+    # Query for any highway (fallback)
+    query_any_highway = f"""
+    [out:json][timeout:10];
+    way(around:50,{lat},{lon})["highway"];
     out body;
     """
     
@@ -503,9 +529,10 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
     for attempt in range(max_retries):
         try:
             async with httpx.AsyncClient(timeout=10.0) as http_client:
+                # First try to get roads with explicit maxspeed
                 response = await http_client.post(
                     OVERPASS_URL,
-                    data={"data": query},
+                    data={"data": query_with_maxspeed},
                     headers={"Content-Type": "application/x-www-form-urlencoded"}
                 )
                 response.raise_for_status()
@@ -547,6 +574,51 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
                         road_name=road_name,
                         source="openstreetmap"
                     )
+                
+                # No explicit maxspeed found - try to get highway type for fallback
+                response2 = await http_client.post(
+                    OVERPASS_URL,
+                    data={"data": query_any_highway},
+                    headers={"Content-Type": "application/x-www-form-urlencoded"}
+                )
+                response2.raise_for_status()
+                data2 = response2.json()
+                
+                if data2.get("elements") and len(data2["elements"]) > 0:
+                    # Find the most significant road (prefer motorway > trunk > primary, etc.)
+                    priority_order = ["motorway", "trunk", "primary", "secondary", "tertiary", "residential", "unclassified"]
+                    best_road = None
+                    best_priority = 999
+                    
+                    for element in data2["elements"]:
+                        tags = element.get("tags", {})
+                        highway_type = tags.get("highway", "")
+                        
+                        try:
+                            priority = priority_order.index(highway_type)
+                            if priority < best_priority:
+                                best_priority = priority
+                                best_road = element
+                        except ValueError:
+                            if best_road is None:
+                                best_road = element
+                    
+                    if best_road:
+                        tags = best_road.get("tags", {})
+                        highway_type = tags.get("highway", "")
+                        road_name = tags.get("name") or tags.get("ref") or f"{highway_type.title()} Road"
+                        road_name = sanitize_string(road_name, 100)
+                        
+                        # Get estimated speed limit based on highway type
+                        estimated_limit = HIGHWAY_SPEED_DEFAULTS.get(highway_type)
+                        
+                        if estimated_limit:
+                            return SpeedLimitResponse(
+                                speed_limit=estimated_limit,
+                                unit="mph",
+                                road_name=road_name,
+                                source="estimated"  # Mark as estimated
+                            )
                 
                 return SpeedLimitResponse(
                     speed_limit=None,
