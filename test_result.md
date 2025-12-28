@@ -308,15 +308,18 @@ frontend:
 
   - task: "HUD Mode Feature"
     implemented: true
-    working: true
+    working: "NA"
     file: "frontend/src/components/HUDMode.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: true
         agent: "main"
         comment: "HUD Mode fully functional - large mirrored speed display for windshield, brightness control, mirror toggle. Verified via screenshot."
+      - working: "NA"
+        agent: "testing"
+        comment: "E2E TEST INCONCLUSIVE: HUD Mode button found and clickable, but large speed display elements not detected during test. HUD mode may be activating but display detection failed. Need manual verification of HUD mode functionality."
 
   - task: "AI Speed Prediction Feature"
     implemented: true
