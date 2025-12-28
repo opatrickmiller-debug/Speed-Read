@@ -1513,7 +1513,7 @@ async def join_family(request: Request, invite_code: str, user: dict = Depends(r
 @api_router.get("/family")
 @limiter.limit("30/minute")
 async def get_my_family(request: Request, user: dict = Depends(require_auth)):
-    """Get user's family group and member stats."""
+    """Get family group and member stats for authenticated user."""
     user_id = str(user["_id"])
     
     # Find family where user is a member
