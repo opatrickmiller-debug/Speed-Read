@@ -390,6 +390,21 @@ frontend:
       - working: true
         agent: "main"
         comment: "Fixed: 1) Added isDraggingRef for immediate state updates. 2) Moved toast notifications from top-center to bottom-left to prevent blocking drag. 3) Added window-level touch event listeners. 4) Added touch-action:none to drag handle. Drag successfully changes position from {x:0,y:80} to {x:-50,y:434}."
+      - working: "NA"
+        agent: "testing"
+        comment: "E2E TEST ISSUE: Speedometer HUD not visible during desktop testing. May be positioning issue or opacity setting. Speed status indicator (SAFE/NO DATA) found but main speedometer display not detected. Needs investigation of speedometer visibility and positioning."
+
+  - task: "Speedometer Visibility Issue"
+    implemented: true
+    working: false
+    file: "frontend/src/components/SpeedometerPro.jsx"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL UI ISSUE: Speedometer HUD not visible in main app view during E2E testing. Speed status indicators (SAFE/NO DATA) are working, but main speedometer display with MPH reading is not detected. This could be due to: 1) Positioning/CSS issues, 2) Opacity settings too low, 3) Z-index problems, 4) Component not rendering properly. Speedometer is core functionality and must be visible to users."
 
   - task: "Trip History UI Improvements"
     implemented: true
