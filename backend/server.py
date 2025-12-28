@@ -495,29 +495,38 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
     # US Highway type to typical speed limit mapping (in mph)
     HIGHWAY_SPEED_DEFAULTS = {
         "motorway": 70,      # Interstate highways
-        "motorway_link": 45, # On/off ramps
+        "motorway_link": 55, # On/off ramps (increased for safety)
         "trunk": 65,         # US highways
-        "trunk_link": 40,
+        "trunk_link": 45,
         "primary": 55,       # State highways
-        "primary_link": 35,
+        "primary_link": 40,
         "secondary": 45,     # County roads
-        "secondary_link": 30,
-        "tertiary": 35,      # Local through roads
+        "secondary_link": 35,
+        "tertiary": 40,      # Local through roads
+        "tertiary_link": 30,
         "residential": 25,   # Residential streets
-        "unclassified": 30,  # Rural roads
-        "living_street": 15,
+        "unclassified": 35,  # Rural roads
+        "living_street": 20,
         "service": 15,
     }
     
+    # Increased search radius for better coverage
+    SEARCH_RADIUS_MAXSPEED = 100  # meters for roads with explicit speed limits
+    SEARCH_RADIUS_HIGHWAY = 150   # meters for any highway (fallback)
+    
     # First try to get explicit maxspeed
     query_with_maxspeed = f"""
-    [out:json][timeout:10];
-    way(around:30,{lat},{lon})["highway"]["maxspeed"];
+    [out:json][timeout:8];
+    way(around:{SEARCH_RADIUS_MAXSPEED},{lat},{lon})["highway"]["maxspeed"];
     out body;
     """
     
     # Query for any highway (fallback)
     query_any_highway = f"""
+    [out:json][timeout:8];
+    way(around:{SEARCH_RADIUS_HIGHWAY},{lat},{lon})["highway"];
+    out body;
+    """
     [out:json][timeout:10];
     way(around:50,{lat},{lon})["highway"];
     out body;
