@@ -7,16 +7,16 @@ export const SpeedLimitSign = ({ speedLimit, roadName, isLoading, isCached, them
       <div 
         data-testid="speed-limit-loading"
         className={cn(
-          "backdrop-blur-xl border p-4 rounded-none",
+          "backdrop-blur-xl border p-3 rounded-none",
           theme === "dark" ? "bg-black/50 border-white/10" : "bg-white/80 border-gray-300"
         )}
       >
         <div className={cn(
-          "w-20 h-20 rounded-full border-4 flex items-center justify-center animate-pulse",
+          "w-28 h-28 rounded-full border-[8px] flex items-center justify-center animate-pulse",
           theme === "dark" ? "border-zinc-700" : "border-gray-300"
         )}>
           <span className={cn(
-            "text-sm font-mono",
+            "text-lg font-mono",
             theme === "dark" ? "text-zinc-600" : "text-gray-400"
           )}>...</span>
         </div>
@@ -29,17 +29,17 @@ export const SpeedLimitSign = ({ speedLimit, roadName, isLoading, isCached, them
       <div 
         data-testid="speed-limit-unknown"
         className={cn(
-          "backdrop-blur-xl border p-4 rounded-none",
+          "backdrop-blur-xl border p-3 rounded-none",
           theme === "dark" ? "bg-black/50 border-white/10" : "bg-white/80 border-gray-300"
         )}
       >
         <div className="flex flex-col items-center gap-2">
           <div className={cn(
-            "w-20 h-20 rounded-full border-4 flex items-center justify-center",
+            "w-28 h-28 rounded-full border-[8px] flex items-center justify-center",
             theme === "dark" ? "border-zinc-600" : "border-gray-400"
           )}>
             <span className={cn(
-              "text-xl font-bold",
+              "text-3xl font-bold",
               theme === "dark" ? "text-zinc-500" : "text-gray-500"
             )}>?</span>
           </div>
