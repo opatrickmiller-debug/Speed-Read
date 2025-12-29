@@ -220,6 +220,8 @@ export default function SpeedMap() {
   // Ref to track last known good speed limit (survives re-renders and API gaps)
   const lastKnownSpeedLimitRef = useRef(null);
   const lastKnownRoadNameRef = useRef(null);
+  const lastKnownTimestampRef = useRef(null);
+  const STICKY_MAX_AGE_MS = 30000; // Only keep sticky value for 30 seconds max
   
   // Auto-wake backend on component mount
   useEffect(() => {
