@@ -723,81 +723,120 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
         out body;
         """
     
-    # First try to get explicit maxspeed
-    query_with_maxspeed = f"""
-    [out:json][timeout:8];
-    way(around:{SEARCH_RADIUS_MAXSPEED},{lat},{lon})["highway"]["maxspeed"];
-    out body;
-    """
+    # Helper function to parse maxspeed tag
+    def parse_maxspeed(maxspeed: str) -> tuple:
+        """Parse OSM maxspeed tag, returns (speed_limit, unit)"""
+        if not maxspeed:
+            return None, "mph"
+        
+        maxspeed_clean = maxspeed.lower().strip()
+        
+        # Handle special values
+        if maxspeed_clean in ("none", "unlimited"):
+            return 75, "mph"  # Reasonable highway speed
+        if maxspeed_clean == "walk":
+            return 5, "mph"
+        
+        # Parse numeric values
+        if "mph" in maxspeed_clean:
+            digits = ''.join(filter(str.isdigit, maxspeed_clean))
+            return int(digits) if digits else None, "mph"
+        elif "km/h" in maxspeed_clean or "kmh" in maxspeed_clean:
+            digits = ''.join(filter(str.isdigit, maxspeed_clean))
+            return int(digits) if digits else None, "km/h"
+        elif maxspeed_clean.isdigit():
+            # Assume km/h if no unit specified (OSM default)
+            return int(maxspeed_clean), "km/h"
+        else:
+            digits = ''.join(filter(str.isdigit, maxspeed_clean))
+            if digits:
+                return int(digits), "km/h"
+        
+        return None, "mph"
     
-    # Query for any highway (fallback)
-    query_any_highway = f"""
-    [out:json][timeout:8];
-    way(around:{SEARCH_RADIUS_HIGHWAY},{lat},{lon})["highway"];
-    out body;
-    """
-    
-    max_retries = 2
-    last_error = None
-    
-    for attempt in range(max_retries):
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as http_client:
-                # First try to get roads with explicit maxspeed
-                response = await http_client.post(
-                    OVERPASS_URL,
-                    data={"data": query_with_maxspeed},
-                    headers={"Content-Type": "application/x-www-form-urlencoded"}
-                )
-                response.raise_for_status()
-                data = response.json()
+    # Try progressive search radii
+    for radius in SEARCH_RADII:
+        # First try to get roads with explicit maxspeed
+        query_maxspeed = make_maxspeed_query(radius)
+        data = await query_overpass_with_fallback(query_maxspeed)
+        
+        if data and data.get("elements"):
+            # Find the best road (closest or most significant)
+            road = data["elements"][0]
+            tags = road.get("tags", {})
+            maxspeed = tags.get("maxspeed", "")
+            road_name = tags.get("name") or tags.get("ref") or "Unknown Road"
+            road_name = sanitize_string(road_name, 100)
+            
+            speed_limit, unit = parse_maxspeed(maxspeed)
+            
+            if speed_limit:
+                result = {
+                    "speed_limit": speed_limit,
+                    "unit": unit,
+                    "road_name": road_name,
+                    "source": "openstreetmap"
+                }
+                set_cached_speed_limit(lat, lon, result)
+                return SpeedLimitResponse(**result)
+        
+        # No explicit maxspeed - try highway type estimation
+        query_highway = make_highway_query(radius)
+        data2 = await query_overpass_with_fallback(query_highway)
+        
+        if data2 and data2.get("elements"):
+            # Find the most significant road type
+            priority_order = ["motorway", "trunk", "primary", "secondary", 
+                            "tertiary", "residential", "unclassified", "service"]
+            best_road = None
+            best_priority = 999
+            
+            for element in data2["elements"]:
+                tags = element.get("tags", {})
+                highway_type = tags.get("highway", "")
                 
-                if data.get("elements") and len(data["elements"]) > 0:
-                    road = data["elements"][0]
-                    tags = road.get("tags", {})
-                    maxspeed = tags.get("maxspeed", "")
-                    road_name = tags.get("name") or tags.get("ref") or "Unknown Road"
-                    
-                    # Sanitize road name
-                    road_name = sanitize_string(road_name, 100)
-                    
-                    speed_limit = None
-                    unit = "mph"
-                    
-                    if maxspeed:
-                        maxspeed_clean = maxspeed.lower().strip()
-                        
-                        if "mph" in maxspeed_clean:
-                            speed_limit = int(''.join(filter(str.isdigit, maxspeed_clean)))
-                            unit = "mph"
-                        elif "km/h" in maxspeed_clean or "kmh" in maxspeed_clean:
-                            speed_limit = int(''.join(filter(str.isdigit, maxspeed_clean)))
-                            unit = "km/h"
-                        elif maxspeed_clean.isdigit():
-                            speed_limit = int(maxspeed_clean)
-                            unit = "km/h"
-                        else:
-                            digits = ''.join(filter(str.isdigit, maxspeed_clean))
-                            if digits:
-                                speed_limit = int(digits)
-                                unit = "km/h"
-                    
+                # Skip non-road types
+                if highway_type in ("footway", "cycleway", "path", "steps", "pedestrian"):
+                    continue
+                
+                try:
+                    priority = priority_order.index(highway_type)
+                    if priority < best_priority:
+                        best_priority = priority
+                        best_road = element
+                except ValueError:
+                    # Highway type not in priority list
+                    if best_road is None and highway_type in HIGHWAY_SPEED_DEFAULTS:
+                        best_road = element
+            
+            if best_road:
+                tags = best_road.get("tags", {})
+                highway_type = tags.get("highway", "")
+                road_name = tags.get("name") or tags.get("ref") or f"{highway_type.replace('_', ' ').title()}"
+                road_name = sanitize_string(road_name, 100)
+                
+                estimated_limit = HIGHWAY_SPEED_DEFAULTS.get(highway_type)
+                
+                if estimated_limit:
                     result = {
-                        "speed_limit": speed_limit,
-                        "unit": unit,
+                        "speed_limit": estimated_limit,
+                        "unit": "mph",
                         "road_name": road_name,
-                        "source": "openstreetmap"
+                        "source": "estimated"
                     }
                     set_cached_speed_limit(lat, lon, result)
                     return SpeedLimitResponse(**result)
-                
-                # No explicit maxspeed found - try to get highway type for fallback
-                response2 = await http_client.post(
-                    OVERPASS_URL,
-                    data={"data": query_any_highway},
-                    headers={"Content-Type": "application/x-www-form-urlencoded"}
-                )
-                response2.raise_for_status()
+    
+    # No data found after all attempts
+    logger.info(f"No speed limit data found for {lat}, {lon} after searching all radii")
+    result = {
+        "speed_limit": None,
+        "unit": "mph",
+        "road_name": None,
+        "source": "none"
+    }
+    set_cached_speed_limit(lat, lon, result)
+    return SpeedLimitResponse(**result)
                 data2 = response2.json()
                 
                 if data2.get("elements") and len(data2["elements"]) > 0:
