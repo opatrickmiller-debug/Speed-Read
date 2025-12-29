@@ -591,12 +591,12 @@ export default function SpeedMap() {
   // Get current language info for display
   const currentLangInfo = AVAILABLE_LANGUAGES.find(l => l.code === voiceLanguage) || AVAILABLE_LANGUAGES[0];
 
-  // Speed prediction - look ahead for lower speed zones (only when moving)
+  // Speed prediction - DISABLED until core speed limit is more stable
   const { prediction: speedPrediction } = useSpeedPrediction(
     currentPosition,
     bearing,
     speedLimit,
-    speedPredictionEnabled && !demoMode && currentSpeed > 5  // Only predict when moving
+    false  // Disabled for now
   );
 
   // ==================== TRIP RECORDING ====================
