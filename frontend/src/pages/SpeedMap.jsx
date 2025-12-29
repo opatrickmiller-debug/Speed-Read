@@ -814,13 +814,15 @@ export default function SpeedMap() {
           setRoadName(cached.roadName);
           lastKnownSpeedLimitRef.current = convertedLimit;
           lastKnownRoadNameRef.current = cached.roadName;
+          lastKnownTimestampRef.current = Date.now();
           setIsUsingCache(true);
           return;
         }
       }
       
-      // Fall back to last known good value (sticky)
-      if (lastKnownSpeedLimitRef.current !== null) {
+      // Fall back to last known good value (sticky) - with time limit
+      const stickyAge = lastKnownTimestampRef.current ? Date.now() - lastKnownTimestampRef.current : Infinity;
+      if (lastKnownSpeedLimitRef.current !== null && stickyAge < STICKY_MAX_AGE_MS) {
         setSpeedLimit(lastKnownSpeedLimitRef.current);
         setRoadName(lastKnownRoadNameRef.current);
         setIsUsingCache(true);
