@@ -217,6 +217,10 @@ export default function SpeedMap() {
   const [isUsingCache, setIsUsingCache] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   
+  // Ref to track last known good speed limit (survives re-renders and API gaps)
+  const lastKnownSpeedLimitRef = useRef(null);
+  const lastKnownRoadNameRef = useRef(null);
+  
   // Auto-wake backend on component mount
   useEffect(() => {
     let isMounted = true;
