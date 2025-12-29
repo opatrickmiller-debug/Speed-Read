@@ -797,7 +797,40 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
         
         return best_road if best_road else elements[0]
     
-    # Try progressive search radii
+    # STEP 1: First try to find a motorway/trunk within a larger radius
+    # This ensures we detect highways even when GPS is slightly off
+    motorway_query = f"""
+    [out:json][timeout:10];
+    (
+      way(around:500,{lat},{lon})["highway"="motorway"]["maxspeed"];
+      way(around:500,{lat},{lon})["highway"="trunk"]["maxspeed"];
+    );
+    out body;
+    """
+    
+    motorway_data = await query_overpass_with_fallback(motorway_query)
+    
+    if motorway_data and motorway_data.get("elements"):
+        road = motorway_data["elements"][0]
+        tags = road.get("tags", {})
+        maxspeed = tags.get("maxspeed", "")
+        road_name = tags.get("name") or tags.get("ref") or "Highway"
+        road_name = sanitize_string(road_name, 100)
+        
+        speed_limit, unit = parse_maxspeed(maxspeed)
+        
+        if speed_limit:
+            logger.info(f"HIGHWAY DETECTED: {road_name} with {speed_limit} {unit}")
+            result = {
+                "speed_limit": speed_limit,
+                "unit": unit,
+                "road_name": road_name,
+                "source": "openstreetmap"
+            }
+            set_cached_speed_limit(lat, lon, result)
+            return SpeedLimitResponse(**result)
+    
+    # STEP 2: No motorway found - try progressive search for any road
     for radius in SEARCH_RADII:
         # First try to get roads with explicit maxspeed
         query_maxspeed = make_maxspeed_query(radius)
