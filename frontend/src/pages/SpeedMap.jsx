@@ -773,19 +773,24 @@ export default function SpeedMap() {
         setRoadName(road_name);
         lastKnownSpeedLimitRef.current = convertedLimit;
         lastKnownRoadNameRef.current = road_name;
+        lastKnownTimestampRef.current = Date.now();
         setIsUsingCache(false);
       } else {
-        // API returned null - use last known good value (sticky behavior)
-        // This prevents the speed limit from disappearing during brief API gaps
-        if (lastKnownSpeedLimitRef.current !== null) {
-          // Keep showing last known speed limit
+        // API returned null - check if we should use sticky value
+        const stickyAge = lastKnownTimestampRef.current ? Date.now() - lastKnownTimestampRef.current : Infinity;
+        const canUseSticky = lastKnownSpeedLimitRef.current !== null && stickyAge < STICKY_MAX_AGE_MS;
+        
+        if (canUseSticky) {
+          // Keep showing last known speed limit (within 30 sec window)
           setSpeedLimit(lastKnownSpeedLimitRef.current);
           setRoadName(lastKnownRoadNameRef.current);
-          setIsUsingCache(true); // Indicate we're using cached/sticky value
+          setIsUsingCache(true);
         } else {
-          // No previous value exists
+          // Sticky value too old or doesn't exist - show no data
           setSpeedLimit(null);
           setRoadName(null);
+          lastKnownSpeedLimitRef.current = null;
+          lastKnownRoadNameRef.current = null;
           setIsUsingCache(false);
         }
       }
