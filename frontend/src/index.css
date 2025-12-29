@@ -23,6 +23,28 @@ code {
   font-family: 'Chivo', sans-serif;
 }
 
+/* Leaflet map z-index fix - ensure UI elements appear above the map */
+.leaflet-container {
+  z-index: 0 !important;
+}
+
+.leaflet-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-tile-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-overlay-pane {
+  z-index: 2 !important;
+}
+
+.leaflet-marker-pane {
+  z-index: 3 !important;
+}
+
+
 @layer base {
   :root {
     --background: 240 10% 3.9%;
