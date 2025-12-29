@@ -1080,36 +1080,46 @@ export default function SpeedMap() {
         />
       )}
       
-      {/* Google Map */}
+      {/* OpenStreetMap - Same data source as speed limits for better accuracy! */}
       {isLoaded ? (
-        <GoogleMap
-          mapContainerStyle={mapContainerStyle}
-          center={currentPosition || defaultCenter}
+        <MapContainer
+          ref={mapRef}
+          center={currentPosition ? [currentPosition.lat, currentPosition.lng] : [defaultCenter.lat, defaultCenter.lng]}
           zoom={17}
-          onLoad={onMapLoad}
-          options={{
-            styles: theme === "dark" ? darkMapStyle : lightMapStyle,
-            disableDefaultUI: true,
-            zoomControl: false,
-            mapTypeControl: false,
-            streetViewControl: false,
-            fullscreenControl: false,
-          }}
+          style={mapContainerStyle}
+          zoomControl={false}
+          attributionControl={false}
         >
+          <TileLayer
+            url={theme === "dark" ? OSM_TILE_DARK : OSM_TILE_LIGHT}
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          />
+          
+          {/* Update map center when position changes */}
+          <MapUpdater center={currentPosition} />
+          
+          {/* User location marker */}
           {currentPosition && (
-            <Marker
-              position={currentPosition}
-              icon={{
-                path: window.google?.maps?.SymbolPath?.CIRCLE || 0,
-                scale: 10,
-                fillColor: isSpeeding ? "#ef4444" : "#38bdf8",
-                fillOpacity: 1,
-                strokeColor: "#ffffff",
-                strokeWeight: 3,
-              }}
-            />
+            <>
+              {/* Accuracy circle */}
+              <Circle
+                center={[currentPosition.lat, currentPosition.lng]}
+                radius={15}
+                pathOptions={{
+                  color: isSpeeding ? '#ef4444' : '#38bdf8',
+                  fillColor: isSpeeding ? '#ef4444' : '#38bdf8',
+                  fillOpacity: 0.2,
+                  weight: 2,
+                }}
+              />
+              {/* User marker */}
+              <Marker
+                position={[currentPosition.lat, currentPosition.lng]}
+                icon={createUserMarker(isSpeeding)}
+              />
+            </>
           )}
-        </GoogleMap>
+        </MapContainer>
       ) : (
         <div className="h-full w-full flex items-center justify-center">
           <div className="text-zinc-500 font-mono animate-pulse">Loading map...</div>
