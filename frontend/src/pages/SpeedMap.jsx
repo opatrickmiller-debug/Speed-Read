@@ -960,17 +960,16 @@ export default function SpeedMap() {
     };
   }, [demoMode, fetchSpeedLimit]);
 
-  // Center map on current position
+  // Center map on current position - will be handled by map ref
+  const mapRef = useRef(null);
+  
   const centerOnPosition = useCallback(() => {
-    if (currentPosition && map) {
-      map.panTo(currentPosition);
-      map.setZoom(17);
+    if (currentPosition && mapRef.current) {
+      mapRef.current.setView([currentPosition.lat, currentPosition.lng], 17);
     }
-  }, [currentPosition, map]);
+  }, [currentPosition]);
 
-  const onMapLoad = useCallback((mapInstance) => {
-    setMap(mapInstance);
-  }, []);
+  // No map load callback needed for Leaflet
 
   if (loadError) {
     return (
