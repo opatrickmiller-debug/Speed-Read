@@ -221,7 +221,7 @@ export default function SpeedMap() {
   const lastKnownSpeedLimitRef = useRef(null);
   const lastKnownRoadNameRef = useRef(null);
   const lastKnownTimestampRef = useRef(null);
-  const STICKY_MAX_AGE_MS = 30000; // Only keep sticky value for 30 seconds max
+  const STICKY_MAX_AGE_MS = 120000; // Keep sticky value for 2 minutes (increased from 30s)
   
   // Auto-wake backend on component mount
   useEffect(() => {
