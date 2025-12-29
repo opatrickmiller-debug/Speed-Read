@@ -29,22 +29,45 @@ from passlib.context import CryptContext
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# ==================== SPEED LIMIT CACHE ====================
+# ==================== SPEED LIMIT CACHE (IMPROVED) ====================
 # In-memory cache for speed limits to reduce API calls
 speed_limit_cache: Dict[str, Any] = {}
-CACHE_TTL = 300  # 5 minutes cache
-CACHE_MAX_SIZE = 1000
+
+# Cache TTL based on source - speed limits rarely change
+CACHE_TTL_EXPLICIT = 3600  # 1 hour for explicit OSM speed limits
+CACHE_TTL_ESTIMATED = 1800  # 30 min for estimated limits
+CACHE_TTL_ERROR = 120  # 2 min for errors (retry sooner)
+CACHE_MAX_SIZE = 2000  # Increased cache size
+
+# Multiple Overpass API servers for redundancy
+OVERPASS_SERVERS = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+    "https://overpass.openstreetmap.ru/api/interpreter",
+]
 
 def get_cache_key(lat: float, lon: float) -> str:
     """Round coordinates to ~100m precision for cache key"""
     return f"{round(lat, 3)},{round(lon, 3)}"
+
+def get_cache_ttl(source: str) -> int:
+    """Get appropriate TTL based on data source"""
+    if source == "openstreetmap":
+        return CACHE_TTL_EXPLICIT
+    elif source == "estimated":
+        return CACHE_TTL_ESTIMATED
+    elif source in ("error", "none"):
+        return CACHE_TTL_ERROR
+    return CACHE_TTL_ESTIMATED
 
 def get_cached_speed_limit(lat: float, lon: float) -> Optional[dict]:
     """Get cached speed limit if available and not expired"""
     key = get_cache_key(lat, lon)
     if key in speed_limit_cache:
         entry = speed_limit_cache[key]
-        if time.time() - entry['timestamp'] < CACHE_TTL:
+        ttl = get_cache_ttl(entry['data'].get('source', 'estimated'))
+        if time.time() - entry['timestamp'] < ttl:
             return entry['data']
         else:
             del speed_limit_cache[key]
@@ -58,7 +81,7 @@ def set_cached_speed_limit(lat: float, lon: float, data: dict):
         # Remove oldest entries
         sorted_keys = sorted(speed_limit_cache.keys(), 
                            key=lambda k: speed_limit_cache[k]['timestamp'])
-        for k in sorted_keys[:100]:
+        for k in sorted_keys[:200]:
             del speed_limit_cache[k]
     
     key = get_cache_key(lat, lon)
@@ -66,6 +89,33 @@ def set_cached_speed_limit(lat: float, lon: float, data: dict):
         'timestamp': time.time(),
         'data': data
     }
+
+async def query_overpass_with_fallback(query: str, timeout: float = 10.0) -> Optional[dict]:
+    """Query Overpass API with fallback to backup servers"""
+    import random
+    
+    # Shuffle servers to distribute load
+    servers = OVERPASS_SERVERS.copy()
+    random.shuffle(servers)
+    
+    last_error = None
+    for server_url in servers:
+        try:
+            async with httpx.AsyncClient(timeout=timeout) as http_client:
+                response = await http_client.post(
+                    server_url,
+                    data={"data": query},
+                    headers={"Content-Type": "application/x-www-form-urlencoded"}
+                )
+                response.raise_for_status()
+                return response.json()
+        except Exception as e:
+            last_error = e
+            logger.debug(f"Overpass server {server_url} failed: {str(e)}")
+            continue
+    
+    logger.warning(f"All Overpass servers failed. Last error: {last_error}")
+    return None
 
 # ==================== GOOGLE ROADS API SERVICE ====================
 GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', '')
