@@ -534,11 +534,8 @@ export default function SpeedMap() {
   // Get auth context
   const { isAuthenticated } = useAuth();
 
-  // Load Google Maps
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-  });
+  // Map is always loaded with Leaflet (no API key needed!)
+  const isLoaded = true;
 
   // Calculate dynamic threshold based on speed limit
   const getDynamicThreshold = (limit) => {
