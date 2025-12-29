@@ -971,17 +971,6 @@ export default function SpeedMap() {
 
   // No map load callback needed for Leaflet
 
-  if (loadError) {
-    return (
-      <div className="h-screen w-screen bg-zinc-950 flex items-center justify-center">
-        <div className="text-center text-red-500">
-          <p className="text-xl font-mono">Map failed to load</p>
-          <p className="text-sm text-zinc-500 mt-2">Check your Google Maps API key</p>
-        </div>
-      </div>
-    );
-  }
-
   // Show onboarding for first-time users
   if (!isCheckingOnboarding && showOnboarding) {
     return <OnboardingFlow onComplete={completeOnboarding} />;
