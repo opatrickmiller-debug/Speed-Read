@@ -754,6 +754,36 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
         
         return None, "mph"
     
+    # Road type priority - higher priority roads should be selected first
+    ROAD_PRIORITY = {
+        "motorway": 1, "motorway_link": 2,
+        "trunk": 3, "trunk_link": 4,
+        "primary": 5, "primary_link": 6,
+        "secondary": 7, "secondary_link": 8,
+        "tertiary": 9, "tertiary_link": 10,
+        "residential": 11, "unclassified": 12,
+        "living_street": 13, "service": 14
+    }
+    
+    def get_best_road(elements):
+        """Select the most significant road from results (prioritize highways)"""
+        if not elements:
+            return None
+        
+        best_road = None
+        best_priority = 999
+        
+        for element in elements:
+            tags = element.get("tags", {})
+            highway_type = tags.get("highway", "")
+            priority = ROAD_PRIORITY.get(highway_type, 100)
+            
+            if priority < best_priority:
+                best_priority = priority
+                best_road = element
+        
+        return best_road if best_road else elements[0]
+    
     # Try progressive search radii
     for radius in SEARCH_RADII:
         # First try to get roads with explicit maxspeed
@@ -761,8 +791,8 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
         data = await query_overpass_with_fallback(query_maxspeed)
         
         if data and data.get("elements"):
-            # Find the best road (closest or most significant)
-            road = data["elements"][0]
+            # Find the BEST road (prioritize highways over local streets)
+            road = get_best_road(data["elements"])
             tags = road.get("tags", {})
             maxspeed = tags.get("maxspeed", "")
             road_name = tags.get("name") or tags.get("ref") or "Unknown Road"
