@@ -882,9 +882,7 @@ export default function SpeedMap() {
         // Update bearing for speed prediction
         updateBearing(latitude, longitude);
         
-        if (map) {
-          map.panTo({ lat: latitude, lng: longitude });
-        }
+        // Map panning is handled by MapUpdater component in Leaflet
       },
       (error) => {
         console.error("Geolocation error:", error);
