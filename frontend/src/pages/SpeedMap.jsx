@@ -790,10 +790,10 @@ export default function SpeedMap() {
     } catch (error) {
       console.error("Error fetching speed limit:", error);
       
-      // Keep last known speed limit on error (don't reset)
-      // This prevents the display from flickering
+      // On error, use sticky behavior - keep last known speed limit
+      // This prevents the display from flickering during network issues
       
-      // Fallback to cache on error
+      // First try offline cache
       if (offlineCacheEnabled) {
         const cached = getCachedSpeedLimit(lat, lon);
         if (cached) {
@@ -805,8 +805,18 @@ export default function SpeedMap() {
           }
           setSpeedLimit(convertedLimit);
           setRoadName(cached.roadName);
+          lastKnownSpeedLimitRef.current = convertedLimit;
+          lastKnownRoadNameRef.current = cached.roadName;
           setIsUsingCache(true);
+          return;
         }
+      }
+      
+      // Fall back to last known good value (sticky)
+      if (lastKnownSpeedLimitRef.current !== null) {
+        setSpeedLimit(lastKnownSpeedLimitRef.current);
+        setRoadName(lastKnownRoadNameRef.current);
+        setIsUsingCache(true);
       }
     } finally {
       setIsLoadingSpeedLimit(false);
