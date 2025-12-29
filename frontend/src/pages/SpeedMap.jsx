@@ -898,7 +898,7 @@ export default function SpeedMap() {
     return () => {
       navigator.geolocation.clearWatch(watchId);
     };
-  }, [map, calculateSpeed, fetchSpeedLimit, demoMode, updateBearing]);
+  }, [calculateSpeed, fetchSpeedLimit, demoMode, updateBearing]);
 
   // Record trip data points every 5 seconds while recording
   useEffect(() => {
