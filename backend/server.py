@@ -660,7 +660,7 @@ async def root(request: Request):
 async def get_speed_limit(request: Request, lat: float, lon: float):
     """
     Fetch speed limit for a given location using OpenStreetMap Overpass API.
-    Falls back to highway type-based estimation if no explicit speed limit is found.
+    Uses multiple backup servers and falls back to highway type-based estimation.
     """
     # Validate coordinates
     if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
@@ -671,27 +671,57 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
     if cached:
         return SpeedLimitResponse(**cached)
     
-    # US Highway type to typical speed limit mapping (in mph)
+    # Expanded US Highway type to typical speed limit mapping (in mph)
+    # Based on MUTCD and state DOT guidelines
     HIGHWAY_SPEED_DEFAULTS = {
-        "motorway": 70,      # Interstate highways
-        "motorway_link": 55, # On/off ramps (increased for safety)
-        "trunk": 65,         # US highways
-        "trunk_link": 45,
-        "primary": 55,       # State highways
-        "primary_link": 40,
-        "secondary": 45,     # County roads
-        "secondary_link": 35,
-        "tertiary": 40,      # Local through roads
-        "tertiary_link": 30,
-        "residential": 25,   # Residential streets
-        "unclassified": 35,  # Rural roads
-        "living_street": 20,
-        "service": 15,
+        # Major highways
+        "motorway": 70,           # Interstate highways
+        "motorway_link": 45,      # On/off ramps
+        "trunk": 65,              # US highways
+        "trunk_link": 40,
+        "primary": 55,            # State highways
+        "primary_link": 35,
+        "secondary": 45,          # County roads
+        "secondary_link": 30,
+        "tertiary": 35,           # Local through roads
+        "tertiary_link": 25,
+        # Local roads
+        "residential": 25,        # Residential streets
+        "unclassified": 45,       # Rural roads (often higher)
+        "living_street": 15,      # Shared space streets
+        "service": 15,            # Parking lots, driveways
+        # Special road types
+        "track": 25,              # Agricultural/forest roads
+        "road": 35,               # Unknown road type
+        "busway": 35,             # Bus-only roads
+        "raceway": 45,            # Racing circuits (when public)
+        # Urban/pedestrian (low speed)
+        "pedestrian": 10,
+        "footway": 10,
+        "cycleway": 15,
+        "bridleway": 15,
+        "path": 15,
+        "steps": 5,
     }
     
-    # Increased search radius for better coverage
-    SEARCH_RADIUS_MAXSPEED = 100  # meters for roads with explicit speed limits
-    SEARCH_RADIUS_HIGHWAY = 150   # meters for any highway (fallback)
+    # Progressive search radius - start small, expand if needed
+    SEARCH_RADII = [75, 150, 300]  # meters
+    
+    # Query template for explicit maxspeed
+    def make_maxspeed_query(radius):
+        return f"""
+        [out:json][timeout:10];
+        way(around:{radius},{lat},{lon})["highway"]["maxspeed"];
+        out body;
+        """
+    
+    # Query template for any highway (fallback)
+    def make_highway_query(radius):
+        return f"""
+        [out:json][timeout:10];
+        way(around:{radius},{lat},{lon})["highway"];
+        out body;
+        """
     
     # First try to get explicit maxspeed
     query_with_maxspeed = f"""
