@@ -1069,8 +1069,8 @@ export default function SpeedMap() {
         />
       )}
       
-      {/* Speed Prediction Banner - DISABLED until core speed limit is more stable */}
-      {/* {speedPredictionEnabled && speedPrediction && currentSpeed > 5 && (
+      {/* Speed Prediction Banner - only shows at highway speeds (45+ mph) */}
+      {speedPredictionEnabled && speedPrediction && currentSpeed >= PREDICTION_SPEED_THRESHOLD && (
         <SpeedPredictionBanner
           prediction={speedPrediction}
           currentSpeedLimit={speedLimit}
@@ -1078,7 +1078,7 @@ export default function SpeedMap() {
           theme={theme}
           onDismiss={() => setShowPredictionBanner(false)}
         />
-      )} */}
+      )}
       
       {/* OpenStreetMap - Same data source as speed limits for better accuracy! */}
       {isLoaded ? (
