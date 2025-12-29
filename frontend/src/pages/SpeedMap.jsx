@@ -1095,8 +1095,8 @@ export default function SpeedMap() {
         />
       )}
       
-      {/* Speed Prediction Banner */}
-      {speedPredictionEnabled && speedPrediction && (
+      {/* Speed Prediction Banner - only show when moving (> 5 mph) */}
+      {speedPredictionEnabled && speedPrediction && currentSpeed > 5 && (
         <SpeedPredictionBanner
           prediction={speedPrediction}
           currentSpeedLimit={speedLimit}
