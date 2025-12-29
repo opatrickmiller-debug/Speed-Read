@@ -107,7 +107,46 @@ const versionUpdated = checkAppVersion();
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
-const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+
+// OpenStreetMap tile URLs - using the same data source as speed limits!
+const OSM_TILE_DARK = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+const OSM_TILE_LIGHT = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+
+// Fix Leaflet default marker icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
+
+// Custom user location marker
+const createUserMarker = (isSpeeding) => {
+  return L.divIcon({
+    className: 'user-location-marker',
+    html: `<div style="
+      width: 24px;
+      height: 24px;
+      background-color: ${isSpeeding ? '#ef4444' : '#38bdf8'};
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    "></div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  });
+};
+
+// Component to update map center when position changes
+const MapUpdater = ({ center }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.setView([center.lat, center.lng], map.getZoom());
+    }
+  }, [center, map]);
+  return null;
+};
 
 // Auto-wake backend servers on app load
 const wakeBackendServers = async () => {
