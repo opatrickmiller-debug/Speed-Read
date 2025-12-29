@@ -1260,7 +1260,9 @@ export default function SpeedMap() {
             />
             <SpeedLimitSign
               speedLimit={speedLimit}
+              lastKnownLimit={lastKnownSpeedLimitRef.current}
               roadName={roadName}
+              lastKnownRoadName={lastKnownRoadNameRef.current}
               isLoading={isLoadingSpeedLimit}
               isCached={isUsingCache}
               theme={theme}
