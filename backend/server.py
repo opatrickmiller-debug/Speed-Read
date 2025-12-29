@@ -797,20 +797,80 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
         
         return best_road if best_road else elements[0]
     
-    # STEP 1: Find the closest road with explicit speed limit (small radius first)
-    # This ensures we get the road the user is actually on, not a nearby highway
-    for radius in [50, 100, 150]:  # Start very small
-        query = f"""
-        [out:json][timeout:10];
-        way(around:{radius},{lat},{lon})["highway"]["maxspeed"];
-        out body;
-        """
+    def calculate_point_to_segment_distance(px, py, x1, y1, x2, y2):
+        """Calculate perpendicular distance from point (px,py) to line segment (x1,y1)-(x2,y2)"""
+        import math
         
-        data = await query_overpass_with_fallback(query)
+        # Vector from p1 to p2
+        dx = x2 - x1
+        dy = y2 - y1
         
-        if data and data.get("elements"):
-            # At small radius, take the first result (closest road)
-            road = data["elements"][0]
+        # If segment is a point
+        if dx == 0 and dy == 0:
+            return math.sqrt((px - x1)**2 + (py - y1)**2)
+        
+        # Parameter t for closest point on line
+        t = max(0, min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)))
+        
+        # Closest point on segment
+        closest_x = x1 + t * dx
+        closest_y = y1 + t * dy
+        
+        # Distance in degrees, convert to approximate meters (at mid-latitudes)
+        dist_deg = math.sqrt((px - closest_x)**2 + (py - closest_y)**2)
+        dist_meters = dist_deg * 111000  # Rough conversion
+        
+        return dist_meters
+    
+    def find_closest_road_with_geometry(elements, user_lat, user_lon):
+        """Find the road with minimum perpendicular distance to user position"""
+        if not elements:
+            return None
+        
+        closest_road = None
+        min_distance = float('inf')
+        
+        for element in elements:
+            geometry = element.get("geometry", [])
+            if len(geometry) < 2:
+                continue
+            
+            # Calculate minimum distance to any segment of this road
+            road_min_dist = float('inf')
+            for i in range(len(geometry) - 1):
+                p1 = geometry[i]
+                p2 = geometry[i + 1]
+                dist = calculate_point_to_segment_distance(
+                    user_lon, user_lat,  # Note: lon=x, lat=y
+                    p1.get("lon", 0), p1.get("lat", 0),
+                    p2.get("lon", 0), p2.get("lat", 0)
+                )
+                road_min_dist = min(road_min_dist, dist)
+            
+            if road_min_dist < min_distance:
+                min_distance = road_min_dist
+                closest_road = element
+        
+        if closest_road:
+            logger.info(f"Closest road is {min_distance:.1f}m away: {closest_road.get('tags', {}).get('name', 'Unknown')}")
+        
+        return closest_road
+    
+    # STEP 1: Get roads with geometry and find the ACTUAL closest one
+    # Use "out geom" to get road coordinates for accurate distance calculation
+    query_with_geom = f"""
+    [out:json][timeout:10];
+    way(around:75,{lat},{lon})["highway"]["maxspeed"];
+    out body geom;
+    """
+    
+    data = await query_overpass_with_fallback(query_with_geom)
+    
+    if data and data.get("elements"):
+        # Find the road with minimum perpendicular distance
+        road = find_closest_road_with_geometry(data["elements"], lat, lon)
+        
+        if road:
             tags = road.get("tags", {})
             maxspeed = tags.get("maxspeed", "")
             highway_type = tags.get("highway", "")
@@ -820,7 +880,7 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
             speed_limit, unit = parse_maxspeed(maxspeed)
             
             if speed_limit:
-                logger.info(f"Found road at {radius}m: {road_name} ({highway_type}) - {speed_limit} {unit}")
+                logger.info(f"CLOSEST ROAD: {road_name} ({highway_type}) - {speed_limit} {unit}")
                 result = {
                     "speed_limit": speed_limit,
                     "unit": unit,
@@ -830,9 +890,8 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
                 set_cached_speed_limit(lat, lon, result)
                 return SpeedLimitResponse(**result)
     
-    # STEP 2: No road with explicit speed limit found nearby
-    # Try larger radius but prioritize by road type
-    for radius in SEARCH_RADII:
+    # STEP 2: No road with geometry found - try progressively larger radius
+    for radius in [100, 150, 200]:
         # First try to get roads with explicit maxspeed
         query_maxspeed = make_maxspeed_query(radius)
         data = await query_overpass_with_fallback(query_maxspeed)
