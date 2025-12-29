@@ -929,35 +929,26 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
         way(around:{radius},{lat},{lon})["highway"];
         out body geom;
         """
-        data2 = await query_overpass_with_fallback(query_highway)
+        data2 = await query_overpass_with_fallback(query_highway_geom)
         
         if data2 and data2.get("elements"):
-            # Find the most significant road type
-            priority_order = ["motorway", "trunk", "primary", "secondary", 
-                            "tertiary", "residential", "unclassified", "service"]
-            best_road = None
-            best_priority = 999
-            
+            # Filter to only driveable roads
+            driveable_roads = []
             for element in data2["elements"]:
                 tags = element.get("tags", {})
                 highway_type = tags.get("highway", "")
-                
                 # Skip non-road types
-                if highway_type in ("footway", "cycleway", "path", "steps", "pedestrian"):
-                    continue
-                
-                try:
-                    priority = priority_order.index(highway_type)
-                    if priority < best_priority:
-                        best_priority = priority
-                        best_road = element
-                except ValueError:
-                    # Highway type not in priority list
-                    if best_road is None and highway_type in HIGHWAY_SPEED_DEFAULTS:
-                        best_road = element
+                if highway_type not in ("footway", "cycleway", "path", "steps", "pedestrian", "bridleway"):
+                    if highway_type in HIGHWAY_SPEED_DEFAULTS:
+                        driveable_roads.append(element)
             
-            if best_road:
-                tags = best_road.get("tags", {})
+            if driveable_roads:
+                # Find the closest driveable road using geometry
+                closest_road = find_closest_road_with_geometry(driveable_roads, lat, lon)
+                if not closest_road:
+                    closest_road = driveable_roads[0]
+                
+                tags = closest_road.get("tags", {})
                 highway_type = tags.get("highway", "")
                 road_name = tags.get("name") or tags.get("ref") or f"{highway_type.replace('_', ' ').title()}"
                 road_name = sanitize_string(road_name, 100)
