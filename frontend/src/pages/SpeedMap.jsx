@@ -776,29 +776,25 @@ export default function SpeedMap() {
         lastKnownTimestampRef.current = Date.now();
         setIsUsingCache(false);
       } else {
-        // API returned null - check if we should use sticky value
-        const stickyAge = lastKnownTimestampRef.current ? Date.now() - lastKnownTimestampRef.current : Infinity;
-        const canUseSticky = lastKnownSpeedLimitRef.current !== null && stickyAge < STICKY_MAX_AGE_MS;
-        
-        if (canUseSticky) {
-          // Keep showing last known speed limit (within 30 sec window)
+        // API returned null - ALWAYS use sticky value if we have one
+        // This prevents the speed limit from ever disappearing once we have data
+        if (lastKnownSpeedLimitRef.current !== null) {
+          // Keep showing last known speed limit indefinitely
           setSpeedLimit(lastKnownSpeedLimitRef.current);
           setRoadName(lastKnownRoadNameRef.current);
           setIsUsingCache(true);
+          console.log("Using sticky speed limit:", lastKnownSpeedLimitRef.current);
         } else {
-          // Sticky value too old or doesn't exist - show no data
+          // No previous value exists at all
           setSpeedLimit(null);
           setRoadName(null);
-          lastKnownSpeedLimitRef.current = null;
-          lastKnownRoadNameRef.current = null;
           setIsUsingCache(false);
         }
       }
     } catch (error) {
       console.error("Error fetching speed limit:", error);
       
-      // On error, use sticky behavior - keep last known speed limit
-      // This prevents the display from flickering during network issues
+      // On error, ALWAYS use sticky behavior - keep last known speed limit
       
       // First try offline cache
       if (offlineCacheEnabled) {
@@ -820,9 +816,8 @@ export default function SpeedMap() {
         }
       }
       
-      // Fall back to last known good value (sticky) - with time limit
-      const stickyAge = lastKnownTimestampRef.current ? Date.now() - lastKnownTimestampRef.current : Infinity;
-      if (lastKnownSpeedLimitRef.current !== null && stickyAge < STICKY_MAX_AGE_MS) {
+      // Fall back to last known good value (sticky) - NO timeout
+      if (lastKnownSpeedLimitRef.current !== null) {
         setSpeedLimit(lastKnownSpeedLimitRef.current);
         setRoadName(lastKnownRoadNameRef.current);
         setIsUsingCache(true);
