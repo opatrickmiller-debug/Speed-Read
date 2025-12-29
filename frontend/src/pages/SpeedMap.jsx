@@ -1068,8 +1068,8 @@ export default function SpeedMap() {
         />
       )}
       
-      {/* Speed Prediction Banner - only show when moving (> 5 mph) */}
-      {speedPredictionEnabled && speedPrediction && currentSpeed > 5 && (
+      {/* Speed Prediction Banner - DISABLED until core speed limit is more stable */}
+      {/* {speedPredictionEnabled && speedPrediction && currentSpeed > 5 && (
         <SpeedPredictionBanner
           prediction={speedPrediction}
           currentSpeedLimit={speedLimit}
@@ -1077,7 +1077,7 @@ export default function SpeedMap() {
           theme={theme}
           onDismiss={() => setShowPredictionBanner(false)}
         />
-      )}
+      )} */}
       
       {/* OpenStreetMap - Same data source as speed limits for better accuracy! */}
       {isLoaded ? (
