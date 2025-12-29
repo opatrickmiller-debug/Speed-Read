@@ -190,8 +190,7 @@ const getSavedPosition = () => {
 const defaultCenter = getSavedPosition();
 
 export default function SpeedMap() {
-  // Map state
-  const [map, setMap] = useState(null);
+  // Map state - using ref for Leaflet
   const [currentPosition, setCurrentPosition] = useState(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   
