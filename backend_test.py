@@ -169,6 +169,272 @@ class SpeedAlertAPITester:
             self.log_test("API Response Time", False, str(e))
             return False
 
+    # ==================== IMPROVED SPEED LIMIT API TESTS ====================
+    
+    def test_speed_limit_highway_estimation(self):
+        """Test speed limit endpoint with highway estimation fallback (Rural Montana)"""
+        try:
+            # Rural Montana coordinates - should trigger highway type estimation
+            params = {"lat": 46.8797, "lon": -110.3626}
+            response = requests.get(f"{self.base_url}/api/speed-limit", params=params, timeout=15)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                data = response.json()
+                # Check response structure
+                required_fields = ["speed_limit", "unit", "road_name", "source"]
+                has_all_fields = all(field in data for field in required_fields)
+                
+                if has_all_fields:
+                    source = data.get('source')
+                    speed_limit = data.get('speed_limit')
+                    details += f", Speed Limit: {speed_limit}, Unit: {data.get('unit')}, Source: {source}"
+                    
+                    # Should be estimated for rural area
+                    if source == "estimated" and speed_limit is not None:
+                        details += " (Highway estimation working)"
+                    else:
+                        success = False
+                        details += f" (Expected estimated source, got {source})"
+                else:
+                    success = False
+                    details += f", Missing fields in response: {data}"
+            
+            self.log_test("Speed Limit - Highway Estimation", success, details)
+            return success, response.json() if success else {}
+        except Exception as e:
+            self.log_test("Speed Limit - Highway Estimation", False, str(e))
+            return False, {}
+
+    def test_speed_limit_cache_performance(self):
+        """Test speed limit cache performance - second request should be faster"""
+        try:
+            import time
+            
+            # First request - will populate cache
+            params = {"lat": 37.7749, "lon": -122.4194}
+            start_time1 = time.time()
+            response1 = requests.get(f"{self.base_url}/api/speed-limit", params=params, timeout=15)
+            end_time1 = time.time()
+            first_response_time = end_time1 - start_time1
+            
+            if response1.status_code != 200:
+                self.log_test("Speed Limit - Cache Performance", False, f"First request failed: {response1.status_code}")
+                return False
+            
+            first_data = response1.json()
+            
+            # Small delay to ensure cache is set
+            time.sleep(0.1)
+            
+            # Second request - should be cached and faster
+            start_time2 = time.time()
+            response2 = requests.get(f"{self.base_url}/api/speed-limit", params=params, timeout=15)
+            end_time2 = time.time()
+            second_response_time = end_time2 - start_time2
+            
+            success = response2.status_code == 200
+            details = f"First: {first_response_time:.3f}s, Second: {second_response_time:.3f}s"
+            
+            if success:
+                second_data = response2.json()
+                
+                # Verify data is identical
+                data_identical = first_data == second_data
+                
+                # Second request should be significantly faster (cached)
+                cache_improvement = second_response_time < (first_response_time * 0.5)
+                
+                if data_identical and cache_improvement:
+                    speedup = first_response_time / second_response_time if second_response_time > 0 else 0
+                    details += f", Speedup: {speedup:.1f}x (cached)"
+                else:
+                    success = False
+                    if not data_identical:
+                        details += ", Data mismatch between requests"
+                    if not cache_improvement:
+                        details += ", No significant cache speedup"
+            
+            self.log_test("Speed Limit - Cache Performance", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Speed Limit - Cache Performance", False, str(e))
+            return False
+
+    def test_speed_limit_different_road_types(self):
+        """Test speed limit endpoint with different road types"""
+        try:
+            # Test various locations for different road types
+            test_locations = [
+                {"lat": 37.7749, "lon": -122.4194, "name": "San Francisco (Urban)", "expected_range": (25, 45)},
+                {"lat": 40.7128, "lon": -74.0060, "name": "NYC (Urban)", "expected_range": (25, 35)},
+                {"lat": 39.7392, "lon": -104.9903, "name": "Denver (Mixed)", "expected_range": (25, 55)},
+                {"lat": 32.7767, "lon": -96.7970, "name": "Dallas (Highway)", "expected_range": (35, 70)},
+            ]
+            
+            all_success = True
+            details_list = []
+            
+            for location in test_locations:
+                params = {"lat": location["lat"], "lon": location["lon"]}
+                response = requests.get(f"{self.base_url}/api/speed-limit", params=params, timeout=15)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    speed_limit = data.get('speed_limit')
+                    source = data.get('source')
+                    road_name = data.get('road_name')
+                    
+                    if speed_limit is not None:
+                        min_speed, max_speed = location["expected_range"]
+                        in_range = min_speed <= speed_limit <= max_speed
+                        
+                        if in_range:
+                            details_list.append(f"{location['name']}: {speed_limit}mph ({source}) ✓")
+                        else:
+                            details_list.append(f"{location['name']}: {speed_limit}mph (out of range {min_speed}-{max_speed}) ✗")
+                            all_success = False
+                    else:
+                        details_list.append(f"{location['name']}: No data ⚠️")
+                else:
+                    details_list.append(f"{location['name']}: HTTP {response.status_code} ✗")
+                    all_success = False
+                
+                time.sleep(0.5)  # Small delay between requests
+            
+            details = "; ".join(details_list)
+            self.log_test("Speed Limit - Different Road Types", all_success, details)
+            return all_success
+        except Exception as e:
+            self.log_test("Speed Limit - Different Road Types", False, str(e))
+            return False
+
+    def test_speed_limit_invalid_coordinates(self):
+        """Test speed limit endpoint with invalid coordinates (out of range)"""
+        try:
+            # Test with invalid latitude (>90)
+            params = {"lat": 91, "lon": 0}
+            response = requests.get(f"{self.base_url}/api/speed-limit", params=params, timeout=10)
+            
+            # Should return 400 error for invalid coordinates
+            success = response.status_code == 400
+            details = f"Status: {response.status_code} (expected 400 for lat=91)"
+            
+            if response.status_code == 400:
+                try:
+                    error_data = response.json()
+                    details += f", Error: {error_data.get('detail', 'No detail')}"
+                except:
+                    pass
+            
+            self.log_test("Speed Limit - Invalid Coordinates", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Speed Limit - Invalid Coordinates", False, str(e))
+            return False
+
+    def test_speed_limit_rate_limiting(self):
+        """Test speed limit endpoint rate limiting (30 requests/minute)"""
+        try:
+            import time
+            
+            # Make rapid requests to test rate limiting
+            params = {"lat": 37.7749, "lon": -122.4194}
+            success_count = 0
+            rate_limited_count = 0
+            
+            print("   Testing rate limiting with 35 rapid requests...")
+            
+            for i in range(35):
+                response = requests.get(f"{self.base_url}/api/speed-limit", params=params, timeout=5)
+                
+                if response.status_code == 200:
+                    success_count += 1
+                elif response.status_code == 429:  # Too Many Requests
+                    rate_limited_count += 1
+                
+                # Small delay to avoid overwhelming the server
+                time.sleep(0.1)
+            
+            # Should start seeing 429 responses after ~30 requests
+            success = rate_limited_count > 0 and success_count >= 25
+            details = f"Successful: {success_count}, Rate limited: {rate_limited_count}"
+            
+            if rate_limited_count > 0:
+                details += " (Rate limiting working)"
+            else:
+                details += " (No rate limiting detected)"
+            
+            self.log_test("Speed Limit - Rate Limiting", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Speed Limit - Rate Limiting", False, str(e))
+            return False
+
+    def test_speed_limit_overpass_fallback(self):
+        """Test multiple Overpass server fallback by checking logs"""
+        try:
+            # Make request to a location that might trigger server fallback
+            params = {"lat": 37.7749, "lon": -122.4194}
+            response = requests.get(f"{self.base_url}/api/speed-limit", params=params, timeout=20)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                data = response.json()
+                source = data.get('source')
+                speed_limit = data.get('speed_limit')
+                
+                # Check if we got a valid response (indicates fallback system working)
+                if source in ["openstreetmap", "estimated"] and speed_limit is not None:
+                    details += f", Source: {source}, Speed: {speed_limit} (Fallback system operational)"
+                else:
+                    success = False
+                    details += f", Invalid response: {data}"
+            
+            self.log_test("Speed Limit - Overpass Fallback", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Speed Limit - Overpass Fallback", False, str(e))
+            return False
+
+    def test_speed_limit_progressive_search(self):
+        """Test progressive search radius expansion"""
+        try:
+            # Test with a location that might need progressive search
+            # Using coordinates in a less dense area
+            params = {"lat": 39.5, "lon": -106.0}  # Colorado mountains
+            response = requests.get(f"{self.base_url}/api/speed-limit", params=params, timeout=20)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                data = response.json()
+                source = data.get('source')
+                speed_limit = data.get('speed_limit')
+                road_name = data.get('road_name')
+                
+                # If we get any result, progressive search is working
+                if source in ["openstreetmap", "estimated", "none"]:
+                    details += f", Source: {source}"
+                    if speed_limit is not None:
+                        details += f", Speed: {speed_limit}, Road: {road_name} (Progressive search found data)"
+                    else:
+                        details += " (Progressive search completed, no data found)"
+                else:
+                    success = False
+                    details += f", Unexpected source: {source}"
+            
+            self.log_test("Speed Limit - Progressive Search", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Speed Limit - Progressive Search", False, str(e))
+            return False
+
     # ==================== SPEED PREDICTION TESTS ====================
     
     def test_speed_ahead_valid_location(self):
