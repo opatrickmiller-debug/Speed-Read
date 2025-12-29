@@ -707,19 +707,31 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
     # Progressive search radius - start small, expand if needed
     SEARCH_RADII = [75, 150, 300]  # meters
     
-    # Query template for explicit maxspeed
+    # Query template for explicit maxspeed - prioritize motorways
     def make_maxspeed_query(radius):
         return f"""
         [out:json][timeout:10];
-        way(around:{radius},{lat},{lon})["highway"]["maxspeed"];
+        (
+          way(around:{radius},{lat},{lon})["highway"="motorway"]["maxspeed"];
+          way(around:{radius},{lat},{lon})["highway"="motorway_link"]["maxspeed"];
+          way(around:{radius},{lat},{lon})["highway"="trunk"]["maxspeed"];
+          way(around:{radius},{lat},{lon})["highway"="trunk_link"]["maxspeed"];
+          way(around:{radius},{lat},{lon})["highway"]["maxspeed"];
+        );
         out body;
         """
     
-    # Query template for any highway (fallback)
+    # Query template for any highway (fallback) - prioritize motorways
     def make_highway_query(radius):
         return f"""
         [out:json][timeout:10];
-        way(around:{radius},{lat},{lon})["highway"];
+        (
+          way(around:{radius},{lat},{lon})["highway"="motorway"];
+          way(around:{radius},{lat},{lon})["highway"="motorway_link"];
+          way(around:{radius},{lat},{lon})["highway"="trunk"];
+          way(around:{radius},{lat},{lon})["highway"="trunk_link"];
+          way(around:{radius},{lat},{lon})["highway"];
+        );
         out body;
         """
     
