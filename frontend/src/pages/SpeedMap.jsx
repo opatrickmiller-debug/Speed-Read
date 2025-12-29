@@ -750,7 +750,7 @@ export default function SpeedMap() {
         timeout: 10000,
       });
       
-      const { speed_limit, unit, road_name } = response.data;
+      const { speed_limit, unit, road_name, source } = response.data;
       
       if (speed_limit) {
         // Cache the result
@@ -765,18 +765,27 @@ export default function SpeedMap() {
         } else if (unit === "mph" && speedUnit === "km/h") {
           convertedLimit = Math.round(speed_limit * 1.60934);
         }
+        
+        // Update state and save as last known good value
         setSpeedLimit(convertedLimit);
         setRoadName(road_name);
+        lastKnownSpeedLimitRef.current = convertedLimit;
+        lastKnownRoadNameRef.current = road_name;
         setIsUsingCache(false);
       } else {
-        // Keep last known speed limit if API returns null (don't reset to null)
+        // API returned null - use last known good value (sticky behavior)
         // This prevents the speed limit from disappearing during brief API gaps
-        if (!speedLimit) {
-          // Only set to null if we don't have a previous value
+        if (lastKnownSpeedLimitRef.current !== null) {
+          // Keep showing last known speed limit
+          setSpeedLimit(lastKnownSpeedLimitRef.current);
+          setRoadName(lastKnownRoadNameRef.current);
+          setIsUsingCache(true); // Indicate we're using cached/sticky value
+        } else {
+          // No previous value exists
           setSpeedLimit(null);
           setRoadName(null);
+          setIsUsingCache(false);
         }
-        setIsUsingCache(false);
       }
     } catch (error) {
       console.error("Error fetching speed limit:", error);
