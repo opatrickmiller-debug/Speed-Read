@@ -293,14 +293,14 @@ export function WeatherAlertBanner({ currentPosition, theme = "dark" }) {
     );
   }
 
-  // Minor alerts - small indicator
+  // Minor alerts - small indicator (moved to bottom to avoid overlap)
   if (otherAlerts.length > 0) {
     return (
       <button
         onClick={() => setExpanded(true)}
         className={cn(
-          "fixed top-4 right-20 z-40 flex items-center gap-2 px-3 py-2 rounded-full",
-          "backdrop-blur-xl border transition-all",
+          "fixed bottom-24 left-4 z-40 flex items-center gap-2 px-3 py-2 rounded-full",
+          "backdrop-blur-xl border transition-all shadow-lg",
           theme === "dark" 
             ? "bg-yellow-500/20 border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/30"
             : "bg-yellow-500/30 border-yellow-500 text-yellow-700 hover:bg-yellow-500/40"
