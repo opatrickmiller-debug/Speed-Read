@@ -663,9 +663,15 @@ export default function SpeedMap() {
     }
   }, [currentTripId, currentPosition, speedUnit]);
   
-  // Record data point during trip
+  // Record data point during trip (only when moving)
   const recordDataPoint = useCallback(async (lat, lon, speed, limit, speeding) => {
     if (!isRecording || !currentTripId) return;
+    
+    // Don't record data when stationary (< 2 mph threshold)
+    if (speed < 2) {
+      console.log("Skipping data point - vehicle stationary");
+      return;
+    }
     
     try {
       await axios.post(`${API}/trips/data-point`, {
