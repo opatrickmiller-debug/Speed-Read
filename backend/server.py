@@ -708,40 +708,6 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
     # Increased to better capture highways which may be offset from GPS position
     SEARCH_RADII = [100, 250, 500]  # meters
     
-    # FIRST: Try to find a motorway/trunk specifically (highways get priority)
-    for radius in SEARCH_RADII:
-        motorway_query = f"""
-        [out:json][timeout:10];
-        (
-          way(around:{radius},{lat},{lon})["highway"="motorway"]["maxspeed"];
-          way(around:{radius},{lat},{lon})["highway"="motorway_link"]["maxspeed"];
-          way(around:{radius},{lat},{lon})["highway"="trunk"]["maxspeed"];
-        );
-        out body;
-        """
-        
-        data = await query_overpass_with_fallback(motorway_query)
-        
-        if data and data.get("elements"):
-            road = data["elements"][0]  # First motorway found
-            tags = road.get("tags", {})
-            maxspeed = tags.get("maxspeed", "")
-            road_name = tags.get("name") or tags.get("ref") or "Highway"
-            road_name = sanitize_string(road_name, 100)
-            
-            speed_limit, unit = parse_maxspeed(maxspeed)
-            
-            if speed_limit:
-                logger.info(f"Found highway {road_name} with {speed_limit} {unit} at {lat}, {lon}")
-                result = {
-                    "speed_limit": speed_limit,
-                    "unit": unit,
-                    "road_name": road_name,
-                    "source": "openstreetmap"
-                }
-                set_cached_speed_limit(lat, lon, result)
-                return SpeedLimitResponse(**result)
-    
     # Query template for explicit maxspeed - prioritize motorways
     def make_maxspeed_query(radius):
         return f"""
