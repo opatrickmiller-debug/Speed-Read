@@ -591,12 +591,13 @@ export default function SpeedMap() {
   // Get current language info for display
   const currentLangInfo = AVAILABLE_LANGUAGES.find(l => l.code === voiceLanguage) || AVAILABLE_LANGUAGES[0];
 
-  // Speed prediction - DISABLED until core speed limit is more stable
+  // Speed prediction - only active at highway speeds (45+ mph) for better accuracy
+  const PREDICTION_SPEED_THRESHOLD = 45;
   const { prediction: speedPrediction } = useSpeedPrediction(
     currentPosition,
     bearing,
     speedLimit,
-    false  // Disabled for now
+    speedPredictionEnabled && !demoMode && currentSpeed >= PREDICTION_SPEED_THRESHOLD
   );
 
   // ==================== TRIP RECORDING ====================
