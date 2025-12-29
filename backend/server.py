@@ -705,7 +705,8 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
     }
     
     # Progressive search radius - start small, expand if needed
-    SEARCH_RADII = [75, 150, 300]  # meters
+    # Increased to better capture highways which may be offset from GPS position
+    SEARCH_RADII = [100, 250, 500]  # meters
     
     # Query template for explicit maxspeed - prioritize motorways
     def make_maxspeed_query(radius):
