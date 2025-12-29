@@ -890,15 +890,22 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
                 set_cached_speed_limit(lat, lon, result)
                 return SpeedLimitResponse(**result)
     
-    # STEP 2: No road with geometry found - try progressively larger radius
-    for radius in [100, 150, 200]:
-        # First try to get roads with explicit maxspeed
-        query_maxspeed = make_maxspeed_query(radius)
-        data = await query_overpass_with_fallback(query_maxspeed)
+    # STEP 2: No road with geometry found - try progressively larger radius with geometry
+    for radius in [100, 150, 250]:
+        query_with_geom = f"""
+        [out:json][timeout:10];
+        way(around:{radius},{lat},{lon})["highway"]["maxspeed"];
+        out body geom;
+        """
+        
+        data = await query_overpass_with_fallback(query_with_geom)
         
         if data and data.get("elements"):
-            # Find the BEST road (prioritize highways over local streets)
-            road = get_best_road(data["elements"])
+            # Find the actual closest road using geometry
+            road = find_closest_road_with_geometry(data["elements"], lat, lon)
+            if not road:
+                road = data["elements"][0]  # Fallback to first
+            
             tags = road.get("tags", {})
             maxspeed = tags.get("maxspeed", "")
             road_name = tags.get("name") or tags.get("ref") or "Unknown Road"
@@ -916,8 +923,12 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
                 set_cached_speed_limit(lat, lon, result)
                 return SpeedLimitResponse(**result)
         
-        # No explicit maxspeed - try highway type estimation
-        query_highway = make_highway_query(radius)
+        # No explicit maxspeed - try highway type estimation with geometry
+        query_highway_geom = f"""
+        [out:json][timeout:10];
+        way(around:{radius},{lat},{lon})["highway"];
+        out body geom;
+        """
         data2 = await query_overpass_with_fallback(query_highway)
         
         if data2 and data2.get("elements"):
