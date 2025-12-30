@@ -314,40 +314,61 @@ async def get_speed_limit_from_tomtom(lat: float, lon: float) -> Optional[dict]:
     
     try:
         async with httpx.AsyncClient(timeout=10.0) as http_client:
-            # TomTom Snap to Roads API with speed limit
-            url = f"https://api.tomtom.com/snap/1/points"
+            # TomTom Snap to Roads API (correct endpoint)
+            # Documentation: https://developer.tomtom.com/snap-to-roads-api
+            url = "https://api.tomtom.com/snap-to-roads/1/snap"
             params = {
                 "key": TOMTOM_API_KEY,
                 "points": f"{lat},{lon}",
-                "fields": "{road{speedLimit,freeFlowSpeed,currentSpeed}}",
             }
             
             response = await http_client.get(url, params=params)
             
             if response.status_code != 200:
-                logger.warning(f"TomTom API failed: {response.status_code}")
+                logger.warning(f"TomTom API failed: {response.status_code} - {response.text[:200]}")
                 return None
             
             data = response.json()
             
-            # Parse TomTom response
-            if data.get("points") and len(data["points"]) > 0:
-                point = data["points"][0]
-                road_info = point.get("road", {})
-                
-                speed_limit_kmh = road_info.get("speedLimit")
-                
-                if speed_limit_kmh:
-                    # TomTom returns km/h, convert to mph
-                    speed_limit_mph = round(speed_limit_kmh * 0.621371)
-                    
-                    return {
-                        "speed_limit": speed_limit_mph,
-                        "unit": "mph",
-                        "road_name": road_info.get("name"),
-                        "source": "tomtom"
-                    }
+            # Parse TomTom GeoJSON response
+            # Response contains "features" array with road segments
+            features = data.get("features", [])
             
+            if features and len(features) > 0:
+                feature = features[0]
+                properties = feature.get("properties", {})
+                
+                # Get speed limit info
+                speed_limits = properties.get("speedLimits", {})
+                
+                if speed_limits:
+                    # Can be a dict with value/unit or direct value
+                    if isinstance(speed_limits, dict):
+                        speed_value = speed_limits.get("value")
+                        speed_unit = speed_limits.get("unit", "kmph")
+                    else:
+                        speed_value = speed_limits
+                        speed_unit = "kmph"
+                    
+                    if speed_value:
+                        # Convert to mph if needed
+                        if speed_unit in ("kmph", "km/h", "kph"):
+                            speed_limit_mph = round(speed_value * 0.621371)
+                        else:
+                            speed_limit_mph = round(speed_value)
+                        
+                        # Get road name from address
+                        address = properties.get("address", {})
+                        road_name = address.get("roadName") or address.get("street")
+                        
+                        return {
+                            "speed_limit": speed_limit_mph,
+                            "unit": "mph",
+                            "road_name": road_name,
+                            "source": "tomtom"
+                        }
+            
+            logger.debug(f"TomTom returned no speed limit data for {lat}, {lon}")
             return None
             
     except httpx.TimeoutException:
