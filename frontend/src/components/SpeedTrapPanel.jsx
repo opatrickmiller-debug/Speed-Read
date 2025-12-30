@@ -196,7 +196,7 @@ export function SpeedTrapPanel({ currentPosition }) {
                       </p>
                       <div className="flex items-center gap-2 text-xs text-zinc-500">
                         <MapPin className="w-3 h-3" />
-                        <span>{trap.distance_miles} mi</span>
+                        <span>{formatDistance(trap.distance_miles, 1).formatted}</span>
                         <span>•</span>
                         <span>{trap.reporter_count} report{trap.reporter_count !== 1 ? 's' : ''}</span>
                       </div>
