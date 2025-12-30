@@ -305,7 +305,8 @@ async def get_speed_limit_from_google_roads(lat: float, lon: float) -> Optional[
 
 async def get_speed_limit_from_tomtom(lat: float, lon: float) -> Optional[dict]:
     """
-    Fetch speed limit using TomTom Snap to Roads API as a fallback.
+    Fetch speed limit using TomTom Routing API as a fallback.
+    Uses a short route calculation to get speed limit at the location.
     Requires TOMTOM_API_KEY in .env
     Free tier: 2,500 requests/day
     """
@@ -314,59 +315,49 @@ async def get_speed_limit_from_tomtom(lat: float, lon: float) -> Optional[dict]:
     
     try:
         async with httpx.AsyncClient(timeout=10.0) as http_client:
-            # TomTom Snap to Roads API (correct endpoint)
-            # Documentation: https://developer.tomtom.com/snap-to-roads-api
-            url = "https://api.tomtom.com/snap-to-roads/1/snap"
+            # Create a very short route (just 10 meters ahead) to get speed limit at this point
+            # We offset the destination slightly to create a valid route
+            dest_lat = lat + 0.0001  # ~11 meters north
+            dest_lon = lon + 0.0001  # ~8 meters east
+            
+            url = f"https://api.tomtom.com/routing/1/calculateRoute/{lat},{lon}:{dest_lat},{dest_lon}/json"
             params = {
                 "key": TOMTOM_API_KEY,
-                "points": f"{lat},{lon}",
+                "sectionType": "speedLimit",
             }
             
             response = await http_client.get(url, params=params)
             
             if response.status_code != 200:
-                logger.warning(f"TomTom API failed: {response.status_code} - {response.text[:200]}")
+                logger.warning(f"TomTom Routing API failed: {response.status_code}")
                 return None
             
             data = response.json()
             
-            # Parse TomTom GeoJSON response
-            # Response contains "features" array with road segments
-            features = data.get("features", [])
+            # Parse TomTom routing response for speed limit sections
+            routes = data.get("routes", [])
             
-            if features and len(features) > 0:
-                feature = features[0]
-                properties = feature.get("properties", {})
+            if routes and len(routes) > 0:
+                route = routes[0]
+                sections = route.get("sections", [])
                 
-                # Get speed limit info
-                speed_limits = properties.get("speedLimits", {})
-                
-                if speed_limits:
-                    # Can be a dict with value/unit or direct value
-                    if isinstance(speed_limits, dict):
-                        speed_value = speed_limits.get("value")
-                        speed_unit = speed_limits.get("unit", "kmph")
-                    else:
-                        speed_value = speed_limits
-                        speed_unit = "kmph"
-                    
-                    if speed_value:
-                        # Convert to mph if needed
-                        if speed_unit in ("kmph", "km/h", "kph"):
-                            speed_limit_mph = round(speed_value * 0.621371)
-                        else:
-                            speed_limit_mph = round(speed_value)
+                # Get the first speed limit section (the one at our starting point)
+                for section in sections:
+                    if section.get("sectionType") == "SPEED_LIMIT":
+                        speed_limit_kmh = section.get("maxSpeedLimitInKmh")
                         
-                        # Get road name from address
-                        address = properties.get("address", {})
-                        road_name = address.get("roadName") or address.get("street")
-                        
-                        return {
-                            "speed_limit": speed_limit_mph,
-                            "unit": "mph",
-                            "road_name": road_name,
-                            "source": "tomtom"
-                        }
+                        if speed_limit_kmh:
+                            # Convert km/h to mph
+                            speed_limit_mph = round(speed_limit_kmh * 0.621371)
+                            
+                            logger.info(f"TomTom returned speed limit: {speed_limit_mph} mph for {lat}, {lon}")
+                            
+                            return {
+                                "speed_limit": speed_limit_mph,
+                                "unit": "mph",
+                                "road_name": None,  # Routing API doesn't include road name in sections
+                                "source": "tomtom"
+                            }
             
             logger.debug(f"TomTom returned no speed limit data for {lat}, {lon}")
             return None
