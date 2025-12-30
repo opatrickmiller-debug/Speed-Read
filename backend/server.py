@@ -1165,8 +1165,16 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
                     set_cached_speed_limit(lat, lon, result)
                     return SpeedLimitResponse(**result)
     
+    # OpenStreetMap failed - try TomTom API as fallback (if configured)
+    if TOMTOM_API_KEY:
+        logger.info(f"Trying TomTom API fallback for {lat}, {lon}")
+        tomtom_result = await get_speed_limit_from_tomtom(lat, lon)
+        if tomtom_result and tomtom_result.get("speed_limit"):
+            set_cached_speed_limit(lat, lon, tomtom_result)
+            return SpeedLimitResponse(**tomtom_result)
+    
     # No data found after all attempts
-    logger.info(f"No speed limit data found for {lat}, {lon} after searching all radii")
+    logger.info(f"No speed limit data found for {lat}, {lon} after searching all sources")
     result = {
         "speed_limit": None,
         "unit": "mph",
