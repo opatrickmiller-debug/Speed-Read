@@ -731,6 +731,49 @@ async def health_check():
     """Health check endpoint for server wake-up detection"""
     return {"status": "ok", "message": "Backend is running"}
 
+@api_router.get("/cache-stats")
+async def get_cache_stats():
+    """
+    Get cache statistics for debugging data dropout issues.
+    Shows hit rate, API call counts, and cache size.
+    """
+    global cache_stats
+    
+    total_requests = cache_stats["hits"] + cache_stats["misses"]
+    hit_rate = (cache_stats["hits"] / total_requests * 100) if total_requests > 0 else 0
+    api_success_rate = ((cache_stats["api_calls"] - cache_stats["api_failures"]) / 
+                        cache_stats["api_calls"] * 100) if cache_stats["api_calls"] > 0 else 100
+    
+    uptime_minutes = (time.time() - cache_stats["last_reset"]) / 60
+    
+    return {
+        "cache_size": len(speed_limit_cache),
+        "max_cache_size": CACHE_MAX_SIZE,
+        "cache_hits": cache_stats["hits"],
+        "cache_misses": cache_stats["misses"],
+        "hit_rate_percent": round(hit_rate, 1),
+        "api_calls": cache_stats["api_calls"],
+        "api_failures": cache_stats["api_failures"],
+        "api_success_rate_percent": round(api_success_rate, 1),
+        "uptime_minutes": round(uptime_minutes, 1),
+        "last_successful_server": last_successful_server.get("url", "none"),
+        "requests_per_minute": round(total_requests / max(uptime_minutes, 0.1), 1)
+    }
+
+@api_router.post("/cache-reset")
+async def reset_cache():
+    """Reset the speed limit cache (for debugging)"""
+    global speed_limit_cache, cache_stats
+    speed_limit_cache = {}
+    cache_stats = {
+        "hits": 0,
+        "misses": 0, 
+        "api_calls": 0,
+        "api_failures": 0,
+        "last_reset": time.time()
+    }
+    return {"message": "Cache reset successfully"}
+
 @api_router.get("/")
 @limiter.limit("100/minute")
 async def root(request: Request):
