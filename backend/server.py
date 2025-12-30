@@ -140,13 +140,26 @@ def set_cached_speed_limit(lat: float, lon: float, data: dict):
         'data': data
     }
 
-async def query_overpass_with_fallback(query: str, timeout: float = 10.0) -> Optional[dict]:
-    """Query Overpass API with fallback to backup servers"""
+async def query_overpass_with_fallback(query: str, timeout: float = 12.0) -> Optional[dict]:
+    """
+    Query Overpass API with smart fallback to backup servers.
+    Prefers last successful server to reduce latency.
+    """
+    global last_successful_server, cache_stats
     import random
     
-    # Shuffle servers to distribute load
+    cache_stats["api_calls"] += 1
+    
+    # Build server list - prefer last successful server if recent (within 5 mins)
     servers = OVERPASS_SERVERS.copy()
-    random.shuffle(servers)
+    if (last_successful_server["url"] and 
+        time.time() - last_successful_server["time"] < 300):
+        # Move last successful server to front
+        if last_successful_server["url"] in servers:
+            servers.remove(last_successful_server["url"])
+            servers.insert(0, last_successful_server["url"])
+    else:
+        random.shuffle(servers)
     
     last_error = None
     for server_url in servers:
@@ -158,12 +171,30 @@ async def query_overpass_with_fallback(query: str, timeout: float = 10.0) -> Opt
                     headers={"Content-Type": "application/x-www-form-urlencoded"}
                 )
                 response.raise_for_status()
+                
+                # Track successful server
+                last_successful_server["url"] = server_url
+                last_successful_server["time"] = time.time()
+                
                 return response.json()
+        except httpx.TimeoutException:
+            last_error = f"Timeout on {server_url}"
+            logger.debug(f"Overpass server {server_url} timeout")
+            continue
+        except httpx.HTTPStatusError as e:
+            # Check for rate limiting (429) or server overload (503)
+            if e.response.status_code in (429, 503):
+                last_error = f"Rate limited/overloaded: {server_url}"
+                logger.warning(f"Overpass server {server_url} rate limited or overloaded")
+            else:
+                last_error = f"HTTP {e.response.status_code} from {server_url}"
+            continue
         except Exception as e:
-            last_error = e
+            last_error = str(e)
             logger.debug(f"Overpass server {server_url} failed: {str(e)}")
             continue
     
+    cache_stats["api_failures"] += 1
     logger.warning(f"All Overpass servers failed. Last error: {last_error}")
     return None
 
