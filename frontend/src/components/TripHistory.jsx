@@ -347,9 +347,9 @@ export const TripHistory = ({
                             </div>
                             <div className="text-center p-2 bg-black/20 rounded-md">
                               <div className="text-sm font-bold text-zinc-300 font-mono">
-                                {trip.distance_miles ? trip.distance_miles.toFixed(1) : '0'}
+                                {formatDistance(trip.distance_miles, 1).value}
                               </div>
-                              <div className="text-[9px] text-zinc-500 uppercase">Miles</div>
+                              <div className="text-[9px] text-zinc-500 uppercase">{getUnitLabels().distanceShort}</div>
                             </div>
                           </div>
                           
