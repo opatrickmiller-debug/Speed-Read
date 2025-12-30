@@ -849,6 +849,34 @@ async def reset_cache():
     }
     return {"message": "Cache reset successfully"}
 
+@api_router.get("/data-sources")
+async def get_data_sources():
+    """
+    Get information about configured data sources for speed limits.
+    Useful for debugging and understanding which APIs are active.
+    """
+    return {
+        "overpass": {
+            "enabled": True,
+            "self_hosted": bool(SELF_HOSTED_OVERPASS),
+            "self_hosted_url": SELF_HOSTED_OVERPASS if SELF_HOSTED_OVERPASS else None,
+            "public_servers": len(PUBLIC_OVERPASS_SERVERS),
+            "description": "Primary source - OpenStreetMap data"
+        },
+        "tomtom": {
+            "enabled": bool(TOMTOM_API_KEY),
+            "description": "Fallback source - TomTom commercial API (2,500 free/day)"
+        },
+        "estimation": {
+            "enabled": True,
+            "description": "Final fallback - estimates based on road type"
+        },
+        "recommendation": (
+            "Self-hosted Overpass recommended for production. "
+            "See /app/docs/SELF_HOSTING_GUIDE.md"
+        ) if not SELF_HOSTED_OVERPASS else "Self-hosted Overpass configured ✓"
+    }
+
 @api_router.get("/")
 @limiter.limit("100/minute")
 async def root(request: Request):
