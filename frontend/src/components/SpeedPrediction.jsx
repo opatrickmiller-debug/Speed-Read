@@ -231,31 +231,34 @@ export function SpeedPredictionBanner({
               <span>Heading {current_direction || 'N'}</span>
             </div>
             
-            {upcoming_limits.map((limit, idx) => (
-              <div 
-                key={idx}
-                className={cn(
-                  "flex items-center justify-between text-sm",
-                  "text-white"
-                )}
-              >
-                <span className="flex items-center gap-2">
-                  <ArrowDown className="w-3 h-3" />
-                  <span className="font-mono">{limit.distance_meters}m</span>
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="text-white/70">{limit.road_name}</span>
-                  <span className={cn(
-                    "font-bold px-2 py-0.5 rounded",
-                    limit.speed_limit < currentSpeedLimit 
-                      ? "bg-red-700" 
-                      : "bg-green-700"
-                  )}>
-                    {limit.speed_limit} {limit.unit}
+            {upcoming_limits.map((limit, idx) => {
+              const formattedSpeed = formatPredictionSpeed(limit.speed_limit, limit.unit);
+              return (
+                <div 
+                  key={idx}
+                  className={cn(
+                    "flex items-center justify-between text-sm",
+                    "text-white"
+                  )}
+                >
+                  <span className="flex items-center gap-2">
+                    <ArrowDown className="w-3 h-3" />
+                    <span className="font-mono">{formatPredictionDistance(limit.distance_meters)}</span>
                   </span>
-                </span>
-              </div>
-            ))}
+                  <span className="flex items-center gap-2">
+                    <span className="text-white/70">{limit.road_name}</span>
+                    <span className={cn(
+                      "font-bold px-2 py-0.5 rounded",
+                      limit.speed_limit < currentSpeedLimit 
+                        ? "bg-red-700" 
+                        : "bg-green-700"
+                    )}>
+                      {formattedSpeed.value} {formattedSpeed.unit}
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
 
             <button
               onClick={handleDismiss}
