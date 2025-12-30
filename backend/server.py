@@ -49,16 +49,35 @@ CACHE_TTL_ERROR = 300  # 5 min for errors (increased to reduce retries)
 CACHE_TTL_NONE = 600  # 10 min for "no data" results (new - prevents hammering API)
 CACHE_MAX_SIZE = 5000  # Increased cache size for longer trips
 
-# Multiple Overpass API servers for redundancy
-OVERPASS_SERVERS = [
+# ==================== OVERPASS SERVER CONFIGURATION ====================
+# Self-hosted Overpass server URL (optional - set in .env)
+# If set, this will be used FIRST before falling back to public servers
+SELF_HOSTED_OVERPASS = os.environ.get('OVERPASS_SERVER_URL', '')
+
+# Public Overpass API servers for redundancy (fallback)
+PUBLIC_OVERPASS_SERVERS = [
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
     "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
     "https://overpass.openstreetmap.ru/api/interpreter",
 ]
 
+# Build the server list - self-hosted first if configured
+def get_overpass_servers():
+    servers = []
+    if SELF_HOSTED_OVERPASS:
+        servers.append(SELF_HOSTED_OVERPASS)
+        logger.info(f"Using self-hosted Overpass server: {SELF_HOSTED_OVERPASS}")
+    servers.extend(PUBLIC_OVERPASS_SERVERS)
+    return servers
+
+OVERPASS_SERVERS = get_overpass_servers() if SELF_HOSTED_OVERPASS else PUBLIC_OVERPASS_SERVERS
+
 # Track last successful server to prefer it
 last_successful_server = {"url": None, "time": 0}
+
+# TomTom API configuration (optional fallback)
+TOMTOM_API_KEY = os.environ.get('TOMTOM_API_KEY', '')
 
 def get_cache_key(lat: float, lon: float) -> str:
     """
