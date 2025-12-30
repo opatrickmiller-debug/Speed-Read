@@ -2,8 +2,54 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { AlertTriangle, Navigation, ArrowDown, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axios from "axios";
+import { formatSpeed, isMetric, getSpeedUnit } from "@/utils/units";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
+/**
+ * Format distance for prediction display
+ * Shows meters for short distances, converts to display unit for longer ones
+ */
+const formatPredictionDistance = (meters) => {
+  if (isMetric()) {
+    // Metric: show meters for < 1000m, km for >= 1000m
+    if (meters < 1000) {
+      return `${Math.round(meters)}m`;
+    }
+    return `${(meters / 1000).toFixed(1)}km`;
+  } else {
+    // Imperial: show feet for < 1000ft (~305m), miles for longer
+    const feet = meters * 3.28084;
+    if (feet < 1000) {
+      return `${Math.round(feet)}ft`;
+    }
+    const miles = meters / 1609.34;
+    return `${miles.toFixed(1)}mi`;
+  }
+};
+
+/**
+ * Convert speed limit to display unit
+ * Backend returns speed in the road's native unit (usually mph in US)
+ */
+const formatPredictionSpeed = (speed, unit) => {
+  const userUnit = getSpeedUnit();
+  
+  // If the speed is already in user's preferred unit, return as-is
+  if ((unit === 'mph' && userUnit === 'mph') || (unit === 'km/h' && userUnit === 'km/h')) {
+    return { value: Math.round(speed), unit: userUnit };
+  }
+  
+  // Convert if needed
+  if (unit === 'km/h' && userUnit === 'mph') {
+    return { value: Math.round(speed * 0.621371), unit: 'mph' };
+  }
+  if (unit === 'mph' && userUnit === 'km/h') {
+    return { value: Math.round(speed * 1.60934), unit: 'km/h' };
+  }
+  
+  return { value: Math.round(speed), unit: userUnit };
+};
 
 /**
  * Hook to calculate bearing/heading from GPS movement
