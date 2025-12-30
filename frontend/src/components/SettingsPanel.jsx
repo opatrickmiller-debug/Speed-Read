@@ -22,9 +22,14 @@ import { AVAILABLE_LANGUAGES } from "@/components/AlertOverlay";
 import { getCacheStats, clearCache } from "@/utils/speedLimitCache";
 import { SoundSelector } from "@/components/SoundCustomization";
 import { MobileSettingsSection } from "@/components/MobileSettings";
+import { isMetric } from "@/utils/units";
 
 // App version
 const APP_VERSION = "2.2.0";
+
+// AI Prediction threshold (45 mph = ~72 km/h)
+const AI_THRESHOLD_MPH = 45;
+const AI_THRESHOLD_KMH = 72;
 
 // Test messages for voice
 const TEST_MESSAGES = {
