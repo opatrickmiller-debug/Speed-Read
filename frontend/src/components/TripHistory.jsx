@@ -380,21 +380,21 @@ export const TripHistory = ({
                                   <Route className="w-4 h-4 text-zinc-500" />
                                   <div>
                                     <div className="text-[10px] text-zinc-500 uppercase">Distance</div>
-                                    <div className="text-sm text-zinc-300 font-mono">{trip.distance_miles?.toFixed(2) || '0.00'} mi</div>
+                                    <div className="text-sm text-zinc-300 font-mono">{formatDistance(trip.distance_miles, 2).formatted}</div>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <TrendingUp className="w-4 h-4 text-zinc-500" />
                                   <div>
                                     <div className="text-[10px] text-zinc-500 uppercase">Top Speed</div>
-                                    <div className="text-sm text-zinc-300 font-mono">{Math.round(trip.max_speed || 0)} {trip.speed_unit}</div>
+                                    <div className="text-sm text-zinc-300 font-mono">{formatSpeed(trip.max_speed, 0).formatted}</div>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Gauge className="w-4 h-4 text-zinc-500" />
                                   <div>
                                     <div className="text-[10px] text-zinc-500 uppercase">Avg Speed</div>
-                                    <div className="text-sm text-zinc-300 font-mono">{Math.round(trip.avg_speed || 0)} {trip.speed_unit}</div>
+                                    <div className="text-sm text-zinc-300 font-mono">{formatSpeed(trip.avg_speed, 0).formatted}</div>
                                   </div>
                                 </div>
                               </div>
