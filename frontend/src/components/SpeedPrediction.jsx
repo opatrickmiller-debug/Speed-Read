@@ -293,6 +293,9 @@ export function SpeedPredictionIndicator({
     .filter(l => l.speed_limit < currentSpeedLimit)
     .sort((a, b) => a.distance_meters - b.distance_meters)[0];
 
+  const formattedSpeed = formatPredictionSpeed(lowestUpcoming.speed_limit, lowestUpcoming.unit);
+  const formattedDistance = formatPredictionDistance(lowestUpcoming.distance_meters);
+
   return (
     <button
       onClick={onClick}
@@ -307,7 +310,7 @@ export function SpeedPredictionIndicator({
     >
       <AlertTriangle className="w-4 h-4" />
       <span className="text-xs font-mono font-bold">
-        {lowestUpcoming.speed_limit} {lowestUpcoming.unit} in {lowestUpcoming.distance_meters}m
+        {formattedSpeed.value} {formattedSpeed.unit} in {formattedDistance}
       </span>
     </button>
   );
