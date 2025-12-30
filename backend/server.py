@@ -29,15 +29,25 @@ from passlib.context import CryptContext
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# ==================== SPEED LIMIT CACHE (IMPROVED) ====================
+# ==================== SPEED LIMIT CACHE (IMPROVED FOR LONG TRIPS) ====================
 # In-memory cache for speed limits to reduce API calls
 speed_limit_cache: Dict[str, Any] = {}
 
+# Cache statistics for debugging
+cache_stats = {
+    "hits": 0,
+    "misses": 0,
+    "api_calls": 0,
+    "api_failures": 0,
+    "last_reset": time.time()
+}
+
 # Cache TTL based on source - speed limits rarely change
-CACHE_TTL_EXPLICIT = 3600  # 1 hour for explicit OSM speed limits
-CACHE_TTL_ESTIMATED = 1800  # 30 min for estimated limits
-CACHE_TTL_ERROR = 120  # 2 min for errors (retry sooner)
-CACHE_MAX_SIZE = 2000  # Increased cache size
+CACHE_TTL_EXPLICIT = 7200  # 2 hours for explicit OSM speed limits (increased)
+CACHE_TTL_ESTIMATED = 3600  # 1 hour for estimated limits (increased)
+CACHE_TTL_ERROR = 300  # 5 min for errors (increased to reduce retries)
+CACHE_TTL_NONE = 600  # 10 min for "no data" results (new - prevents hammering API)
+CACHE_MAX_SIZE = 5000  # Increased cache size for longer trips
 
 # Multiple Overpass API servers for redundancy
 OVERPASS_SERVERS = [
@@ -47,9 +57,27 @@ OVERPASS_SERVERS = [
     "https://overpass.openstreetmap.ru/api/interpreter",
 ]
 
+# Track last successful server to prefer it
+last_successful_server = {"url": None, "time": 0}
+
 def get_cache_key(lat: float, lon: float) -> str:
-    """Round coordinates to ~100m precision for cache key"""
-    return f"{round(lat, 3)},{round(lon, 3)}"
+    """
+    Round coordinates for cache key.
+    ~50m precision (0.0005 degrees ≈ 55m at equator)
+    This means if you're within 50m of a cached location, you'll get the same result.
+    """
+    # Round to nearest 0.0005 (roughly 50 meters)
+    rounded_lat = round(lat * 2000) / 2000
+    rounded_lon = round(lon * 2000) / 2000
+    return f"{rounded_lat:.4f},{rounded_lon:.4f}"
+
+def get_nearby_cache_keys(lat: float, lon: float) -> List[str]:
+    """Get cache keys for nearby grid cells (3x3 grid around the point)"""
+    keys = []
+    for dlat in [-0.0005, 0, 0.0005]:
+        for dlon in [-0.0005, 0, 0.0005]:
+            keys.append(get_cache_key(lat + dlat, lon + dlon))
+    return keys
 
 def get_cache_ttl(source: str) -> int:
     """Get appropriate TTL based on data source"""
@@ -57,31 +85,53 @@ def get_cache_ttl(source: str) -> int:
         return CACHE_TTL_EXPLICIT
     elif source == "estimated":
         return CACHE_TTL_ESTIMATED
-    elif source in ("error", "none"):
+    elif source == "none":
+        return CACHE_TTL_NONE
+    elif source in ("error",):
         return CACHE_TTL_ERROR
     return CACHE_TTL_ESTIMATED
 
 def get_cached_speed_limit(lat: float, lon: float) -> Optional[dict]:
-    """Get cached speed limit if available and not expired"""
+    """
+    Get cached speed limit if available and not expired.
+    Also checks nearby cache cells for better hit rate.
+    """
+    global cache_stats
+    
+    # First check exact key
     key = get_cache_key(lat, lon)
     if key in speed_limit_cache:
         entry = speed_limit_cache[key]
         ttl = get_cache_ttl(entry['data'].get('source', 'estimated'))
         if time.time() - entry['timestamp'] < ttl:
+            cache_stats["hits"] += 1
             return entry['data']
         else:
             del speed_limit_cache[key]
+    
+    # Check nearby cells for valid cache entries (improves hit rate while driving)
+    for nearby_key in get_nearby_cache_keys(lat, lon):
+        if nearby_key in speed_limit_cache and nearby_key != key:
+            entry = speed_limit_cache[nearby_key]
+            ttl = get_cache_ttl(entry['data'].get('source', 'estimated'))
+            if time.time() - entry['timestamp'] < ttl:
+                # Only use nearby cache for good data (not errors/none)
+                if entry['data'].get('source') not in ('error', 'none'):
+                    cache_stats["hits"] += 1
+                    return entry['data']
+    
+    cache_stats["misses"] += 1
     return None
 
 def set_cached_speed_limit(lat: float, lon: float, data: dict):
     """Cache speed limit result"""
     global speed_limit_cache
-    # Limit cache size
+    # Limit cache size - use LRU-style eviction
     if len(speed_limit_cache) > CACHE_MAX_SIZE:
-        # Remove oldest entries
+        # Remove oldest 20% of entries
         sorted_keys = sorted(speed_limit_cache.keys(), 
                            key=lambda k: speed_limit_cache[k]['timestamp'])
-        for k in sorted_keys[:200]:
+        for k in sorted_keys[:int(CACHE_MAX_SIZE * 0.2)]:
             del speed_limit_cache[k]
     
     key = get_cache_key(lat, lon)
