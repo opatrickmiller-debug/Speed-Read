@@ -737,11 +737,12 @@ async def root(request: Request):
     return {"message": "Speed Alert API", "version": "1.0.0"}
 
 @api_router.get("/speed-limit")
-@limiter.limit("30/minute")
+@limiter.limit("200/minute")
 async def get_speed_limit(request: Request, lat: float, lon: float):
     """
     Fetch speed limit for a given location using OpenStreetMap Overpass API.
     Uses multiple backup servers and falls back to highway type-based estimation.
+    Rate limit: 200/min to support continuous driving (polling every ~0.3s)
     """
     # Validate coordinates
     if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
