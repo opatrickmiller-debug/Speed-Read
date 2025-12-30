@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { formatDistance, formatSpeed, getUnitLabels } from "@/utils/units";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
