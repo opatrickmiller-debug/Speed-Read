@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { formatDistance, isMetric, milesToKm } from "@/utils/units";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -14,6 +15,12 @@ const TRAP_TYPES = [
   { id: "construction", icon: Construction, label: "Construction", color: "text-orange-400" },
   { id: "school_zone", icon: GraduationCap, label: "School Zone", color: "text-yellow-400" },
 ];
+
+// Get search radius in miles based on user's unit preference
+const getSearchRadius = () => {
+  // Always search 5 miles, but display will be converted
+  return 5;
+};
 
 export function SpeedTrapPanel({ currentPosition }) {
   const { isAuthenticated } = useAuth();
