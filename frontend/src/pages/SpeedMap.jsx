@@ -509,6 +509,9 @@ export default function SpeedMap() {
   
   // Speed limit fetch throttle
   const lastFetchRef = useRef(0);
+  
+  // Track if initial speed limit fetch has been done (fetch once when GPS locks, even if stationary)
+  const initialFetchDoneRef = useRef(false);
 
   // Monitor online/offline status
   useEffect(() => {
