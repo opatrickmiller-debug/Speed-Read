@@ -184,27 +184,37 @@ export const SettingsPanel = ({
             )}
           </div>
 
-          {/* Speed Unit */}
+          {/* Unit System */}
           <div className="space-y-2 pt-3 border-t border-zinc-400">
             <div className="flex items-center gap-3">
               <Gauge className="w-5 h-5 text-orange-500" />
-              <span className="text-sm font-medium text-white">Speed Unit</span>
+              <span className="text-sm font-medium text-white">Units</span>
             </div>
             <div className="pl-8 flex gap-2">
-              {['mph', 'km/h'].map(unit => (
-                <button
-                  key={unit}
-                  onClick={() => { setSpeedUnit(unit); localStorage.setItem('speedUnit', unit); }}
-                  className={cn(
-                    "px-4 py-2 text-xs font-mono uppercase rounded transition-colors",
-                    speedUnit === unit
-                      ? "bg-orange-500/20 border border-orange-500/50 text-orange-400"
-                      : "bg-zinc-500/50 border border-zinc-400 text-white hover:border-zinc-500"
-                  )}
-                >
-                  {unit}
-                </button>
-              ))}
+              <button
+                onClick={() => { setSpeedUnit('mph'); localStorage.setItem('speedUnit', 'mph'); }}
+                className={cn(
+                  "px-4 py-2 text-xs font-mono rounded transition-colors flex flex-col items-center",
+                  speedUnit === 'mph'
+                    ? "bg-orange-500/20 border border-orange-500/50 text-orange-400"
+                    : "bg-zinc-500/50 border border-zinc-400 text-white hover:border-zinc-500"
+                )}
+              >
+                <span className="uppercase font-bold">Imperial</span>
+                <span className="text-[10px] opacity-70">mph / miles</span>
+              </button>
+              <button
+                onClick={() => { setSpeedUnit('km/h'); localStorage.setItem('speedUnit', 'km/h'); }}
+                className={cn(
+                  "px-4 py-2 text-xs font-mono rounded transition-colors flex flex-col items-center",
+                  speedUnit === 'km/h'
+                    ? "bg-orange-500/20 border border-orange-500/50 text-orange-400"
+                    : "bg-zinc-500/50 border border-zinc-400 text-white hover:border-zinc-500"
+                )}
+              >
+                <span className="uppercase font-bold">Metric</span>
+                <span className="text-[10px] opacity-70">km/h / km</span>
+              </button>
             </div>
           </div>
 
