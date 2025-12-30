@@ -301,6 +301,62 @@ async def get_speed_limit_from_google_roads(lat: float, lon: float) -> Optional[
         logger.error(f"Google Roads API error: {str(e)}")
         return None
 
+# ==================== TOMTOM API SERVICE ====================
+
+async def get_speed_limit_from_tomtom(lat: float, lon: float) -> Optional[dict]:
+    """
+    Fetch speed limit using TomTom Snap to Roads API as a fallback.
+    Requires TOMTOM_API_KEY in .env
+    Free tier: 2,500 requests/day
+    """
+    if not TOMTOM_API_KEY:
+        return None
+    
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as http_client:
+            # TomTom Snap to Roads API with speed limit
+            url = f"https://api.tomtom.com/snap/1/points"
+            params = {
+                "key": TOMTOM_API_KEY,
+                "points": f"{lat},{lon}",
+                "fields": "{road{speedLimit,freeFlowSpeed,currentSpeed}}",
+            }
+            
+            response = await http_client.get(url, params=params)
+            
+            if response.status_code != 200:
+                logger.warning(f"TomTom API failed: {response.status_code}")
+                return None
+            
+            data = response.json()
+            
+            # Parse TomTom response
+            if data.get("points") and len(data["points"]) > 0:
+                point = data["points"][0]
+                road_info = point.get("road", {})
+                
+                speed_limit_kmh = road_info.get("speedLimit")
+                
+                if speed_limit_kmh:
+                    # TomTom returns km/h, convert to mph
+                    speed_limit_mph = round(speed_limit_kmh * 0.621371)
+                    
+                    return {
+                        "speed_limit": speed_limit_mph,
+                        "unit": "mph",
+                        "road_name": road_info.get("name"),
+                        "source": "tomtom"
+                    }
+            
+            return None
+            
+    except httpx.TimeoutException:
+        logger.warning(f"TomTom API timeout for {lat}, {lon}")
+        return None
+    except Exception as e:
+        logger.error(f"TomTom API error: {str(e)}")
+        return None
+
 # ==================== SECURITY CONFIGURATION ====================
 
 # JWT Configuration
