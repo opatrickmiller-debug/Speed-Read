@@ -143,7 +143,7 @@ export function ExportReportPanel() {
             </div>
             <div className="bg-zinc-900/50 border border-zinc-800 p-2 rounded">
               <p className="text-zinc-500 text-xs">Distance</p>
-              <p className="text-white font-medium">{report.summary.total_distance_miles} mi</p>
+              <p className="text-white font-medium">{formatDistance(report.summary.total_distance_miles, 1).formatted}</p>
             </div>
             <div className="bg-zinc-900/50 border border-zinc-800 p-2 rounded">
               <p className="text-zinc-500 text-xs">Safe Trips</p>
