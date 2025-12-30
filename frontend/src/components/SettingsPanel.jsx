@@ -506,7 +506,9 @@ export const SettingsPanel = ({
                   <Switch checked={speedPredictionEnabled} onCheckedChange={setSpeedPredictionEnabled} />
                 </div>
                 <p className="text-xs text-zinc-200">Warns before entering lower speed zones</p>
-                <p className="text-[10px] text-zinc-400 italic">Only active at 45+ mph for highway accuracy</p>
+                <p className="text-[10px] text-zinc-400 italic">
+                  Only active at {isMetric() ? `${AI_THRESHOLD_KMH}+ km/h` : `${AI_THRESHOLD_MPH}+ mph`} for highway accuracy
+                </p>
               </div>
 
               {/* Weather Alerts */}
