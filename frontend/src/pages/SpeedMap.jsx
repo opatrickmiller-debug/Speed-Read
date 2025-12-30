@@ -890,10 +890,22 @@ export default function SpeedMap() {
         setIsLoadingLocation(false);
         
         calculateSpeed(position);
-        fetchSpeedLimit(latitude, longitude);
         
-        // Update bearing for speed prediction
-        updateBearing(latitude, longitude);
+        // Get current speed in mph for stationary check
+        // GPS speed is in meters/second, convert to mph (1 m/s = 2.237 mph)
+        const gpsSpeedMph = position.coords.speed !== null ? position.coords.speed * 2.237 : 0;
+        
+        // Only fetch speed limit when moving (> 2 mph threshold)
+        // This saves API calls and battery when parked/stationary
+        if (gpsSpeedMph > 2) {
+          fetchSpeedLimit(latitude, longitude);
+          // Update bearing for speed prediction (only when moving)
+          updateBearing(latitude, longitude);
+        } else {
+          // When stationary, keep the last known speed limit displayed
+          // No need to poll - speed limits don't change while parked
+          console.log("Stationary - skipping speed limit poll");
+        }
         
         // Map panning is handled by MapUpdater component in Leaflet
       },
