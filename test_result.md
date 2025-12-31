@@ -462,3 +462,18 @@ agent_communication:
     message: "COMPREHENSIVE E2E TEST COMPLETED: ✅ Landing page entry works, ✅ Authentication flow successful (login with test credentials), ✅ Trip History NEW UI fully functional (2 trips found, expandable cards, safety ratings, delete buttons), ✅ Settings panel with all toggles working, ✅ Features panel with 4 tabs (Stats/Report/Family/Traps) accessible, ✅ Google Maps integration working. ISSUES FOUND: ❌ Speedometer HUD not visible in main view (may be positioning issue), ❌ HUD Mode activation unclear (no large display detected), ❌ Logout test failed due to DOM element detachment. Overall app functionality is excellent with minor UI visibility issues."
   - agent: "main"
     message: "CRITICAL FIX FOR LONG TRIP DATA DROPOUT: User reported app stops getting data after ~10 minutes of driving. Root cause identified: 1) Backend rate limit was 30/min on /api/speed-limit endpoint - easily exceeded with continuous polling. 2) Cache precision was too coarse causing unnecessary API calls. FIXES APPLIED: 1) Increased rate limit from 30/min to 200/min, 2) Improved cache precision to ~50m grid (was ~100m), 3) Added nearby-cell cache lookup for better hit rate, 4) Increased cache TTL (2hrs explicit, 1hr estimated, 10min no-data, 5min errors), 5) Added cache stats endpoint for debugging (/api/cache-stats), 6) Smart server selection (prefers last successful Overpass server), 7) Increased cache size from 2000 to 5000 entries. SIMULATION TEST: 120 requests (10-min trip equivalent) with 100% success rate, 38% cache hit rate, 0 API failures."
+
+  - task: "Parking Lot Detection"
+    implemented: true
+    working: true
+    file: "frontend/src/components/SpeedLimitSign.jsx, backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "User reported: When parked in a parking lot, app shows speed limit for nearby road (Como Avenue 25 mph) instead of recognizing parking lot."
+      - working: true
+        agent: "main"
+        comment: "FIXED: Added parking lot detection in both backend and frontend. Backend: Added STEP 0 query for parking areas (service roads, amenity=parking) with 30m radius, checks perpendicular distance <25m. Also added off-road detection if closest road with speed limit is >25m away. Frontend: Added smart heuristic - if user is stationary (<3 mph) AND road type is a public road (secondary, tertiary, etc.), show 'Private Area' indicator instead of speed limit. Logic: you can't be at 0 mph ON a public road, so you must be parked nearby. Verified via screenshot showing 'P' icon with 'SLOW' and 'PRIVATE AREA' text."
