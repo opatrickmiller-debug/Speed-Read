@@ -1149,6 +1149,7 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
                 road = data["elements"][0]  # Fallback to first
             
             tags = road.get("tags", {})
+            highway_type = tags.get("highway", "")
             maxspeed = tags.get("maxspeed", "")
             road_name = tags.get("name") or tags.get("ref") or "Unknown Road"
             road_name = sanitize_string(road_name, 100)
@@ -1160,7 +1161,8 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
                     "speed_limit": speed_limit,
                     "unit": unit,
                     "road_name": road_name,
-                    "source": "openstreetmap"
+                    "source": "openstreetmap",
+                    "road_type": highway_type
                 }
                 set_cached_speed_limit(lat, lon, result)
                 return SpeedLimitResponse(**result)
