@@ -202,6 +202,7 @@ export default function SpeedMap() {
   const [currentSpeed, setCurrentSpeed] = useState(0);
   const [speedLimit, setSpeedLimit] = useState(null);
   const [roadName, setRoadName] = useState(null);
+  const [roadType, setRoadType] = useState(null);  // e.g., "motorway", "primary"
   const [isLoadingSpeedLimit, setIsLoadingSpeedLimit] = useState(false);
   const [isUsingCache, setIsUsingCache] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -209,6 +210,7 @@ export default function SpeedMap() {
   // Ref to track last known good speed limit (survives re-renders and API gaps)
   const lastKnownSpeedLimitRef = useRef(null);
   const lastKnownRoadNameRef = useRef(null);
+  const lastKnownRoadTypeRef = useRef(null);
   const lastKnownTimestampRef = useRef(null);
   const STICKY_MAX_AGE_MS = 60000; // Show last known value for 60 seconds, then show "No Data"
   
