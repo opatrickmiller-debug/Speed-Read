@@ -94,8 +94,9 @@ export function useBearing() {
 
 /**
  * Hook to fetch speed predictions
+ * Now includes road type for smarter filtering (ignores side streets when on highways)
  */
-export function useSpeedPrediction(position, bearing, currentSpeedLimit, enabled = true) {
+export function useSpeedPrediction(position, bearing, currentSpeedLimit, currentRoadType, enabled = true) {
   const [prediction, setPrediction] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const lastFetchRef = useRef(0);
@@ -120,6 +121,11 @@ export function useSpeedPrediction(position, bearing, currentSpeedLimit, enabled
         if (currentSpeedLimit) {
           params.current_speed_limit = currentSpeedLimit;
         }
+        
+        // Pass road type so backend can filter appropriately
+        if (currentRoadType) {
+          params.current_road_type = currentRoadType;
+        }
 
         const response = await axios.get(`${BACKEND_URL}/api/speed-ahead`, { params });
         setPrediction(response.data);
@@ -132,7 +138,7 @@ export function useSpeedPrediction(position, bearing, currentSpeedLimit, enabled
     };
 
     fetchPrediction();
-  }, [position, bearing, currentSpeedLimit, enabled]);
+  }, [position, bearing, currentSpeedLimit, currentRoadType, enabled]);
 
   return { prediction, isLoading };
 }
