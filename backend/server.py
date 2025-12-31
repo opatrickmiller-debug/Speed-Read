@@ -1204,7 +1204,8 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
                         "speed_limit": estimated_limit,
                         "unit": "mph",
                         "road_name": road_name,
-                        "source": "estimated"
+                        "source": "estimated",
+                        "road_type": highway_type
                     }
                     set_cached_speed_limit(lat, lon, result)
                     return SpeedLimitResponse(**result)
@@ -1214,6 +1215,7 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
         logger.info(f"Trying TomTom API fallback for {lat}, {lon}")
         tomtom_result = await get_speed_limit_from_tomtom(lat, lon)
         if tomtom_result and tomtom_result.get("speed_limit"):
+            tomtom_result["road_type"] = None  # TomTom doesn't provide road type
             set_cached_speed_limit(lat, lon, tomtom_result)
             return SpeedLimitResponse(**tomtom_result)
     
@@ -1223,7 +1225,8 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
         "speed_limit": None,
         "unit": "mph",
         "road_name": None,
-        "source": "none"
+        "source": "none",
+        "road_type": None
     }
     set_cached_speed_limit(lat, lon, result)
     return SpeedLimitResponse(**result)
