@@ -22,23 +22,23 @@ export const SpeedLimitSign = ({
   // Check if we're in a parking lot / service area
   const isInParkingArea = PARKING_ROAD_TYPES.includes(roadType);
   
-  // Check if we're supposedly on a public road but stationary
-  // If you're at 0 mph on a "secondary" road like Como Ave, you're probably parked in a lot nearby
-  const isStationaryOnPublicRoad = (
-    currentSpeed < 2 &&  // Essentially stopped
-    PUBLIC_ROAD_TYPES.includes(roadType) &&  // API says we're on a public road
-    isCached  // And we're using cached/stale data
+  // Key insight: If you're parked (0 mph) and the app shows you're on a public road,
+  // you're almost certainly in a parking lot NEAR that road, not ON it.
+  // Real scenario: parked in a shopping center lot next to "Como Avenue"
+  const isLikelyParkedNearRoad = (
+    currentSpeed < 3 &&  // Essentially stopped (< 3 mph)
+    PUBLIC_ROAD_TYPES.includes(roadType)  // API says we're on a public road
   );
   
   // Auto-hide conditions:
   // 1. In a parking lot (service road) - ALWAYS show parking indicator
   // 2. Going very slow (< 10 mph) with no data (likely parked)
   // 3. Road type is explicitly "service" from the API (parking lot detected)
-  // 4. Stationary on what API thinks is a public road (likely parked in adjacent lot)
+  // 4. Stopped (< 3 mph) while supposedly on a public road = probably in adjacent lot
   const shouldShowParkingIndicator = hideInParkingLots && (
     isInParkingArea ||  // Always show parking indicator when roadType is service/parking
     (currentSpeed < 10 && !speedLimit && !lastKnownLimit) ||
-    isStationaryOnPublicRoad  // Stationary + public road = probably in parking lot
+    isLikelyParkedNearRoad  // Parked near a public road = in parking lot
   );
   
   // Show parking indicator when in parking area (regardless of cached speed limits)
