@@ -1130,6 +1130,66 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
         
         return closest_road
     
+    # STEP 0: Check if user is in a PARKING LOT first (very tight radius)
+    # Parking lots (service roads) usually don't have maxspeed tags, so we check separately
+    # This prevents showing nearby street speed limits when parked in a lot
+    PARKING_ROAD_TYPES = ['service', 'parking_aisle', 'driveway', 'parking']
+    
+    parking_query = f"""
+    [out:json][timeout:5];
+    (
+      way(around:20,{lat},{lon})["highway"="service"];
+      way(around:20,{lat},{lon})["highway"="service"]["service"="parking_aisle"];
+      way(around:20,{lat},{lon})["amenity"="parking"];
+    );
+    out body geom;
+    """
+    
+    parking_data = await query_overpass_with_fallback(parking_query, timeout=5.0)
+    
+    if parking_data and parking_data.get("elements"):
+        # Check if there's a parking/service road VERY close (within 20m)
+        for element in parking_data["elements"]:
+            tags = element.get("tags", {})
+            highway_type = tags.get("highway", "")
+            amenity = tags.get("amenity", "")
+            service_type = tags.get("service", "")
+            
+            # Check if this is a parking area
+            is_parking = (
+                amenity == "parking" or
+                highway_type == "service" and service_type in ["parking_aisle", "driveway", ""] or
+                highway_type in PARKING_ROAD_TYPES
+            )
+            
+            if is_parking:
+                # Calculate distance to this parking area
+                geometry = element.get("geometry", [])
+                if geometry:
+                    dist = float('inf')
+                    for i in range(len(geometry) - 1):
+                        p1 = geometry[i]
+                        p2 = geometry[i + 1] if i + 1 < len(geometry) else geometry[i]
+                        d = calculate_point_to_segment_distance(
+                            lon, lat,
+                            p1.get("lon", 0), p1.get("lat", 0),
+                            p2.get("lon", 0), p2.get("lat", 0)
+                        )
+                        dist = min(dist, d)
+                    
+                    # If within 15 meters of a parking area, return parking lot result
+                    if dist < 15:
+                        logger.info(f"PARKING LOT DETECTED at {lat}, {lon} (dist: {dist:.1f}m)")
+                        result = {
+                            "speed_limit": None,  # No posted limit in parking lots
+                            "unit": "mph",
+                            "road_name": tags.get("name") or "Parking Area",
+                            "source": "openstreetmap",
+                            "road_type": "service"  # This triggers frontend parking mode
+                        }
+                        set_cached_speed_limit(lat, lon, result)
+                        return SpeedLimitResponse(**result)
+    
     # STEP 1: Get roads with geometry and find the ACTUAL closest one
     # Use smaller radius (50m) to reduce chance of picking up parallel roads
     query_with_geom = f"""
