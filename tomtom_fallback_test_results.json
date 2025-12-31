@@ -1,0 +1,53 @@
+{
+  "summary": {
+    "total_tests": 7,
+    "passed_tests": 7,
+    "success_rate": 100.0,
+    "timestamp": "2025-12-31T18:52:03.539915",
+    "test_focus": "TomTom Fallback Logic Regression Fix"
+  },
+  "test_results": [
+    {
+      "test": "Primary OSM Path (Explicit Maxspeed)",
+      "success": true,
+      "details": "Status: 200, Source: openstreetmap \u2713, Speed: 25 mph, Road: 7th Avenue, Type: secondary",
+      "timestamp": "2025-12-31T18:51:29.136714"
+    },
+    {
+      "test": "OSM Estimation Path (Road Type, No Explicit Maxspeed)",
+      "success": true,
+      "details": "Estimated: 2, TomTom: 0 (should be 0). Los Angeles (residential): openstreetmap (explicit speed) \u2713; Chicago (urban): estimated (secondary) \u2713; Denver (mixed roads): openstreetmap (explicit speed) \u2713; Dallas (suburban): estimated (secondary) \u2713",
+      "timestamp": "2025-12-31T18:51:40.186004"
+    },
+    {
+      "test": "TomTom Fallback (Only When OSM Finds No Roads)",
+      "success": true,
+      "details": "TomTom fallbacks: 0, No data: 3. Atlantic Ocean: none (no data found) \u2713; Antarctica: none (no data found) \u2713; Arctic Ocean: none (no data found) \u2713",
+      "timestamp": "2025-12-31T18:51:57.678547"
+    },
+    {
+      "test": "Cache Stats Endpoint",
+      "success": true,
+      "details": "Status: 200, Cache size: 10, Hit rate: 0.0%, API calls: 34, API success: 100.0%",
+      "timestamp": "2025-12-31T18:51:57.732327"
+    },
+    {
+      "test": "Speed Prediction with Side Street Filtering",
+      "success": true,
+      "details": "Status: 200, Upcoming limits: 1, Direction: S (Side street filtering working)",
+      "timestamp": "2025-12-31T18:52:00.365410"
+    },
+    {
+      "test": "Regression Test (Specific Problematic Locations)",
+      "success": true,
+      "details": "San Francisco downtown: openstreetmap \u2713; NYC downtown: openstreetmap \u2713; Los Angeles downtown: openstreetmap \u2713",
+      "timestamp": "2025-12-31T18:52:03.482948"
+    },
+    {
+      "test": "Data Source Priority Configuration",
+      "success": true,
+      "details": "Status: 200, OSM: True, TomTom: True, Estimation: True",
+      "timestamp": "2025-12-31T18:52:03.539012"
+    }
+  ]
+}
