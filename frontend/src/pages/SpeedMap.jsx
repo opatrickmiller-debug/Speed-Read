@@ -1304,6 +1304,8 @@ export default function SpeedMap() {
               lastKnownLimit={lastKnownSpeedLimitRef.current}
               roadName={roadName}
               lastKnownRoadName={lastKnownRoadNameRef.current}
+              roadType={roadType}
+              currentSpeed={currentSpeed}
               isLoading={isLoadingSpeedLimit}
               isCached={isUsingCache}
               theme={theme}
