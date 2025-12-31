@@ -1216,10 +1216,38 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
             road_name = tags.get("name") or tags.get("ref") or "Unknown Road"
             road_name = sanitize_string(road_name, 100)
             
+            # Calculate actual distance to this road
+            geometry = road.get("geometry", [])
+            road_distance = float('inf')
+            if geometry:
+                for i in range(len(geometry) - 1):
+                    p1 = geometry[i]
+                    p2 = geometry[i + 1] if i + 1 < len(geometry) else geometry[i]
+                    d = calculate_point_to_segment_distance(
+                        lon, lat,
+                        p1.get("lon", 0), p1.get("lat", 0),
+                        p2.get("lon", 0), p2.get("lat", 0)
+                    )
+                    road_distance = min(road_distance, d)
+            
+            # If the closest road is MORE than 25 meters away, assume we're in a parking lot
+            # This catches cases where parking lots aren't mapped but user is clearly off-road
+            if road_distance > 25:
+                logger.info(f"OFF-ROAD DETECTED: Closest road '{road_name}' is {road_distance:.1f}m away (>25m)")
+                result = {
+                    "speed_limit": None,
+                    "unit": "mph", 
+                    "road_name": "Private Area",
+                    "source": "openstreetmap",
+                    "road_type": "service"  # Triggers parking mode in frontend
+                }
+                set_cached_speed_limit(lat, lon, result)
+                return SpeedLimitResponse(**result)
+            
             speed_limit, unit = parse_maxspeed(maxspeed)
             
             if speed_limit:
-                logger.info(f"CLOSEST ROAD: {road_name} ({highway_type}) - {speed_limit} {unit}")
+                logger.info(f"CLOSEST ROAD: {road_name} ({highway_type}) - {speed_limit} {unit} at {road_distance:.1f}m")
                 result = {
                     "speed_limit": speed_limit,
                     "unit": unit,
