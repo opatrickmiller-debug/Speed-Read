@@ -1355,9 +1355,10 @@ def should_include_road_in_prediction(
             logger.debug(f"Filtering out close prediction at {distance_meters}m (likely overpass)")
             return False
     
-    # Check direction alignment (more strict - 35 degrees for highways)
+    # Check direction alignment - STRICT for highways to eliminate perpendicular cross streets
+    # 25 degrees means roads must be nearly parallel to your direction of travel
     if current_road_type in HIGHWAY_ROAD_TYPES:
-        tolerance = 35  # Stricter for highways
+        tolerance = 25  # Very strict for highways - eliminates cross streets (90° would fail)
     else:
         tolerance = 45
     
