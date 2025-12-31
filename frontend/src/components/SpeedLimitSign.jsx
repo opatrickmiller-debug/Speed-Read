@@ -20,15 +20,16 @@ export const SpeedLimitSign = ({
   const isInParkingArea = PARKING_ROAD_TYPES.includes(roadType);
   
   // Auto-hide conditions:
-  // 1. In a parking lot (service road) with no speed limit data
+  // 1. In a parking lot (service road) - ALWAYS show parking indicator
   // 2. Going very slow (< 10 mph) with no data (likely parked)
-  const shouldAutoHide = hideInParkingLots && (
-    (isInParkingArea && !speedLimit) ||
+  // 3. Road type is explicitly "service" from the API (parking lot detected)
+  const shouldShowParkingIndicator = hideInParkingLots && (
+    isInParkingArea ||  // Always show parking indicator when roadType is service/parking
     (currentSpeed < 10 && !speedLimit && !lastKnownLimit)
   );
   
-  // Show parking indicator instead of "No Data" when in parking area
-  if (shouldAutoHide || (isInParkingArea && !speedLimit)) {
+  // Show parking indicator when in parking area (regardless of cached speed limits)
+  if (shouldShowParkingIndicator) {
     return (
       <div 
         data-testid="speed-limit-parking"
