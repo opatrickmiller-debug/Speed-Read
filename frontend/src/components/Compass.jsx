@@ -104,6 +104,7 @@ function getCardinalDirection(heading) {
 
 /**
  * Simple Compass Badge Component
+ * Shows direction you're heading with North indicator
  */
 export function CompassBadge({ heading, size = "md", theme = "dark" }) {
   const direction = getCardinalDirection(heading);
@@ -113,6 +114,11 @@ export function CompassBadge({ heading, size = "md", theme = "dark" }) {
     md: "w-16 h-16 text-sm",
     lg: "w-20 h-20 text-base"
   };
+
+  // The arrow should point to where North is relative to your heading
+  // If you're heading West (270°), North is 90° to your right
+  // So the arrow rotates OPPOSITE to your heading to point at North
+  const arrowRotation = heading !== null ? -heading : 0;
 
   return (
     <div 
@@ -125,34 +131,34 @@ export function CompassBadge({ heading, size = "md", theme = "dark" }) {
         sizes[size]
       )}
     >
-      {/* Rotating arrow */}
+      {/* Rotating arrow - points to North */}
       <Navigation 
         className={cn(
           "absolute transition-transform duration-300",
-          theme === "dark" ? "text-cyan-400" : "text-cyan-600",
+          theme === "dark" ? "text-red-400" : "text-red-600",
           size === "sm" ? "w-4 h-4" : size === "md" ? "w-5 h-5" : "w-6 h-6"
         )}
         style={{ 
-          transform: heading !== null ? `rotate(${heading}deg)` : 'rotate(0deg)'
+          transform: `rotate(${arrowRotation}deg)`
         }}
       />
       
-      {/* Cardinal direction text */}
+      {/* Current heading direction text at bottom */}
       <div className={cn(
         "absolute bottom-1 font-mono font-bold",
-        theme === "dark" ? "text-white" : "text-black",
+        theme === "dark" ? "text-cyan-400" : "text-cyan-600",
         size === "sm" ? "text-[10px]" : "text-xs"
       )}>
         {direction.short}
       </div>
       
-      {/* N marker at top */}
+      {/* Heading degrees at top */}
       <div className={cn(
         "absolute -top-0.5 font-mono font-bold",
-        theme === "dark" ? "text-red-400" : "text-red-600",
+        theme === "dark" ? "text-white/70" : "text-black/70",
         size === "sm" ? "text-[8px]" : "text-[10px]"
       )}>
-        N
+        {heading !== null ? `${Math.round(heading)}°` : '--'}
       </div>
     </div>
   );
