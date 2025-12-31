@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DraggableContainer } from "@/components/DraggableHUD";
 
@@ -103,49 +102,120 @@ function getCardinalDirection(heading) {
 }
 
 /**
- * Simple Compass Badge Component
- * Shows direction of travel (arrow always points up = forward)
+ * Traditional Compass Component
+ * Shows direction of travel with rotating N/E/W/S indicators
  */
 export function CompassBadge({ heading, size = "md", theme = "dark" }) {
   const direction = getCardinalDirection(heading);
   
   const sizes = {
-    sm: "w-12 h-12 text-xs",
-    md: "w-16 h-16 text-sm",
-    lg: "w-20 h-20 text-base"
+    sm: { container: "w-14 h-14", text: "text-[8px]", center: "text-xs", arrow: 10 },
+    md: { container: "w-18 h-18", text: "text-[10px]", center: "text-sm", arrow: 14 },
+    lg: { container: "w-24 h-24", text: "text-xs", center: "text-base", arrow: 18 }
   };
+  
+  const s = sizes[size] || sizes.md;
+  
+  // Rotation: negative heading so N points to the direction we're heading
+  const rotation = heading !== null ? -heading : 0;
 
   return (
     <div 
       className={cn(
-        "relative flex flex-col items-center justify-center rounded-full",
+        "relative flex items-center justify-center rounded-full",
         "backdrop-blur-xl border-2 transition-all",
         theme === "dark" 
-          ? "bg-black/70 border-white/20" 
-          : "bg-white/70 border-black/20",
-        sizes[size]
+          ? "bg-black/80 border-cyan-500/50" 
+          : "bg-white/80 border-cyan-600/50",
+        size === "sm" ? "w-14 h-14" : size === "lg" ? "w-24 h-24" : "w-[72px] h-[72px]"
       )}
     >
-      {/* Arrow always points UP (direction of travel) */}
-      <Navigation 
-        className={cn(
-          "transition-transform duration-300",
-          theme === "dark" ? "text-cyan-400" : "text-cyan-600",
-          size === "sm" ? "w-4 h-4" : size === "md" ? "w-5 h-5" : "w-6 h-6"
-        )}
-        style={{ 
-          transform: 'rotate(0deg)'  // Always pointing up/forward
-        }}
-      />
-      
-      {/* Cardinal direction (W, N, E, S, etc.) */}
-      <div className={cn(
-        "font-mono font-bold",
-        theme === "dark" ? "text-white" : "text-black",
-        size === "sm" ? "text-xs" : "text-sm"
-      )}>
-        {heading !== null ? direction.short : '--'}
+      {/* Rotating compass dial with N/E/S/W */}
+      <div 
+        className="absolute inset-1 transition-transform duration-300 ease-out"
+        style={{ transform: `rotate(${rotation}deg)` }}
+      >
+        {/* North indicator - Red/prominent */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 flex flex-col items-center">
+          <div className={cn(
+            "w-0 h-0 border-l-[5px] border-r-[5px] border-b-[8px] border-l-transparent border-r-transparent",
+            "border-b-red-500"
+          )} />
+          <span className={cn(
+            "font-bold mt-0.5",
+            s.text,
+            "text-red-500"
+          )}>N</span>
+        </div>
+        
+        {/* East indicator */}
+        <div className="absolute top-1/2 right-0 -translate-y-1/2 flex items-center">
+          <span className={cn(
+            "font-bold mr-1",
+            s.text,
+            theme === "dark" ? "text-white/80" : "text-black/80"
+          )}>E</span>
+        </div>
+        
+        {/* South indicator */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center">
+          <span className={cn(
+            "font-bold mb-0.5",
+            s.text,
+            theme === "dark" ? "text-white/80" : "text-black/80"
+          )}>S</span>
+        </div>
+        
+        {/* West indicator */}
+        <div className="absolute top-1/2 left-0 -translate-y-1/2 flex items-center">
+          <span className={cn(
+            "font-bold ml-1",
+            s.text,
+            theme === "dark" ? "text-white/80" : "text-black/80"
+          )}>W</span>
+        </div>
+        
+        {/* Tick marks for intermediate directions */}
+        <div className="absolute top-[15%] right-[15%] w-1 h-1 rounded-full bg-white/40" />
+        <div className="absolute bottom-[15%] right-[15%] w-1 h-1 rounded-full bg-white/40" />
+        <div className="absolute bottom-[15%] left-[15%] w-1 h-1 rounded-full bg-white/40" />
+        <div className="absolute top-[15%] left-[15%] w-1 h-1 rounded-full bg-white/40" />
       </div>
+      
+      {/* Center direction indicator (fixed, doesn't rotate) */}
+      <div className={cn(
+        "relative z-10 flex flex-col items-center justify-center",
+        "rounded-full",
+        theme === "dark" ? "bg-zinc-900/90" : "bg-white/90",
+        size === "sm" ? "w-7 h-7" : size === "lg" ? "w-12 h-12" : "w-9 h-9"
+      )}>
+        {/* Direction arrow pointing up (direction of travel) */}
+        <svg 
+          viewBox="0 0 24 24" 
+          className={cn(
+            "fill-cyan-500",
+            size === "sm" ? "w-3 h-3" : size === "lg" ? "w-5 h-5" : "w-4 h-4"
+          )}
+        >
+          <path d="M12 2L8 10H11V22H13V10H16L12 2Z" />
+        </svg>
+        
+        {/* Current heading text */}
+        <span className={cn(
+          "font-mono font-bold leading-none",
+          s.center,
+          theme === "dark" ? "text-cyan-400" : "text-cyan-600"
+        )}>
+          {heading !== null ? direction.short : '--'}
+        </span>
+      </div>
+      
+      {/* Outer glow effect */}
+      <div className={cn(
+        "absolute inset-0 rounded-full pointer-events-none",
+        "border",
+        theme === "dark" ? "border-cyan-500/20" : "border-cyan-600/20"
+      )} />
     </div>
   );
 }
@@ -169,7 +239,7 @@ export function DraggableCompass({ theme = "dark", enabled = true }) {
 
   return (
     <DraggableContainer
-      storageKey="compassPositionV2"
+      storageKey="compassPositionV3"
       defaultPosition={getDefaultPosition()}
       className="pointer-events-auto"
     >
