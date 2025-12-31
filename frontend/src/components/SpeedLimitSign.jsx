@@ -4,6 +4,9 @@ import { Database, RefreshCw, ParkingCircle } from "lucide-react";
 // Road types that are typically parking lots or private areas without posted limits
 const PARKING_ROAD_TYPES = ['service', 'parking_aisle', 'driveway'];
 
+// Road types that are public roads where you'd be driving (not parked stationary)
+const PUBLIC_ROAD_TYPES = ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'residential', 'unclassified'];
+
 export const SpeedLimitSign = ({ 
   speedLimit, 
   lastKnownLimit, 
@@ -19,13 +22,23 @@ export const SpeedLimitSign = ({
   // Check if we're in a parking lot / service area
   const isInParkingArea = PARKING_ROAD_TYPES.includes(roadType);
   
+  // Check if we're supposedly on a public road but stationary
+  // If you're at 0 mph on a "secondary" road like Como Ave, you're probably parked in a lot nearby
+  const isStationaryOnPublicRoad = (
+    currentSpeed < 2 &&  // Essentially stopped
+    PUBLIC_ROAD_TYPES.includes(roadType) &&  // API says we're on a public road
+    isCached  // And we're using cached/stale data
+  );
+  
   // Auto-hide conditions:
   // 1. In a parking lot (service road) - ALWAYS show parking indicator
   // 2. Going very slow (< 10 mph) with no data (likely parked)
   // 3. Road type is explicitly "service" from the API (parking lot detected)
+  // 4. Stationary on what API thinks is a public road (likely parked in adjacent lot)
   const shouldShowParkingIndicator = hideInParkingLots && (
     isInParkingArea ||  // Always show parking indicator when roadType is service/parking
-    (currentSpeed < 10 && !speedLimit && !lastKnownLimit)
+    (currentSpeed < 10 && !speedLimit && !lastKnownLimit) ||
+    isStationaryOnPublicRoad  // Stationary + public road = probably in parking lot
   );
   
   // Show parking indicator when in parking area (regardless of cached speed limits)
