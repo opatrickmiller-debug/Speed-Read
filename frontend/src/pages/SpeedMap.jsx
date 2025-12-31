@@ -602,6 +602,7 @@ export default function SpeedMap() {
     currentPosition,
     bearing,
     speedLimit,
+    roadType,  // Pass current road type for smarter filtering
     speedPredictionEnabled && !demoMode && currentSpeed >= PREDICTION_SPEED_THRESHOLD
   );
 
