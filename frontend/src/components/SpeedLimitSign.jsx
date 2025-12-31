@@ -1,7 +1,67 @@
 import { cn } from "@/lib/utils";
-import { Database, RefreshCw } from "lucide-react";
+import { Database, RefreshCw, ParkingCircle } from "lucide-react";
 
-export const SpeedLimitSign = ({ speedLimit, lastKnownLimit, roadName, lastKnownRoadName, isLoading, isCached, theme = "dark" }) => {
+// Road types that are typically parking lots or private areas without posted limits
+const PARKING_ROAD_TYPES = ['service', 'parking_aisle', 'driveway'];
+
+export const SpeedLimitSign = ({ 
+  speedLimit, 
+  lastKnownLimit, 
+  roadName, 
+  lastKnownRoadName, 
+  roadType,
+  currentSpeed = 0,
+  isLoading, 
+  isCached, 
+  hideInParkingLots = true,  // Auto-hide in parking areas
+  theme = "dark" 
+}) => {
+  // Check if we're in a parking lot / service area
+  const isInParkingArea = PARKING_ROAD_TYPES.includes(roadType);
+  
+  // Auto-hide conditions:
+  // 1. In a parking lot (service road) with no speed limit data
+  // 2. Going very slow (< 10 mph) with no data (likely parked)
+  const shouldAutoHide = hideInParkingLots && (
+    (isInParkingArea && !speedLimit) ||
+    (currentSpeed < 10 && !speedLimit && !lastKnownLimit)
+  );
+  
+  // Show parking indicator instead of "No Data" when in parking area
+  if (shouldAutoHide || (isInParkingArea && !speedLimit)) {
+    return (
+      <div 
+        data-testid="speed-limit-parking"
+        className={cn(
+          "backdrop-blur-xl border p-3 rounded-none",
+          theme === "dark" ? "bg-black/50 border-white/10" : "bg-white/80 border-gray-300"
+        )}
+      >
+        <div className="flex flex-col items-center gap-2">
+          <div className={cn(
+            "w-28 h-28 rounded-full border-[8px] flex flex-col items-center justify-center",
+            theme === "dark" ? "border-zinc-600 bg-zinc-900/50" : "border-gray-400 bg-gray-100"
+          )}>
+            <ParkingCircle className={cn(
+              "w-8 h-8 mb-1",
+              theme === "dark" ? "text-blue-400" : "text-blue-600"
+            )} />
+            <span className={cn(
+              "text-lg font-bold",
+              theme === "dark" ? "text-zinc-400" : "text-gray-500"
+            )}>SLOW</span>
+          </div>
+          <span className={cn(
+            "text-xs font-mono uppercase tracking-wider",
+            theme === "dark" ? "text-zinc-500" : "text-gray-500"
+          )}>
+            Private Area
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   // Always prefer to show a number - use lastKnownLimit as fallback
   const displayLimit = speedLimit || lastKnownLimit;
   const displayRoadName = roadName || lastKnownRoadName;
