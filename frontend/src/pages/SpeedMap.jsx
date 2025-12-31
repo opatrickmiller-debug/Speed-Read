@@ -1272,7 +1272,7 @@ export default function SpeedMap() {
         
         {/* Speed HUD - Draggable for user customization */}
         <DraggableContainer
-          storageKey="speedHudPosition"
+          storageKey="speedHudPositionV2"
           defaultPosition={{ x: 0, y: 0 }}
           showHandle={true}
           className="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto"
