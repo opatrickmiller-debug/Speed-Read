@@ -1115,14 +1115,27 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
         closest_dist = candidates[0][0]
         closest_road = candidates[0][2]
         
-        # If there are multiple roads within 15m, prefer higher-priority roads
+        # IMPROVED: Prefer highways/motorways even if they're further away
+        # GPS can be off by 20-50m, and we should prefer interstates over frontage roads
+        # Use different thresholds based on road type importance
         for dist, priority, road in candidates:
-            if dist <= closest_dist + 15:  # Within 15m of closest
-                if priority < road_priority.get(
-                    closest_road.get("tags", {}).get("highway", "unclassified"), 15
-                ):
+            highway_type = road.get("tags", {}).get("highway", "")
+            current_highway_type = closest_road.get("tags", {}).get("highway", "unclassified")
+            
+            # For motorways/trunks (interstates), allow up to 50m preference
+            # For primary roads, allow up to 30m preference
+            # For other roads, use 15m threshold
+            if highway_type in ('motorway', 'motorway_link', 'trunk', 'trunk_link'):
+                preference_threshold = 50
+            elif highway_type in ('primary', 'primary_link'):
+                preference_threshold = 30
+            else:
+                preference_threshold = 15
+            
+            if dist <= closest_dist + preference_threshold:
+                if priority < road_priority.get(current_highway_type, 15):
                     closest_road = road
-                    logger.info(f"Preferring {road.get('tags', {}).get('name', 'Unknown')} (type: {road.get('tags', {}).get('highway')}) over closer road")
+                    logger.info(f"Preferring {road.get('tags', {}).get('name', 'Unknown')} (type: {highway_type}) over {current_highway_type} (dist diff: {dist - closest_dist:.1f}m)")
         
         if closest_road:
             tags = closest_road.get("tags", {})
