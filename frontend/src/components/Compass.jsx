@@ -169,14 +169,14 @@ export function CompassBadge({ heading, size = "md", theme = "dark" }) {
         </div>
       </div>
       
-      {/* Fixed arrow pointing UP (direction of travel) */}
+      {/* Fixed arrow pointing straight UP (direction of travel) */}
       <Navigation 
         className={cn(
           "transition-none",
           theme === "dark" ? "text-cyan-400" : "text-cyan-600",
           s.arrow
         )}
-        style={{ transform: 'rotate(0deg)' }}
+        style={{ transform: 'rotate(-45deg)' }}
       />
       
       {/* Heading degrees in center-bottom */}
