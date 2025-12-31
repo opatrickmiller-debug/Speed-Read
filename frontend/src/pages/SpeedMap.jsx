@@ -750,7 +750,7 @@ export default function SpeedMap() {
         timeout: 10000,
       });
       
-      const { speed_limit, unit, road_name, source } = response.data;
+      const { speed_limit, unit, road_name, source, road_type } = response.data;
       
       if (speed_limit) {
         // Cache the result
@@ -769,8 +769,10 @@ export default function SpeedMap() {
         // Update state and save as last known good value
         setSpeedLimit(convertedLimit);
         setRoadName(road_name);
+        setRoadType(road_type);
         lastKnownSpeedLimitRef.current = convertedLimit;
         lastKnownRoadNameRef.current = road_name;
+        lastKnownRoadTypeRef.current = road_type;
         lastKnownTimestampRef.current = Date.now();
         setIsUsingCache(false);
       } else {
@@ -783,14 +785,17 @@ export default function SpeedMap() {
           // Keep showing last known speed limit (within 60 second window)
           setSpeedLimit(lastKnownSpeedLimitRef.current);
           setRoadName(lastKnownRoadNameRef.current);
+          setRoadType(lastKnownRoadTypeRef.current);
           setIsUsingCache(true);
           console.log(`Using sticky speed limit: ${lastKnownSpeedLimitRef.current} (age: ${Math.round(stickyAge/1000)}s)`);
         } else {
           // Data is too stale or no previous value - show "No Data"
           setSpeedLimit(null);
           setRoadName(null);
+          setRoadType(null);
           lastKnownSpeedLimitRef.current = null;
           lastKnownRoadNameRef.current = null;
+          lastKnownRoadTypeRef.current = null;
           lastKnownTimestampRef.current = null;
           setIsUsingCache(false);
           console.log("Speed limit data expired - showing No Data");
