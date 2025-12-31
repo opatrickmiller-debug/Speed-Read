@@ -1280,10 +1280,9 @@ export default function SpeedMap() {
         
         {/* Speed HUD - Draggable for user customization */}
         <DraggableContainer
-          storageKey="speedHudPositionV2"
-          defaultPosition={{ x: 0, y: 0 }}
-          showHandle={true}
-          className="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto"
+          storageKey="speedHudPositionV3"
+          centerOnMount={true}
+          className="pointer-events-auto"
         >
           <div 
             className="flex flex-col items-center gap-3 transition-opacity duration-200"
