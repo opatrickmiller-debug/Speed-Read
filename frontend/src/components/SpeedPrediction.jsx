@@ -288,6 +288,7 @@ export function SpeedPredictionBanner({
 export function SpeedPredictionIndicator({ 
   prediction, 
   currentSpeedLimit,
+  speedUnit = 'mph',
   onClick 
 }) {
   if (!prediction?.upcoming_limits?.length) return null;
@@ -302,8 +303,8 @@ export function SpeedPredictionIndicator({
     .filter(l => l.speed_limit < currentSpeedLimit)
     .sort((a, b) => a.distance_meters - b.distance_meters)[0];
 
-  const formattedSpeed = formatPredictionSpeed(lowestUpcoming.speed_limit, lowestUpcoming.unit);
-  const formattedDistance = formatPredictionDistance(lowestUpcoming.distance_meters);
+  const formattedSpeed = formatPredictionSpeed(lowestUpcoming.speed_limit, lowestUpcoming.unit, speedUnit);
+  const formattedDistance = formatPredictionDistance(lowestUpcoming.distance_meters, speedUnit);
 
   return (
     <button
