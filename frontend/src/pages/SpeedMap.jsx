@@ -514,6 +514,9 @@ export default function SpeedMap() {
   
   // Track if initial speed limit fetch has been done (fetch once when GPS locks, even if stationary)
   const initialFetchDoneRef = useRef(false);
+  
+  // Track previous speed state (moving vs stopped)
+  const wasMovingRef = useRef(true);
 
   // Monitor online/offline status
   useEffect(() => {
