@@ -1126,7 +1126,8 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
                     "speed_limit": speed_limit,
                     "unit": unit,
                     "road_name": road_name,
-                    "source": "openstreetmap"
+                    "source": "openstreetmap",
+                    "road_type": highway_type
                 }
                 set_cached_speed_limit(lat, lon, result)
                 return SpeedLimitResponse(**result)
