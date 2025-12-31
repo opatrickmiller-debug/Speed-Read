@@ -1233,6 +1233,19 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
                 estimated_limit = HIGHWAY_SPEED_DEFAULTS.get(highway_type)
                 
                 if estimated_limit:
+                    # OSM only has road type, no explicit speed limit
+                    # Try TomTom for a more accurate limit before falling back to estimation
+                    if TOMTOM_API_KEY:
+                        logger.info(f"OSM has no explicit limit - trying TomTom for {lat}, {lon}")
+                        tomtom_result = await get_speed_limit_from_tomtom(lat, lon)
+                        if tomtom_result and tomtom_result.get("speed_limit"):
+                            # TomTom has data - use it with road name from OSM
+                            tomtom_result["road_name"] = road_name
+                            tomtom_result["road_type"] = highway_type
+                            set_cached_speed_limit(lat, lon, tomtom_result)
+                            return SpeedLimitResponse(**tomtom_result)
+                    
+                    # Fall back to estimation
                     result = {
                         "speed_limit": estimated_limit,
                         "unit": "mph",
