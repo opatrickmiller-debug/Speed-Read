@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { AlertTriangle, Navigation, ArrowDown, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axios from "axios";
-import { formatSpeed, isMetric, getSpeedUnit } from "@/utils/units";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -10,8 +9,10 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
  * Format distance for prediction display
  * Shows meters for short distances, converts to display unit for longer ones
  */
-const formatPredictionDistance = (meters) => {
-  if (isMetric()) {
+const formatPredictionDistance = (meters, speedUnit = 'mph') => {
+  const isMetricUnit = speedUnit === 'km/h';
+  
+  if (isMetricUnit) {
     // Metric: show meters for < 1000m, km for >= 1000m
     if (meters < 1000) {
       return `${Math.round(meters)}m`;
@@ -32,23 +33,25 @@ const formatPredictionDistance = (meters) => {
  * Convert speed limit to display unit
  * Backend returns speed in the road's native unit (usually mph in US)
  */
-const formatPredictionSpeed = (speed, unit) => {
-  const userUnit = getSpeedUnit();
+const formatPredictionSpeed = (speed, sourceUnit, targetUnit = 'mph') => {
+  // Normalize units for comparison
+  const normalizedSourceUnit = sourceUnit === 'kmh' ? 'km/h' : sourceUnit;
+  const normalizedTargetUnit = targetUnit === 'kmh' ? 'km/h' : targetUnit;
   
   // If the speed is already in user's preferred unit, return as-is
-  if ((unit === 'mph' && userUnit === 'mph') || (unit === 'km/h' && userUnit === 'km/h')) {
-    return { value: Math.round(speed), unit: userUnit };
+  if (normalizedSourceUnit === normalizedTargetUnit) {
+    return { value: Math.round(speed), unit: normalizedTargetUnit };
   }
   
   // Convert if needed
-  if (unit === 'km/h' && userUnit === 'mph') {
+  if (normalizedSourceUnit === 'km/h' && normalizedTargetUnit === 'mph') {
     return { value: Math.round(speed * 0.621371), unit: 'mph' };
   }
-  if (unit === 'mph' && userUnit === 'km/h') {
+  if (normalizedSourceUnit === 'mph' && normalizedTargetUnit === 'km/h') {
     return { value: Math.round(speed * 1.60934), unit: 'km/h' };
   }
   
-  return { value: Math.round(speed), unit: userUnit };
+  return { value: Math.round(speed), unit: normalizedTargetUnit };
 };
 
 /**
