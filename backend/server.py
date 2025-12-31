@@ -1434,16 +1434,6 @@ async def get_speed_ahead(
                     geometry = road.get("geometry", [])
                     road_bearing = calculate_road_bearing(geometry)
                     
-                    # Apply filtering - skip side streets and misaligned roads
-                    if not should_include_road_in_prediction(
-                        highway_type, 
-                        current_road_type, 
-                        road_bearing, 
-                        bearing
-                    ):
-                        logger.debug(f"Filtering out {road_name} (type={highway_type}, bearing mismatch)")
-                        continue
-                    
                     if maxspeed:
                         maxspeed_clean = maxspeed.lower().strip()
                         speed_limit = None
@@ -1465,6 +1455,18 @@ async def get_speed_ahead(
                             if digits:
                                 speed_limit = int(digits)
                                 unit = "km/h"
+                        
+                        # Apply filtering AFTER parsing speed - skip side streets, overpasses, and misaligned roads
+                        if not should_include_road_in_prediction(
+                            highway_type, 
+                            current_road_type, 
+                            road_bearing, 
+                            bearing,
+                            speed_limit,  # Pass speed limit for low-speed filtering
+                            distance  # Pass distance for overpass filtering
+                        ):
+                            logger.debug(f"Filtering out {road_name} (type={highway_type}, speed={speed_limit}, dist={distance})")
+                            continue
                         
                         if speed_limit:
                             seen_roads.add(road_key)
