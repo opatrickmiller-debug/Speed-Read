@@ -1064,12 +1064,25 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
         return dist_meters
     
     def find_closest_road_with_geometry(elements, user_lat, user_lon):
-        """Find the road with minimum perpendicular distance to user position"""
+        """
+        Find the road with minimum perpendicular distance to user position.
+        Prefers highways/major roads when distances are similar (within 10m).
+        """
         if not elements:
             return None
         
-        closest_road = None
-        min_distance = float('inf')
+        # Road type priority (lower = higher priority)
+        road_priority = {
+            'motorway': 0, 'motorway_link': 1,
+            'trunk': 2, 'trunk_link': 3,
+            'primary': 4, 'primary_link': 5,
+            'secondary': 6, 'secondary_link': 7,
+            'tertiary': 8, 'tertiary_link': 9,
+            'residential': 10, 'unclassified': 11,
+            'service': 12
+        }
+        
+        candidates = []
         
         for element in elements:
             geometry = element.get("geometry", [])
@@ -1088,20 +1101,40 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
                 )
                 road_min_dist = min(road_min_dist, dist)
             
-            if road_min_dist < min_distance:
-                min_distance = road_min_dist
-                closest_road = element
+            highway_type = element.get("tags", {}).get("highway", "unclassified")
+            priority = road_priority.get(highway_type, 15)
+            candidates.append((road_min_dist, priority, element))
+        
+        if not candidates:
+            return None
+        
+        # Sort by distance first
+        candidates.sort(key=lambda x: x[0])
+        
+        # Get the closest road
+        closest_dist = candidates[0][0]
+        closest_road = candidates[0][2]
+        
+        # If there are multiple roads within 15m, prefer higher-priority roads
+        for dist, priority, road in candidates:
+            if dist <= closest_dist + 15:  # Within 15m of closest
+                if priority < road_priority.get(
+                    closest_road.get("tags", {}).get("highway", "unclassified"), 15
+                ):
+                    closest_road = road
+                    logger.info(f"Preferring {road.get('tags', {}).get('name', 'Unknown')} (type: {road.get('tags', {}).get('highway')}) over closer road")
         
         if closest_road:
-            logger.info(f"Closest road is {min_distance:.1f}m away: {closest_road.get('tags', {}).get('name', 'Unknown')}")
+            tags = closest_road.get("tags", {})
+            logger.info(f"Selected road: {tags.get('name', 'Unknown')} ({tags.get('highway')}) at ~{closest_dist:.1f}m")
         
         return closest_road
     
     # STEP 1: Get roads with geometry and find the ACTUAL closest one
-    # Use "out geom" to get road coordinates for accurate distance calculation
+    # Use smaller radius (50m) to reduce chance of picking up parallel roads
     query_with_geom = f"""
     [out:json][timeout:10];
-    way(around:75,{lat},{lon})["highway"]["maxspeed"];
+    way(around:50,{lat},{lon})["highway"]["maxspeed"];
     out body geom;
     """
     
