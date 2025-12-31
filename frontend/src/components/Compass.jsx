@@ -166,11 +166,20 @@ export function DraggableCompass({ theme = "dark", enabled = true }) {
 
   if (!enabled) return null;
 
+  // Default position: top-right area of screen
+  const getDefaultPosition = () => {
+    if (typeof window === 'undefined') return { x: 20, y: 80 };
+    return { 
+      x: window.innerWidth - 100,  // 100px from right edge
+      y: 80  // Below status bar
+    };
+  };
+
   return (
     <DraggableContainer
-      storageKey="compassPosition"
-      defaultPosition={{ x: -140, y: 100 }}
-      className="left-1/2 -translate-x-1/2 pointer-events-auto"
+      storageKey="compassPositionV2"
+      defaultPosition={getDefaultPosition()}
+      className="pointer-events-auto"
     >
       <CompassBadge heading={heading} size="md" theme={theme} />
     </DraggableContainer>
