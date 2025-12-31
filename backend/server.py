@@ -1323,7 +1323,9 @@ def should_include_road_in_prediction(
     road_type: str, 
     current_road_type: Optional[str],
     road_bearing: Optional[float],
-    travel_bearing: float
+    travel_bearing: float,
+    speed_limit: Optional[int] = None,
+    distance_meters: Optional[int] = None
 ) -> bool:
     """
     Determine if a road should be included in predictions.
@@ -1332,12 +1334,26 @@ def should_include_road_in_prediction(
     1. If on a highway (motorway/trunk), only show other highways
     2. Road must be roughly aligned with direction of travel (within 45 degrees)
     3. Filter out pedestrian/cycleway/service roads
+    4. Filter out very low speed limits when on highway (definitely side streets)
+    5. Filter out very close predictions (likely overpasses)
     """
     # Skip non-vehicle roads
     skip_types = {'footway', 'cycleway', 'path', 'steps', 'pedestrian', 
                   'bridleway', 'service', 'track', 'bus_guideway'}
     if road_type in skip_types:
         return False
+    
+    # If on a highway, filter out suspiciously low speed limits (< 35 mph or < 56 km/h)
+    # These are almost certainly side streets, not highway speed changes
+    if current_road_type in HIGHWAY_ROAD_TYPES:
+        if speed_limit and speed_limit < 35:
+            logger.debug(f"Filtering out low speed limit {speed_limit} when on highway")
+            return False
+        
+        # Also filter out very close predictions (< 150m) - likely overpasses
+        if distance_meters and distance_meters < 150:
+            logger.debug(f"Filtering out close prediction at {distance_meters}m (likely overpass)")
+            return False
     
     # Check direction alignment (more strict - 35 degrees for highways)
     if current_road_type in HIGHWAY_ROAD_TYPES:
