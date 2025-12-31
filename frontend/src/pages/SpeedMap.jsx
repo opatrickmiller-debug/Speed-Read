@@ -896,9 +896,6 @@ export default function SpeedMap() {
       setIsLoadingLocation(false);
       return;
     }
-    
-    // Track if we've fetched while stopped at current location
-    let stoppedFetchDone = false;
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
@@ -911,36 +908,34 @@ export default function SpeedMap() {
         // Get current speed in mph for stationary check
         // GPS speed is in meters/second, convert to mph (1 m/s = 2.237 mph)
         const gpsSpeedMph = position.coords.speed !== null ? position.coords.speed * 2.237 : 0;
+        const isMoving = gpsSpeedMph > 2;
         
-        // When STOPPED (< 2 mph):
-        // - Clear last known values (might be on different road now)
-        // - Do a fresh fetch once for current location
-        // When MOVING (> 2 mph):
-        // - Normal polling behavior
+        // Detect transition from moving to stopped
+        const justStopped = wasMovingRef.current && !isMoving;
+        wasMovingRef.current = isMoving;
         
-        if (gpsSpeedMph < 2) {
-          // Stopped - clear cached values so we don't show stale data
-          // This prevents showing "LAST KNOWN" from a previous road when at a stoplight
-          if (lastKnownSpeedLimitRef.current !== null) {
-            console.log("Stopped - clearing cached speed limit");
+        if (isMoving) {
+          // Moving - normal polling
+          fetchSpeedLimit(latitude, longitude);
+          initialFetchDoneRef.current = true;
+          updateBearing(latitude, longitude);
+        } else {
+          // Stopped
+          if (justStopped) {
+            // Just stopped - clear old cached data and fetch fresh for this location
+            console.log("Just stopped - fetching fresh speed limit");
             lastKnownSpeedLimitRef.current = null;
             lastKnownRoadNameRef.current = null;
             lastKnownRoadTypeRef.current = null;
             lastKnownTimestampRef.current = null;
             setIsUsingCache(false);
-          }
-          
-          // Do a single fetch when first stopping to get current location's limit
-          if (!stoppedFetchDone) {
             fetchSpeedLimit(latitude, longitude);
-            stoppedFetchDone = true;
+          } else if (!initialFetchDoneRef.current) {
+            // App just loaded while stationary - do initial fetch
+            fetchSpeedLimit(latitude, longitude);
+            initialFetchDoneRef.current = true;
           }
-        } else {
-          // Moving - normal polling, reset stopped fetch flag
-          stoppedFetchDone = false;
-          fetchSpeedLimit(latitude, longitude);
-          initialFetchDoneRef.current = true;
-          updateBearing(latitude, longitude);
+          // Otherwise stay idle - don't poll while stopped
         }
         
         // Map panning is handled by MapUpdater component in Leaflet
