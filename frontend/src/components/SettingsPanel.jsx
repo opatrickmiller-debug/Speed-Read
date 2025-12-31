@@ -27,9 +27,9 @@ import { isMetric } from "@/utils/units";
 // App version
 const APP_VERSION = "2.2.0";
 
-// AI Prediction threshold (45 mph = ~72 km/h)
-const AI_THRESHOLD_MPH = 45;
-const AI_THRESHOLD_KMH = 72;
+// AI Prediction threshold (35 mph = ~56 km/h)
+const AI_THRESHOLD_MPH = 35;
+const AI_THRESHOLD_KMH = 56;
 
 // Test messages for voice
 const TEST_MESSAGES = {
