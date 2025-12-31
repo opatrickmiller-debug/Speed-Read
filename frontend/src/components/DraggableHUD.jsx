@@ -208,25 +208,61 @@ export function useDraggable(storageKey, defaultPosition = { x: 0, y: 0 }) {
 
 /**
  * Draggable wrapper component - MOBILE OPTIMIZED
+ * Now calculates center position based on viewport
  */
 export function DraggableContainer({ 
   children, 
   storageKey,
   defaultPosition = { x: 0, y: 0 },
+  centerOnMount = false,  // If true, centers the element on first load
   className,
   onPositionChange,
 }) {
+  // Calculate centered default position on mount
+  const getCenteredDefault = useCallback(() => {
+    if (typeof window === 'undefined') return defaultPosition;
+    
+    // For centering, we want the element roughly in the middle of the screen
+    // The element will be positioned from top-left, so we calculate offset
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Estimate element size (speedometer is roughly 200x250)
+    const estimatedWidth = 200;
+    const estimatedHeight = 280;
+    
+    return {
+      x: (viewportWidth - estimatedWidth) / 2,
+      y: (viewportHeight - estimatedHeight) / 2 - 50  // Slightly above center
+    };
+  }, [defaultPosition]);
+
   const { 
     position, 
+    setPosition,
     isDragging,
     isLocked,
     toggleLock,
     resetPosition,
     dragHandlers 
-  } = useDraggable(storageKey, defaultPosition);
+  } = useDraggable(storageKey, centerOnMount ? getCenteredDefault() : defaultPosition);
 
   const [showControls, setShowControls] = useState(false);
   const controlsTimerRef = useRef(null);
+  const hasInitialized = useRef(false);
+
+  // Center on first mount if no saved position and centerOnMount is true
+  useEffect(() => {
+    if (centerOnMount && !hasInitialized.current) {
+      hasInitialized.current = true;
+      const savedPosition = localStorage.getItem(storageKey);
+      if (!savedPosition) {
+        // No saved position, center the element
+        const centered = getCenteredDefault();
+        setPosition(centered);
+      }
+    }
+  }, [centerOnMount, storageKey, getCenteredDefault, setPosition]);
 
   useEffect(() => {
     onPositionChange?.(position);
