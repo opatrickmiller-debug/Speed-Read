@@ -507,7 +507,7 @@ export const SettingsPanel = ({
                 </div>
                 <p className="text-xs text-zinc-200">Warns before entering lower speed zones</p>
                 <p className="text-[10px] text-zinc-400 italic">
-                  Only active at {isMetric() ? `${AI_THRESHOLD_KMH}+ km/h` : `${AI_THRESHOLD_MPH}+ mph`} for highway accuracy
+                  Only active at {isMetric() ? `${AI_THRESHOLD_KMH}+ km/h` : `${AI_THRESHOLD_MPH}+ mph`} for accuracy
                 </p>
               </div>
 
