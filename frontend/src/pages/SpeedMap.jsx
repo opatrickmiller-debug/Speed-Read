@@ -723,8 +723,21 @@ export default function SpeedMap() {
   const fetchSpeedLimit = useCallback(async (lat, lon) => {
     // Throttle requests to every 5 seconds
     const now = Date.now();
+    
+    // Throttle requests - 5 seconds minimum between calls
     if (now - lastFetchRef.current < 5000) return;
     lastFetchRef.current = now;
+    
+    // Track consecutive failures for backoff
+    if (!window.speedLimitFailures) window.speedLimitFailures = 0;
+    if (!window.lastFailureTime) window.lastFailureTime = 0;
+    
+    // If we've had failures recently, apply exponential backoff
+    const backoffTime = Math.min(30000, 5000 * Math.pow(2, window.speedLimitFailures));
+    if (window.speedLimitFailures > 0 && (now - window.lastFailureTime) < backoffTime) {
+      console.log(`Backing off - waiting ${Math.round((backoffTime - (now - window.lastFailureTime))/1000)}s`);
+      return;
+    }
     
     setIsLoadingSpeedLimit(true);
     
@@ -751,7 +764,7 @@ export default function SpeedMap() {
     try {
       const response = await axios.get(`${API}/speed-limit`, {
         params: { lat, lon },
-        timeout: 10000,
+        timeout: 8000,  // Reduced timeout
       });
       
       const { speed_limit, unit, road_name, source, road_type } = response.data;
