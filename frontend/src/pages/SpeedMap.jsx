@@ -824,6 +824,11 @@ export default function SpeedMap() {
     } catch (error) {
       console.error("Error fetching speed limit:", error);
       
+      // Track failures for exponential backoff
+      window.speedLimitFailures = (window.speedLimitFailures || 0) + 1;
+      window.lastFailureTime = Date.now();
+      console.log(`Speed limit fetch failed (${window.speedLimitFailures} consecutive failures)`);
+      
       // On error, use sticky behavior but respect the timeout
       
       // First try offline cache
