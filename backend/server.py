@@ -1130,17 +1130,20 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
         
         return closest_road
     
-    # STEP 0: Check if user is in a PARKING LOT first (very tight radius)
+    # STEP 0: Check if user is in a PARKING LOT first (tight radius search)
     # Parking lots (service roads) usually don't have maxspeed tags, so we check separately
     # This prevents showing nearby street speed limits when parked in a lot
     PARKING_ROAD_TYPES = ['service', 'parking_aisle', 'driveway', 'parking']
     
+    # First, try to find explicit parking areas within 30m
     parking_query = f"""
     [out:json][timeout:5];
     (
-      way(around:20,{lat},{lon})["highway"="service"];
-      way(around:20,{lat},{lon})["highway"="service"]["service"="parking_aisle"];
-      way(around:20,{lat},{lon})["amenity"="parking"];
+      way(around:30,{lat},{lon})["highway"="service"];
+      way(around:30,{lat},{lon})["highway"="service"]["service"];
+      way(around:30,{lat},{lon})["amenity"="parking"];
+      area(around:30,{lat},{lon})["amenity"="parking"];
+      way(around:30,{lat},{lon})["landuse"="retail"];
     );
     out body geom;
     """
@@ -1148,17 +1151,19 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
     parking_data = await query_overpass_with_fallback(parking_query, timeout=5.0)
     
     if parking_data and parking_data.get("elements"):
-        # Check if there's a parking/service road VERY close (within 20m)
+        # Check if there's a parking/service road VERY close
         for element in parking_data["elements"]:
             tags = element.get("tags", {})
             highway_type = tags.get("highway", "")
             amenity = tags.get("amenity", "")
+            landuse = tags.get("landuse", "")
             service_type = tags.get("service", "")
             
             # Check if this is a parking area
             is_parking = (
                 amenity == "parking" or
-                highway_type == "service" and service_type in ["parking_aisle", "driveway", ""] or
+                landuse == "retail" or  # Shopping centers have parking
+                (highway_type == "service" and service_type in ["parking_aisle", "driveway", ""]) or
                 highway_type in PARKING_ROAD_TYPES
             )
             
@@ -1177,8 +1182,8 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
                         )
                         dist = min(dist, d)
                     
-                    # If within 15 meters of a parking area, return parking lot result
-                    if dist < 15:
+                    # If within 25 meters of a parking area, return parking lot result
+                    if dist < 25:
                         logger.info(f"PARKING LOT DETECTED at {lat}, {lon} (dist: {dist:.1f}m)")
                         result = {
                             "speed_limit": None,  # No posted limit in parking lots
