@@ -103,8 +103,8 @@ function getCardinalDirection(heading) {
 }
 
 /**
- * Simple Compass Badge Component
- * Shows direction of travel (arrow always points up = forward)
+ * Compass Badge Component with rotating arrow
+ * Arrow rotates to show actual heading direction, N marker at top
  */
 export function CompassBadge({ heading, size = "md", theme = "dark" }) {
   const direction = getCardinalDirection(heading);
@@ -118,7 +118,7 @@ export function CompassBadge({ heading, size = "md", theme = "dark" }) {
   return (
     <div 
       className={cn(
-        "relative flex flex-col items-center justify-center rounded-full",
+        "relative flex items-center justify-center rounded-full",
         "backdrop-blur-xl border-2 transition-all",
         theme === "dark" 
           ? "bg-black/70 border-white/20" 
@@ -126,25 +126,34 @@ export function CompassBadge({ heading, size = "md", theme = "dark" }) {
         sizes[size]
       )}
     >
-      {/* Arrow always points UP (direction of travel) */}
+      {/* Rotating arrow - points in the direction of travel */}
       <Navigation 
         className={cn(
-          "transition-transform duration-300",
+          "absolute transition-transform duration-300",
           theme === "dark" ? "text-cyan-400" : "text-cyan-600",
           size === "sm" ? "w-4 h-4" : size === "md" ? "w-5 h-5" : "w-6 h-6"
         )}
         style={{ 
-          transform: 'rotate(0deg)'  // Always pointing up/forward
+          transform: heading !== null ? `rotate(${heading}deg)` : 'rotate(0deg)'
         }}
       />
       
-      {/* Cardinal direction (W, N, E, S, etc.) */}
+      {/* Cardinal direction text at bottom */}
       <div className={cn(
-        "font-mono font-bold",
+        "absolute bottom-1 font-mono font-bold",
         theme === "dark" ? "text-white" : "text-black",
-        size === "sm" ? "text-xs" : "text-sm"
+        size === "sm" ? "text-[10px]" : "text-xs"
       )}>
-        {heading !== null ? direction.short : '--'}
+        {direction.short}
+      </div>
+      
+      {/* N marker at top */}
+      <div className={cn(
+        "absolute -top-0.5 font-mono font-bold",
+        theme === "dark" ? "text-red-400" : "text-red-600",
+        size === "sm" ? "text-[8px]" : "text-[10px]"
+      )}>
+        N
       </div>
     </div>
   );
