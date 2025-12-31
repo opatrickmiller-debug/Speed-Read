@@ -893,6 +893,9 @@ export default function SpeedMap() {
       setIsLoadingLocation(false);
       return;
     }
+    
+    // Track if we've fetched while stopped at current location
+    let stoppedFetchDone = false;
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
@@ -908,7 +911,7 @@ export default function SpeedMap() {
         
         // When STOPPED (< 2 mph):
         // - Clear last known values (might be on different road now)
-        // - Do a fresh fetch for current location
+        // - Do a fresh fetch once for current location
         // When MOVING (> 2 mph):
         // - Normal polling behavior
         
@@ -921,15 +924,17 @@ export default function SpeedMap() {
             lastKnownRoadNameRef.current = null;
             lastKnownRoadTypeRef.current = null;
             lastKnownTimestampRef.current = null;
+            setIsUsingCache(false);
           }
           
-          // Do a single fetch when first stopping (or on initial load)
-          if (!initialFetchDoneRef.current) {
+          // Do a single fetch when first stopping to get current location's limit
+          if (!stoppedFetchDone) {
             fetchSpeedLimit(latitude, longitude);
-            initialFetchDoneRef.current = true;
+            stoppedFetchDone = true;
           }
         } else {
-          // Moving - normal polling
+          // Moving - normal polling, reset stopped fetch flag
+          stoppedFetchDone = false;
           fetchSpeedLimit(latitude, longitude);
           initialFetchDoneRef.current = true;
           updateBearing(latitude, longitude);
