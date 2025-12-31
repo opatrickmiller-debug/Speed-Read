@@ -1,52 +1,85 @@
 <analysis>**original_problem_statement:**
-The user's initial goal was to build a Progressive Web App (PWA) called SpeedShield to provide speeding alerts. This session focused on resolving critical real-world driving inaccuracies, overhauling the mapping and data-sourcing infrastructure, and refining UI/UX based on live testing feedback.
+The user's initial goal was to build a Progressive Web App (PWA) called SpeedShield to provide speeding alerts. This expanded to include fixing real-world driving inaccuracies, overhauling the data-sourcing infrastructure, improving long-trip reliability, enhancing UI/UX based on live testing, and preparing the application for potential public deployment by addressing scalability concerns.
 
 **PRODUCT REQUIREMENTS added in this session:**
-- **Make Trip History User-Friendly:** Redesign the trip history report UI.
-- **Final End-to-End Testing:** Conduct a comprehensive test of all features.
-- **Integrate Alternative Geo-Data API:** Research and integrate a more reliable speed limit data source to supplement or replace OpenStreetMap.
-- **Fix Posted speed drops out:** Implement a sticky speed limit display that persists through temporary data gaps.
-- **Fix Predictive AI not working / Inaccurate Data:** Add a speed threshold (45 mph) to the AI prediction feature and a note in the settings to explain its behavior.
-- **Fix Location Inaccuracy:** Resolve discrepancies where the app shows speed limits for a nearby major highway (I-94) instead of the user's actual surface street (University Ave).
-- **Stop Data Collection When Stationary:** Prevent the app from recording trip data when the vehicle is not moving.
-- **Move Weather Alert:** Reposition the weather alert banner to prevent it from overlapping with other UI controls.
-- **Switch Map Provider:** Based on the agent's recommendation, replace Google Maps with OpenStreetMap/Leaflet to create a single, consistent data source for both map display and speed limits.
+- **Fix Data Dropouts:** Resolve an issue where the app stops receiving data after ~10 minutes of use.
+- **Improve Long-Trip Reliability:** Ensure the app remains functional and accurate for drives of an hour or longer.
+- **Stop Polling When Stationary:** Add an optimization to prevent API calls when the vehicle is not moving.
+- **Universal Unit System:** Make the Imperial (mph/mi) vs. Metric (km/h/km) setting apply to all distances and speeds throughout the app, including trip history and AI predictions.
+- **Improve AI Prediction Accuracy:** Prevent the AI prediction feature from showing speed limits of irrelevant side streets or overpasses when driving on a highway.
+- **Prepare for Self-Hosting:** Create documentation and make necessary code changes to allow the user to self-host the backend, including a private Overpass API instance.
+- **Center Speedometer:** Default the speedometer's position to the center of the screen, especially on mobile devices.
+- **Fix/Improve Compass:** Add a visible compass to the UI and ensure it correctly displays the direction of travel.
+- **Auto-hide Speed Limit in Parking Lots:** Automatically hide the speed limit display when the app detects the user is in a low-speed service area like a parking lot.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application has undergone a major architectural change, migrating from Google Maps to a pure OpenStreetMap (OSM) stack using Leaflet for the map display. This aligns the visual map data with the speed limit data source, aiming to resolve location discrepancies. The backend speed limit detection in  is now highly sophisticated, using geometry calculations ( library) to determine the true closest road to the user's GPS coordinates, rather than relying on simple radius searches. The frontend features a redesigned Trip History panel, a more resilient sticky speed limit display that can tolerate data gaps for up to 60 seconds, and a conditional AI Prediction feature that only activates at highway speeds.
+The application is a full-stack PWA using React and FastAPI. The backend () has sophisticated logic for determining speed limits, featuring a primary data source (OpenStreetMap via Overpass API) and a commercial fallback (TomTom API). It uses advanced geometry-based road detection (), robust caching, and rate limiting (). The AI speed prediction feature has been significantly improved to filter roads by type and direction of travel. The frontend () is highly dynamic, with features like a sticky speed limit display, error handling with exponential backoff, and optimizations to reduce data polling when stationary. A comprehensive unit conversion system () ensures all speeds and distances respect the user's Imperial/Metric preference. The UI includes a draggable speedometer, a compass, and various informational panels. The app has also been prepared for self-hosting with documentation and a configurable backend.
 
 **Last working item**:
-- **Last item agent was working:** The user requested to integrate the TomTom API as a commercial backup for speed limit data, as the free Google Roads API was not a viable option. The agent researched the integration, retrieved the playbook, and was preparing to implement it.
-- **Status**: NOT STARTED
-- **Agent Testing Done**: N
+- **Last item agent was working:** The user reported that the application was performing worse after the agent changed the TomTom API fallback logic. The agent had modified  to proactively call TomTom not just when OSM returned *no data*, but also when it returned an *estimated* speed limit. The user stated the previous logic was better. The agent's last action was attempting to debug and test this new, problematic fallback logic.
+- **Status**: BLOCKED
+- **Agent Testing Done**: N (The change was deployed, but user testing revealed a regression.)
 - **Which testing method agent to use?**: backend testing agent
-- **User Testing Done**: N
+- **User Testing Done**: Y (User reported the regression.)
 
 **All Pending/In progress Issue list**:
-- **Issue 1:** (P0) Recurring Wake up servers loop in the preview environment.
-- **Issue 2:** (P1) OpenStreetMap data is still incomplete for some roads. The next step to mitigate this is implementing the TomTom API fallback.
+- **Issue 1:** (P0) Major regression in speed limit accuracy after TomTom fallback logic change.
+- **Issue 2:** (P1) Recurring Wake up servers loop in the preview environment.
 
 **Issues Detail:**
 - **Issue 1:**
-  - **Description:** The Emergent platform's preview system repeatedly shows a Wake up servers overlay. This is a platform-level issue, not an application bug.
-  - **Attempted fixes:** Various workarounds (auto-wake scripts, keep-alive pings) are in place but are not 100% effective.
-  - **Next debug checklist:** The definitive solution is to **deploy the application**, which provides 24/7 uptime. The next agent should re-iterate this to the user as the final solution if the issue is raised again.
-  - **Why fix this issue and what will be achieved with the fix?** Deployment is the proper long-term fix for a seamless user experience.
-  - **Status**: BLOCKED (by platform behavior)
-  - **Is recurring issue?** Y
-  - **Should Test frontend/backend/both after fix?** N/A (platform issue)
+  - **Description:** After the agent changed the TomTom API fallback to be more proactive (triggering when OSM provides an estimated speed, not just when it provides no data), the user reported that the app is not working as well as before. This suggests the new logic is introducing inaccuracies or performance issues.
+  - **Attempted fixes:** The agent implemented the proactive fallback logic in . This change is the source of the problem.
+  - **Next debug checklist:**
+    1.  Use commit b300296164751786f93327925830e1e80d5d4275
+Author: emergent-agent-e1 <github@emergent.sh>
+Date:   Wed Dec 31 17:29:16 2025 +0000
+
+    auto-commit for 7c1c8cdd-bf03-4500-9897-da675d528ef5
+
+diff --git a/backend/server.py b/backend/server.py
+index 2fbdabd..e3bc6e9 100644
+--- a/backend/server.py
++++ b/backend/server.py
+@@ -1233,6 +1233,19 @@ async def get_speed_limit(request: Request, lat: float, lon: float):
+                 estimated_limit = HIGHWAY_SPEED_DEFAULTS.get(highway_type)
+                 
+                 if estimated_limit:
++                    # OSM only has road type, no explicit speed limit
++                    # Try TomTom for a more accurate limit before falling back to estimation
++                    if TOMTOM_API_KEY:
++                        logger.info(f"OSM has no explicit limit - trying TomTom for {lat}, {lon}")
++                        tomtom_result = await get_speed_limit_from_tomtom(lat, lon)
++                        if tomtom_result and tomtom_result.get("speed_limit"):
++                            # TomTom has data - use it with road name from OSM
++                            tomtom_result["road_name"] = road_name
++                            tomtom_result["road_type"] = highway_type
++                            set_cached_speed_limit(lat, lon, tomtom_result)
++                            return SpeedLimitResponse(**tomtom_result)
++                    
++                    # Fall back to estimation
+                     result = {
+                         "speed_limit": estimated_limit,
+                         "unit": "mph", or a similar method to view the exact changes made to the fallback logic in the last few commits.
+    2.  Identify the code block where the condition to call  was changed. The original logic likely only called it on a complete failure from OSM, while the new logic calls it if .
+    3.  Revert this specific logic to its previous state, where TomTom is only called if the primary OSM lookup (including geometry search and estimation) fails entirely to find any road or speed.
+    4.  Thoroughly test the reverted logic using the backend testing agent to confirm both OSM-only and TomTom-fallback scenarios work as expected.
+  - **Why fix this issue and what will be achieved with the fix?** This is a critical regression reported by the user that degrades the core functionality of the app. Fixing it will restore the app's reliability and accuracy to the previously accepted level.
+  - **Status**: IN PROGRESS
+  - **Is recurring issue?** N
+  - **Should Test frontend/backend/both after fix?** Backend
   - **Blocked on other issue:** None
 
 - **Issue 2:**
-  - **Description:** The primary data source, OpenStreetMap, lacks speed limit data for some roads.
-  - **Attempted fixes:** A highly advanced geometry-based fallback system was implemented in .
-  - **Next debug checklist:** Implement the TomTom API as a secondary data source, as requested by the user. This will require obtaining an API key from the user.
-  - **Why fix this issue and what will be achieved with the fix?** Adding a commercial data source will provide more accurate and comprehensive speed limit coverage.
-  - **Status**: IN PROGRESS
+  - **Description:** The Emergent platform's preview environment repeatedly shows a Wake up servers overlay, which can interrupt testing and reset the backend's in-memory cache.
+  - **Attempted fixes:** This is a known platform behavior.
+  - **Next debug checklist:** The only definitive solution is to **deploy the application**, which provides 24/7 uptime. This should be communicated to the user as the final solution.
+  - **Why fix this issue and what will be achieved with the fix?** Deployment provides a stable environment for production use and eliminates interruptions.
+  - **Status**: BLOCKED (by platform behavior)
   - **Is recurring issue?** Y
-  - **Should Test frontend/backend/both after fix?** Backend
+  - **Should Test frontend/backend/both after fix?** N/A
   - **Blocked on other issue:** None
 
 **In progress Task List**:
@@ -54,107 +87,102 @@ The application has undergone a major architectural change, migrating from Googl
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-    - **P0: Implement TomTom API Integration:** Modify  to add TomTom as a fallback data source for speed limits, after the primary OpenStreetMap lookup fails. This will require an API key from the user.
-    - **P1: Final End-to-End Testing:** After the TomTom integration is complete, conduct a comprehensive test to ensure all data sources and fallbacks work together seamlessly.
+  - **P1: Deploy the Application:** To resolve the recurring Wake up servers issue and provide a stable production environment.
+  - **P1: Final End-to-End Testing:** After the P0 regression is fixed, conduct a comprehensive live drive test to ensure all features work together seamlessly.
 - **Future Tasks:**
-    - **P2: Apple CarPlay Support:** Implement Apple CarPlay integration based on .
-    - **P2: Android Auto App:** Build a native Android app for full Android Auto integration based on .
+  - **P2: Apple CarPlay Support:** Implement Apple CarPlay integration based on .
+  - **P2: Android Auto App:** Build a native Android app for full Android Auto integration based on .
+  - **P3: Persistent Cache:** For a deployed app, consider replacing the in-memory Python cache with a persistent solution like Redis to survive server restarts.
 
 **Completed work in this session**
-- **Map Overhaul (Google Maps -> Leaflet/OSM):**
-  - Replaced  with  and  across the application.
-  - Reworked  to use Leaflet's , , and  components.
-  - Removed all dependencies on the Google Maps JavaScript API, including the API key.
-- **Critical Location Accuracy Fix (Geometry-Based Detection):**
-  - Rewrote the speed limit logic in  to fetch road geometry and use the  library to calculate the perpendicular distance from the GPS point to each road segment, ensuring the app detects the road the user is *actually on*.
-- **Trip History UI and Auth Fix:**
-  - Redesigned the  component for a more modern and user-friendly look.
-  - Fixed a critical authentication race condition where trip data failed to load after login by passing the auth token explicitly in the API call header.
-- **Resilient Speed Limit Display:**
-  - Implemented a sticky speed limit in  that holds the last known value for up to 60 seconds during data dropouts, preventing the UI from flashing No Data.
-- **Live Driving Debugging and Fixes:**
-  - **Weather Alert UI:** Moved the weather alert banner and badge to the bottom of the screen in  to fix UI overlap issues.
-  - **AI Prediction Refinement:** Modified the feature to only activate above 45 mph and added an explanatory note in . The feature was also temporarily disabled and re-enabled to allow focus on core issues.
-  - **Stationary Data Collection:** Prevented trip data recording when vehicle speed is below 2 mph in .
-- **API Research & Implementation:**
-  - Researched Google, TomTom, and HERE APIs.
-  - Attempted to integrate Google Roads API, correctly diagnosed that it was not viable due to requiring a premium Asset Tracking license, and clearly communicated this to the user.
-  - Implemented a robust Overpass API fallback system with multiple servers and improved caching.
+- **Long-Trip Reliability Fix:** Resolved the data dropout issue by increasing the backend API rate limit in  from 30/min to 200/min and implementing robust caching.
+- **Frontend Reliability Fix:** Implemented exponential backoff and retry logic in  within  to gracefully handle temporary API server failures.
+- **Universal Unit System:** Created  and refactored the entire app (, , , ) to consistently display distances and speeds in the user's selected Imperial or Metric units.
+- **AI Prediction Accuracy:** Rewrote the speed prediction logic in  to be significantly more accurate by filtering upcoming roads based on the current road's type (, , etc.) and the vehicle's direction of travel.
+- **Stationary Polling Optimization:** Modified  to stop polling for speed limit data when the vehicle is stationary (<2 mph), reducing unnecessary API calls.
+- **Production/Self-Hosting Prep:** Created , made the backend Overpass server URL configurable via , and added the TomTom API key.
+- **UI/UX Improvements:**
+  - **Centered Speedometer:** Reworked  to reliably center the speedometer on page load across devices.
+  - **Compass Added & Fixed:** Added a compass to the UI, fixed its orientation, and simplified its design based on user feedback. A toggle was confirmed to exist in settings.
+  - **Parking Lot Auto-Hide:** Implemented logic in  to automatically hide the speed limit display on service roads (e.g., parking lots).
+  - **AI Threshold Adjustment:** Changed the AI prediction activation threshold from 45 mph to 35 mph as requested.
+- **Bug Fixes:**
+  - Fixed a bug where stale LAST KNOWN data would persist incorrectly when stopped at a traffic light.
+  - Tuned the backend road-detection geometry to better handle adjacent/parallel streets.
+
+**Earlier issues found/mentioned but not fixed**
+- None.
+
+**Known issue recurrence from previous fork**
+- **Issue recurrence:** The Wake up servers loop in the preview environment.
+- **Recurrence count:** 2+
+- **Status:** BLOCKED (Solution is deployment)
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Map Provider Migration:** Complete replacement of Google Maps with an OpenStreetMap/Leaflet stack to ensure data consistency.
-- **Geospatial Analysis:** Use of Python's  library on the backend to perform geometry calculations (perpendicular distance to a ) for accurate road detection, a significant improvement over simple radius searches.
-- **Authentication Race Condition:** Diagnosed and fixed an issue where a  was triggering an API call before an Axios interceptor was updated with the new auth token. The fix involved passing the token directly in the request header.
-- **Resilient Frontend State:** Implemented sticky state management using  and timestamps to keep data visible on the UI during temporary API failures or data gaps, improving user experience.
-- **Live Debugging:** Iteratively diagnosed and fixed complex, interconnected issues reported by the user during real-world drive tests, including location inaccuracies and UI bugs.
-- **Third-Party API Vetting:** Correctly identified that a desired API (Google Roads Speed Limits) was locked behind an enterprise license, and effectively communicated this technical/business constraint to the user before pivoting to another solution.
+- **API Rate Limiting:** Using  on the backend to control request frequency, which was a critical fix.
+- **Exponential Backoff:** Implemented on the frontend to create a resilient client that can recover from temporary server-side API errors or rate limiting.
+- **Context-Aware API Logic:** The AI speed prediction now uses context (current road type, direction) to provide much more relevant results.
+- **Proactive API Fallback:** The (currently problematic) strategy of using a secondary API not just on failure, but when the primary API returns low-confidence (estimated) data.
+- **Viewport-Based Centering:** Using / in React to reliably position elements, overcoming CSS transform inconsistencies.
+- **Centralized Utilities:** Creating a  file to enforce consistency and DRY principles for unit conversion.
 
 **key DB schema**
 - No changes were made to the database schema.
 
 **changes in tech stack**
-- **** was removed.
-- **** and **** were added as primary map rendering libraries.
-- **** is now a key Python dependency on the backend for geospatial calculations.
+- No new libraries were added, but the use of the existing  Python library became critical.
 
 **All files of reference**
-- : Contains the critical geometry-based speed limit detection logic.
-- : The core frontend component, now fully based on Leaflet.
-- : Contains the redesigned UI and the authentication fix.
-- : Contains the improved Last Known value display logic.
-- : Reflects the switch in mapping libraries.
-- : Contains the import for Leaflet's CSS.
-
-**Areas that need refactoring**:
--  remains extremely large and complex. Logic for trip recording, location handling, and API calls should be extracted into custom hooks (, , ) to improve readability and maintainability.
-
-**key api endpoints**
-- : The logic for this endpoint in  was completely overhauled to be significantly more accurate.
+- : The heart of the application logic. The recent regression is located here in the  function's fallback logic.
+- : The core frontend component managing state, API calls, and user interactions.
+- : The component responsible for the now-fixed speedometer positioning.
+- : The new, critical utility for ensuring consistent units across the app.
+- : New documentation for user-managed deployment.
 
 **Critical Info for New Agent**
-- **The app now uses OpenStreetMap/Leaflet exclusively.** Do not attempt to re-integrate Google Maps for map display. The switch was a deliberate choice to improve data consistency.
-- **The core location logic is in .** It uses geospatial calculations with the  library. Understand this geometry-based approach before making any changes to speed limit detection.
-- **The immediate next task is to integrate the TomTom API.** The playbook has been retrieved. You will need to request a TomTom API key from the user to proceed with the implementation in  as a fallback data source.
-- **The Wake up server loop is a known platform issue.** The only real solution is deployment. Do not waste cycles trying to fix it in the application code.
-- **Sticky UI logic is intentional.** The frontend is designed to hold onto the last known speed limit for up to 60 seconds. This is a feature, not a bug, designed to handle temporary data dropouts.
+- **Your IMMEDIATE and HIGHEST priority (P0) is to fix the regression reported by the user.** The app is not working as well since the TomTom fallback logic was changed to be more proactive. You must investigate the last few commits to  and likely revert the fallback condition to only trigger on a complete lack of data from OSM, rather than on an estimated result.
+- The AI Prediction accuracy is now highly dependent on the  being correctly identified and passed from the frontend. Any changes to the speed limit logic must preserve this data flow.
+- The Wake up servers issue is a known platform limitation. The solution is to advise the user to deploy the application, not to attempt code fixes.
+- The user has been very involved in live testing. Be prepared to deploy changes and ask for another drive test once the regression is fixed.
 
 **documents and test reports created in this job**
--  was updated multiple times to reflect E2E testing results and the resolution of false positives.
+- 
+- 
+-  (updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
-- **10. User asks if the app is still using Google Maps as a backup and if it would be useful.** Agent explains why it's not possible (enterprise license) and suggests TomTom as a viable alternative.
-- **9. User agrees to try TomTom.** (Yes)
-- **8. User reports AI prediction is inaccurate.** Agent first disables it, then upon user request, re-enables it with a 45mph+ threshold.
-- **7. User asks for a note in settings to explain the AI prediction behavior.** Agent implements this.
-- **6. User suggests that if data is missing for too long, it should show No Data.** Agent agrees and implements a 60-second timeout for the sticky value.
-- **5. User reports the posted speed is still cutting out.** Agent implements a more persistent last known value display in .
-- **4. User asks to switch to OpenStreetMap.** (Make the switch).
-- **3. User asks for the agent's opinion on switching map providers.** Agent recommends switching to OSM for data consistency.
-- **2. User asks if Overpass can be used for GPS.** Agent clarifies the roles of GPS hardware vs. map data providers.
-- **1. User reports the speed limit is *still* incorrect for their location (the core accuracy problem).** This led to the agent implementing the critical geometry-based detection fix.
+- 10. **User:** The longer I use the app the less reliable it becomes, why? - This led to the agent diagnosing Overpass rate limiting and adding exponential backoff.
+- 9. **Agent:** Summarizes the fix for reliability issues (exponential backoff).
+- 8. **User:** Can we test the tom tom fallback? - This initiated the sequence that led to the regression.
+- 7. **Agent:** Tests and finds TomTom is rarely used. Proposes a more proactive fallback.
+- 6. **Agent:** Implements the proactive TomTom fallback logic.
+- 5. **Agent:** Tests the new logic, but tests are inconclusive.
+- 4. **Agent:** Summarizes that the TomTom fallback is ready.
+- 3. **User:** Can you compare the code from before we updated the tom tom fallback to the current version. It is not working as well as before that change - **THIS IS THE CRITICAL BLOCKING MESSAGE.**
+- 2. **Agent:** Acknowledges the request to compare/revert the change.
+- 1. **Agent:** Starts investigating the git history to revert the change.
 
 **Project Health Check:**
-- **Broken:** The preview environment experience remains unreliable due to the platform's Wake up servers loop. The application itself is not broken.
-- **Mocked**: None.
+- **Broken**: The application's core feature (speed limit accuracy) has a major user-reported regression. The last change made by the previous agent broke the system's reliability.
 
 **3rd Party Integrations**
-- **OpenStreetMap Overpass API**: Primary source for speed limit data. The implementation is now highly robust with backup servers and geometry-based queries.
+- **OpenStreetMap Overpass API**: Primary source for speed limit data.
 - **OpenStreetMap Tile Server (via Leaflet)**: Used for map display.
-- **Weather.gov API**: For weather alerts. No key required.
-- **Resend**: For sending password reset emails. Requires User API Key ().
-- **TomTom API**: **(Next to be implemented)**. Will be a secondary source for speed limit data. Requires a User API Key.
+- **Weather.gov API**: For weather alerts.
+- **Resend**: For password reset emails.
+- **TomTom API**: **Integrated, but the current implementation logic is causing a critical regression.** Requires User API Key.
 
 **Testing status**
-- **Testing agent used after significant changes**: YES. Used to test Trip History and for E2E, though it produced some false positives which the main agent correctly identified and verified manually.
+- **Testing agent used after significant changes**: YES
 - **Troubleshoot agent used after agent stuck in loop**: NO
 - **Test files created**: None.
-- **Known regressions**: None.
+- **Known regressions**: [**CRITICAL**] The proactive TomTom fallback logic introduced in the last few steps has made the app less accurate/reliable, as reported by the user.
 
 **Credentials to test flow:**
-- The previous credentials failed. A new test user was created via the UI during the session. It is recommended to register a new user for testing if required.
+- User credentials for testing are not fixed; it is recommended to register a new user via the UI if login is required.
 
 **What agent forgot to execute**
-- Nothing. The agent was extremely thorough, addressing a series of complex, interconnected real-world problems. It correctly diagnosed deep technical issues (auth race conditions, geospatial data inaccuracies, API licensing limitations) and implemented sophisticated, effective solutions.</analysis>
+- The agent did not forget to execute anything, but its last executed action (modifying the TomTom fallback logic) was flawed and introduced a critical regression that must be addressed immediately. It failed to test the new logic thoroughly enough to catch the degradation in performance before the user did.</analysis>
