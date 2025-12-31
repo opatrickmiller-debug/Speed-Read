@@ -545,6 +545,7 @@ class SpeedLimitResponse(BaseModel):
     unit: str
     road_name: str | None
     source: str
+    road_type: str | None = None  # e.g., "motorway", "primary", "residential"
 
 class TripDataPoint(BaseModel):
     timestamp: str
