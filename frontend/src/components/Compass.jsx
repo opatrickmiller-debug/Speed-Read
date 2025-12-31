@@ -104,22 +104,20 @@ function getCardinalDirection(heading) {
 
 /**
  * Traditional Compass Badge Component
- * Red arrow always points to North, rotates based on your heading
- * Shows heading degrees at top, cardinal direction at bottom
+ * Fixed arrow pointing up (direction of travel)
+ * Outer ring rotates showing N, E, W, S based on heading
  */
 export function CompassBadge({ heading, size = "md", theme = "dark" }) {
-  const direction = getCardinalDirection(heading);
-  
   const sizes = {
-    sm: "w-12 h-12 text-xs",
-    md: "w-16 h-16 text-sm",
-    lg: "w-20 h-20 text-base"
+    sm: { container: "w-14 h-14", arrow: "w-4 h-4", text: "text-[8px]" },
+    md: { container: "w-18 h-18", arrow: "w-5 h-5", text: "text-[10px]" },
+    lg: { container: "w-22 h-22", arrow: "w-6 h-6", text: "text-xs" }
   };
 
-  // Traditional compass: arrow points to North
-  // If you're heading West (270°), North is 90° to your right
-  // So the arrow rotates OPPOSITE to your heading to point at North
-  const arrowRotation = heading !== null ? -heading : 0;
+  const s = sizes[size];
+  
+  // Rotate the outer ring opposite to heading so N points to actual North
+  const ringRotation = heading !== null ? -heading : 0;
 
   return (
     <div 
@@ -129,35 +127,63 @@ export function CompassBadge({ heading, size = "md", theme = "dark" }) {
         theme === "dark" 
           ? "bg-black/70 border-white/20" 
           : "bg-white/70 border-black/20",
-        sizes[size]
+        size === "sm" ? "w-14 h-14" : size === "md" ? "w-16 h-16" : "w-20 h-20"
       )}
     >
-      {/* Rotating arrow - always points to North (red) */}
-      <Navigation 
-        className={cn(
-          "absolute transition-transform duration-300",
+      {/* Rotating outer ring with N, E, S, W */}
+      <div 
+        className="absolute inset-0 transition-transform duration-300"
+        style={{ transform: `rotate(${ringRotation}deg)` }}
+      >
+        {/* North - Red */}
+        <div className={cn(
+          "absolute top-0.5 left-1/2 -translate-x-1/2 font-mono font-bold",
           theme === "dark" ? "text-red-400" : "text-red-600",
-          size === "sm" ? "w-4 h-4" : size === "md" ? "w-5 h-5" : "w-6 h-6"
-        )}
-        style={{ 
-          transform: `rotate(${arrowRotation}deg)`
-        }}
-      />
-      
-      {/* Current heading direction text at bottom (cyan) */}
-      <div className={cn(
-        "absolute bottom-1 font-mono font-bold",
-        theme === "dark" ? "text-cyan-400" : "text-cyan-600",
-        size === "sm" ? "text-[10px]" : "text-xs"
-      )}>
-        {direction.short}
+          s.text
+        )}>
+          N
+        </div>
+        {/* East */}
+        <div className={cn(
+          "absolute right-0.5 top-1/2 -translate-y-1/2 font-mono font-bold",
+          theme === "dark" ? "text-white/70" : "text-black/70",
+          s.text
+        )}>
+          E
+        </div>
+        {/* South */}
+        <div className={cn(
+          "absolute bottom-0.5 left-1/2 -translate-x-1/2 font-mono font-bold",
+          theme === "dark" ? "text-white/70" : "text-black/70",
+          s.text
+        )}>
+          S
+        </div>
+        {/* West */}
+        <div className={cn(
+          "absolute left-0.5 top-1/2 -translate-y-1/2 font-mono font-bold",
+          theme === "dark" ? "text-white/70" : "text-black/70",
+          s.text
+        )}>
+          W
+        </div>
       </div>
       
-      {/* Heading degrees at top */}
+      {/* Fixed arrow pointing UP (direction of travel) */}
+      <Navigation 
+        className={cn(
+          "transition-none",
+          theme === "dark" ? "text-cyan-400" : "text-cyan-600",
+          s.arrow
+        )}
+        style={{ transform: 'rotate(0deg)' }}
+      />
+      
+      {/* Heading degrees in center-bottom */}
       <div className={cn(
-        "absolute -top-0.5 font-mono font-bold",
-        theme === "dark" ? "text-white/70" : "text-black/70",
-        size === "sm" ? "text-[8px]" : "text-[10px]"
+        "absolute bottom-1.5 font-mono font-bold",
+        theme === "dark" ? "text-white/80" : "text-black/80",
+        s.text
       )}>
         {heading !== null ? `${Math.round(heading)}°` : '--'}
       </div>
