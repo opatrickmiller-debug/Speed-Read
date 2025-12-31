@@ -906,22 +906,34 @@ export default function SpeedMap() {
         // GPS speed is in meters/second, convert to mph (1 m/s = 2.237 mph)
         const gpsSpeedMph = position.coords.speed !== null ? position.coords.speed * 2.237 : 0;
         
-        // Fetch speed limit when:
-        // 1. Moving (> 2 mph) - continuous polling while driving
-        // 2. First GPS lock (even if stationary) - so users see speed limit when app opens
-        const shouldFetch = gpsSpeedMph > 2 || !initialFetchDoneRef.current;
+        // When STOPPED (< 2 mph):
+        // - Clear last known values (might be on different road now)
+        // - Do a fresh fetch for current location
+        // When MOVING (> 2 mph):
+        // - Normal polling behavior
         
-        if (shouldFetch) {
+        if (gpsSpeedMph < 2) {
+          // Stopped - clear cached values so we don't show stale data
+          // This prevents showing "LAST KNOWN" from a previous road when at a stoplight
+          if (lastKnownSpeedLimitRef.current !== null) {
+            console.log("Stopped - clearing cached speed limit");
+            lastKnownSpeedLimitRef.current = null;
+            lastKnownRoadNameRef.current = null;
+            lastKnownRoadTypeRef.current = null;
+            lastKnownTimestampRef.current = null;
+          }
+          
+          // Do a single fetch when first stopping (or on initial load)
+          if (!initialFetchDoneRef.current) {
+            fetchSpeedLimit(latitude, longitude);
+            initialFetchDoneRef.current = true;
+          }
+        } else {
+          // Moving - normal polling
           fetchSpeedLimit(latitude, longitude);
           initialFetchDoneRef.current = true;
-          
-          // Update bearing for speed prediction (only when moving)
-          if (gpsSpeedMph > 2) {
-            updateBearing(latitude, longitude);
-          }
+          updateBearing(latitude, longitude);
         }
-        // When stationary after initial fetch, keep the last known speed limit displayed
-        // No need to poll - speed limits don't change while parked
         
         // Map panning is handled by MapUpdater component in Leaflet
       },
