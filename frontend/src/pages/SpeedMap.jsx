@@ -769,6 +769,9 @@ export default function SpeedMap() {
       
       const { speed_limit, unit, road_name, source, road_type } = response.data;
       
+      // Reset failure counter on success
+      window.speedLimitFailures = 0;
+      
       if (speed_limit) {
         // Cache the result
         if (offlineCacheEnabled) {
