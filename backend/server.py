@@ -1257,6 +1257,97 @@ def bearing_to_direction(bearing: float) -> str:
     index = round(bearing / 45) % 8
     return directions[index]
 
+def calculate_road_bearing(geometry: list) -> Optional[float]:
+    """Calculate the bearing/direction of a road from its geometry."""
+    import math
+    if not geometry or len(geometry) < 2:
+        return None
+    
+    # Use first and last points to get overall road direction
+    start = geometry[0]
+    end = geometry[-1]
+    
+    lat1, lon1 = math.radians(start['lat']), math.radians(start['lon'])
+    lat2, lon2 = math.radians(end['lat']), math.radians(end['lon'])
+    
+    dlon = lon2 - lon1
+    x = math.sin(dlon) * math.cos(lat2)
+    y = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
+    
+    bearing = math.degrees(math.atan2(x, y))
+    return (bearing + 360) % 360
+
+def is_road_aligned_with_travel(road_bearing: float, travel_bearing: float, tolerance: float = 45) -> bool:
+    """
+    Check if a road is roughly aligned with the direction of travel.
+    Returns True if the road is within tolerance degrees of the travel direction
+    (in either direction - same way or opposite way).
+    """
+    if road_bearing is None:
+        return True  # Allow if we can't determine
+    
+    # Normalize bearings
+    road_bearing = road_bearing % 360
+    travel_bearing = travel_bearing % 360
+    
+    # Check both directions (road could be going same way or opposite)
+    diff1 = abs(road_bearing - travel_bearing)
+    diff2 = abs((road_bearing + 180) % 360 - travel_bearing)
+    
+    min_diff = min(diff1, 360 - diff1, diff2, 360 - diff2)
+    
+    return min_diff <= tolerance
+
+# Road type hierarchy for filtering predictions
+HIGHWAY_ROAD_TYPES = {'motorway', 'motorway_link', 'trunk', 'trunk_link'}
+MAJOR_ROAD_TYPES = {'primary', 'primary_link', 'secondary', 'secondary_link'}
+MINOR_ROAD_TYPES = {'tertiary', 'tertiary_link', 'residential', 'unclassified'}
+
+def get_road_class(highway_type: str) -> str:
+    """Classify road into highway/major/minor."""
+    if highway_type in HIGHWAY_ROAD_TYPES:
+        return "highway"
+    elif highway_type in MAJOR_ROAD_TYPES:
+        return "major"
+    else:
+        return "minor"
+
+def should_include_road_in_prediction(
+    road_type: str, 
+    current_road_type: Optional[str],
+    road_bearing: Optional[float],
+    travel_bearing: float
+) -> bool:
+    """
+    Determine if a road should be included in predictions.
+    
+    Rules:
+    1. If on a highway (motorway/trunk), only show other highways
+    2. Road must be roughly aligned with direction of travel (within 45 degrees)
+    3. Filter out pedestrian/cycleway/service roads
+    """
+    # Skip non-vehicle roads
+    skip_types = {'footway', 'cycleway', 'path', 'steps', 'pedestrian', 
+                  'bridleway', 'service', 'track', 'bus_guideway'}
+    if road_type in skip_types:
+        return False
+    
+    # Check direction alignment (more strict - 35 degrees for highways)
+    if current_road_type in HIGHWAY_ROAD_TYPES:
+        tolerance = 35  # Stricter for highways
+    else:
+        tolerance = 45
+    
+    if not is_road_aligned_with_travel(road_bearing, travel_bearing, tolerance):
+        return False
+    
+    # If currently on a highway, only show other highways (not side streets)
+    if current_road_type in HIGHWAY_ROAD_TYPES:
+        if road_type not in HIGHWAY_ROAD_TYPES:
+            return False
+    
+    return True
+
 @api_router.get("/speed-ahead", response_model=SpeedPredictionResponse)
 @limiter.limit("20/minute")
 async def get_speed_ahead(
@@ -1264,11 +1355,14 @@ async def get_speed_ahead(
     lat: float, 
     lon: float, 
     bearing: float = 0,  # Direction of travel (0-360 degrees)
-    current_speed_limit: Optional[int] = None
+    current_speed_limit: Optional[int] = None,
+    current_road_type: Optional[str] = None  # e.g., "motorway", "primary"
 ):
     """
     Look ahead for upcoming speed limit changes along the travel direction.
-    Returns speed limits at multiple distances ahead (200, 500, 1000 meters).
+    
+    IMPROVED: Now filters out side streets and overpasses when on highways.
+    Only shows roads that are aligned with the direction of travel.
     """
     if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
         raise HTTPException(status_code=400, detail="Invalid coordinates")
@@ -1276,76 +1370,103 @@ async def get_speed_ahead(
     if not (0 <= bearing <= 360):
         bearing = bearing % 360
     
-    distances = [200, 500, 1000]  # meters ahead to check
+    # Check distances ahead - farther for highways
+    if current_road_type in HIGHWAY_ROAD_TYPES:
+        distances = [300, 800, 1500]  # Longer distances for highway driving
+        search_radius = 30  # Narrower search - highways are well-defined
+    else:
+        distances = [200, 500, 1000]
+        search_radius = 50
+    
     upcoming_limits = []
     warning = None
+    seen_roads = set()  # Avoid duplicates
     
     for distance in distances:
         ahead_lat, ahead_lon = calculate_point_ahead(lat, lon, bearing, distance)
         
-        # Query for speed limit at this point
+        # Query for roads with geometry so we can check their direction
         query = f"""
         [out:json][timeout:5];
-        way(around:50,{ahead_lat},{ahead_lon})["highway"]["maxspeed"];
-        out body;
+        way(around:{search_radius},{ahead_lat},{ahead_lon})["highway"]["maxspeed"];
+        out body geom;
         """
         
         try:
-            async with httpx.AsyncClient(timeout=5.0) as http_client:
-                response = await http_client.post(
-                    OVERPASS_URL,
-                    data={"data": query},
-                    headers={"Content-Type": "application/x-www-form-urlencoded"}
-                )
-                
-                if response.status_code == 200:
-                    data = response.json()
+            data = await query_overpass_with_fallback(query, timeout=5.0)
+            
+            if data and data.get("elements"):
+                for road in data["elements"]:
+                    tags = road.get("tags", {})
+                    highway_type = tags.get("highway", "")
+                    maxspeed = tags.get("maxspeed", "")
+                    road_name = tags.get("name") or tags.get("ref") or highway_type.replace('_', ' ').title()
                     
-                    if data.get("elements") and len(data["elements"]) > 0:
-                        road = data["elements"][0]
-                        tags = road.get("tags", {})
-                        maxspeed = tags.get("maxspeed", "")
-                        road_name = tags.get("name") or tags.get("ref") or "Road"
+                    # Skip if we've already seen this road
+                    road_key = f"{road_name}_{maxspeed}"
+                    if road_key in seen_roads:
+                        continue
+                    
+                    # Calculate road bearing from geometry
+                    geometry = road.get("geometry", [])
+                    road_bearing = calculate_road_bearing(geometry)
+                    
+                    # Apply filtering - skip side streets and misaligned roads
+                    if not should_include_road_in_prediction(
+                        highway_type, 
+                        current_road_type, 
+                        road_bearing, 
+                        bearing
+                    ):
+                        logger.debug(f"Filtering out {road_name} (type={highway_type}, bearing mismatch)")
+                        continue
+                    
+                    if maxspeed:
+                        maxspeed_clean = maxspeed.lower().strip()
+                        speed_limit = None
+                        unit = "mph"
                         
-                        if maxspeed:
-                            maxspeed_clean = maxspeed.lower().strip()
-                            speed_limit = None
+                        if "mph" in maxspeed_clean:
+                            digits = ''.join(filter(str.isdigit, maxspeed_clean))
+                            speed_limit = int(digits) if digits else None
                             unit = "mph"
-                            
-                            if "mph" in maxspeed_clean:
-                                digits = ''.join(filter(str.isdigit, maxspeed_clean))
-                                speed_limit = int(digits) if digits else None
-                                unit = "mph"
-                            elif "km/h" in maxspeed_clean or "kmh" in maxspeed_clean:
-                                digits = ''.join(filter(str.isdigit, maxspeed_clean))
-                                speed_limit = int(digits) if digits else None
+                        elif "km/h" in maxspeed_clean or "kmh" in maxspeed_clean:
+                            digits = ''.join(filter(str.isdigit, maxspeed_clean))
+                            speed_limit = int(digits) if digits else None
+                            unit = "km/h"
+                        elif maxspeed_clean.isdigit():
+                            speed_limit = int(maxspeed_clean)
+                            unit = "km/h"
+                        else:
+                            digits = ''.join(filter(str.isdigit, maxspeed_clean))
+                            if digits:
+                                speed_limit = int(digits)
                                 unit = "km/h"
-                            elif maxspeed_clean.isdigit():
-                                speed_limit = int(maxspeed_clean)
-                                unit = "km/h"
-                            else:
-                                digits = ''.join(filter(str.isdigit, maxspeed_clean))
-                                if digits:
-                                    speed_limit = int(digits)
-                                    unit = "km/h"
+                        
+                        if speed_limit:
+                            seen_roads.add(road_key)
+                            upcoming_limits.append({
+                                "distance_meters": distance,
+                                "speed_limit": speed_limit,
+                                "road_name": sanitize_string(road_name, 50),
+                                "unit": unit,
+                                "road_type": highway_type
+                            })
                             
-                            if speed_limit:
-                                upcoming_limits.append({
-                                    "distance_meters": distance,
-                                    "speed_limit": speed_limit,
-                                    "road_name": sanitize_string(road_name, 50),
-                                    "unit": unit
-                                })
+                            # Generate warning if approaching lower speed zone
+                            if current_speed_limit and speed_limit < current_speed_limit:
+                                if not warning:
+                                    if distance <= 300:
+                                        warning = f"⚠️ SLOW DOWN: {speed_limit} {unit} zone in {distance}m"
+                                    elif distance <= 800:
+                                        warning = f"Speed reduction ahead: {speed_limit} {unit} in ~{distance}m"
+                                    else:
+                                        warning = f"Lower speed zone ({speed_limit} {unit}) approaching"
+                            
+                            # For highways, we only want the first valid result per distance
+                            if current_road_type in HIGHWAY_ROAD_TYPES:
+                                break
                                 
-                                # Generate warning if approaching lower speed zone
-                                if current_speed_limit and speed_limit < current_speed_limit:
-                                    if not warning:
-                                        if distance <= 200:
-                                            warning = f"⚠️ SLOW DOWN: {speed_limit} {unit} zone in {distance}m"
-                                        elif distance <= 500:
-                                            warning = f"Speed reduction ahead: {speed_limit} {unit} in ~{distance}m"
-                                        else:
-                                            warning = f"Lower speed zone ({speed_limit} {unit}) approaching"
         except Exception as e:
             logger.debug(f"Speed ahead check failed at {distance}m: {e}")
             continue
