@@ -596,8 +596,8 @@ export default function SpeedMap() {
   // Get current language info for display
   const currentLangInfo = AVAILABLE_LANGUAGES.find(l => l.code === voiceLanguage) || AVAILABLE_LANGUAGES[0];
 
-  // Speed prediction - only active at highway speeds (45+ mph) for better accuracy
-  const PREDICTION_SPEED_THRESHOLD = 45;
+  // Speed prediction - active at 35+ mph for city and highway driving
+  const PREDICTION_SPEED_THRESHOLD = 35;
   const { prediction: speedPrediction } = useSpeedPrediction(
     currentPosition,
     bearing,
