@@ -301,8 +301,9 @@ export function DraggableContainer({
         className
       )}
       style={{
-        transform: `translate(${position.x}px, ${position.y}px)`,
-        transition: isDragging ? 'none' : 'transform 0.15s ease-out',
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        transition: isDragging ? 'none' : 'left 0.15s ease-out, top 0.15s ease-out',
         touchAction: 'none', // Prevent default touch behaviors
       }}
     >
