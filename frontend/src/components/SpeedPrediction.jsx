@@ -241,7 +241,7 @@ export function SpeedPredictionBanner({
             </div>
             
             {upcoming_limits.map((limit, idx) => {
-              const formattedSpeed = formatPredictionSpeed(limit.speed_limit, limit.unit);
+              const formattedSpeed = formatPredictionSpeed(limit.speed_limit, limit.unit, speedUnit);
               return (
                 <div 
                   key={idx}
@@ -252,7 +252,7 @@ export function SpeedPredictionBanner({
                 >
                   <span className="flex items-center gap-2">
                     <ArrowDown className="w-3 h-3" />
-                    <span className="font-mono">{formatPredictionDistance(limit.distance_meters)}</span>
+                    <span className="font-mono">{formatPredictionDistance(limit.distance_meters, speedUnit)}</span>
                   </span>
                   <span className="flex items-center gap-2">
                     <span className="text-white/70">{limit.road_name}</span>
