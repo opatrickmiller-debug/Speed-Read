@@ -303,38 +303,189 @@ const AreasToImprove = ({ incidents }) => {
   );
 };
 
-// Share/Parent Access Card
-const ShareAccessCard = ({ deviceId, onShare }) => {
-  const [copied, setCopied] = useState(false);
-  const shareCode = deviceId ? deviceId.slice(-8).toUpperCase() : 'LOADING';
-  
-  const handleCopy = () => {
+// Share/Parent Access Card with Backend Integration
+const ShareAccessCard = ({ deviceId, onRefresh }) => {
+  const [shares, setShares] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [newShare, setNewShare] = useState({
+    recipient_name: '',
+    recipient_email: '',
+    expires_days: 30
+  });
+
+  useEffect(() => {
+    loadShares();
+  }, [deviceId]);
+
+  const loadShares = async () => {
+    if (!deviceId) return;
+    try {
+      const response = await fetch(`${API}/practice/share/list?device_id=${deviceId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setShares(data);
+      }
+    } catch (err) {
+      console.error('Error loading shares:', err);
+    }
+  };
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!newShare.recipient_name) {
+      toast.error('Please enter a name');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const response = await fetch(`${API}/practice/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          device_id: deviceId,
+          ...newShare
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        toast.success('Share link created!');
+        navigator.clipboard.writeText(`${window.location.origin}/progress/${data.share_code}`);
+        toast.success('Link copied to clipboard!');
+        setShowForm(false);
+        setNewShare({ recipient_name: '', recipient_email: '', expires_days: 30 });
+        loadShares();
+      } else {
+        toast.error('Failed to create share link');
+      }
+    } catch (err) {
+      toast.error('Error creating share link');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRevoke = async (shareCode) => {
+    try {
+      const response = await fetch(`${API}/practice/share/${shareCode}?device_id=${deviceId}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        toast.success('Share link revoked');
+        loadShares();
+      }
+    } catch (err) {
+      toast.error('Error revoking link');
+    }
+  };
+
+  const copyLink = (shareCode) => {
     navigator.clipboard.writeText(`${window.location.origin}/progress/${shareCode}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast.success('Link copied! Share with parent or instructor');
+    toast.success('Link copied!');
   };
   
   return (
     <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-purple-400" />
           <span className="text-xs text-purple-300 font-medium">Parent/Instructor Access</span>
         </div>
-      </div>
-      <p className="text-[10px] text-purple-400/70 mt-1 mb-2">Share your progress with a parent or instructor</p>
-      <div className="flex gap-2">
-        <div className="flex-1 bg-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-300 font-mono">
-          Code: {shareCode}
-        </div>
         <button
-          onClick={handleCopy}
-          className="px-3 py-1.5 bg-purple-500/20 border border-purple-500/50 text-purple-300 text-xs rounded hover:bg-purple-500/30 transition-colors"
+          onClick={() => setShowForm(!showForm)}
+          className="p-1 bg-purple-500/20 border border-purple-500/50 rounded hover:bg-purple-500/30 transition-colors"
         >
-          {copied ? 'Copied!' : 'Copy Link'}
+          {showForm ? <X className="w-3.5 h-3.5 text-purple-400" /> : <Plus className="w-3.5 h-3.5 text-purple-400" />}
         </button>
       </div>
+      
+      <p className="text-[10px] text-purple-400/70 mb-2">Share your progress with a parent or instructor</p>
+      
+      {/* Create Share Form */}
+      {showForm && (
+        <form onSubmit={handleCreate} className="mb-3 p-2 bg-zinc-700/50 rounded-lg space-y-2">
+          <div>
+            <label className="text-[10px] text-zinc-400 block mb-1">Recipient Name *</label>
+            <input
+              type="text"
+              placeholder="e.g., Mom, Dad, Instructor"
+              value={newShare.recipient_name}
+              onChange={(e) => setNewShare({...newShare, recipient_name: e.target.value})}
+              className="w-full bg-zinc-700 text-xs text-white px-2 py-1.5 rounded border border-zinc-600"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] text-zinc-400 block mb-1">Email (optional)</label>
+            <input
+              type="email"
+              placeholder="their@email.com"
+              value={newShare.recipient_email}
+              onChange={(e) => setNewShare({...newShare, recipient_email: e.target.value})}
+              className="w-full bg-zinc-700 text-xs text-white px-2 py-1.5 rounded border border-zinc-600"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] text-zinc-400 block mb-1">Link expires in</label>
+            <select
+              value={newShare.expires_days}
+              onChange={(e) => setNewShare({...newShare, expires_days: parseInt(e.target.value)})}
+              className="w-full bg-zinc-700 text-xs text-white px-2 py-1.5 rounded border border-zinc-600"
+            >
+              <option value={7}>7 days</option>
+              <option value={30}>30 days</option>
+              <option value={90}>90 days</option>
+              <option value={365}>1 year</option>
+            </select>
+          </div>
+          <button
+            type="submit"
+            disabled={loading || !newShare.recipient_name}
+            className="w-full py-1.5 bg-purple-500 text-white text-xs font-medium rounded hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading ? 'Creating...' : 'Create Share Link'}
+          </button>
+        </form>
+      )}
+      
+      {/* Active Share Links */}
+      {shares.length > 0 && (
+        <div className="space-y-2">
+          {shares.map((share) => (
+            <div key={share.share_code} className="flex items-center justify-between bg-zinc-800/50 rounded px-2 py-1.5">
+              <div className="flex-1">
+                <div className="text-xs text-white">{share.recipient_name}</div>
+                <div className="text-[10px] text-zinc-500">
+                  {share.access_count > 0 ? `Viewed ${share.access_count}x` : 'Not viewed yet'}
+                </div>
+              </div>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => copyLink(share.share_code)}
+                  className="p-1.5 hover:bg-zinc-700 rounded transition-colors"
+                  title="Copy link"
+                >
+                  <Copy className="w-3 h-3 text-zinc-400" />
+                </button>
+                <button
+                  onClick={() => handleRevoke(share.share_code)}
+                  className="p-1.5 hover:bg-red-500/20 rounded transition-colors"
+                  title="Revoke access"
+                >
+                  <Trash2 className="w-3 h-3 text-red-400" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {shares.length === 0 && !showForm && (
+        <div className="text-center py-2">
+          <p className="text-[10px] text-zinc-500">No active share links</p>
+        </div>
+      )}
     </div>
   );
 };
