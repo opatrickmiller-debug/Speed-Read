@@ -282,24 +282,24 @@ export default function LandingPage({ onEnterApp }) {
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-4xl mx-auto">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-8">
-              <Zap className="w-4 h-4 text-cyan-400" />
-              <span className="text-sm text-cyan-400 font-medium">AI-Powered Speed Protection</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 mb-8">
+              <GraduationCap className="w-4 h-4 text-purple-400" />
+              <span className="text-sm text-purple-400 font-medium">The #1 Driver Training App</span>
             </div>
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
-              Never Get Another{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
-                Speeding Ticket
+              Turn Your Teen Into a{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
+                Confident Driver
               </span>
             </h1>
 
             {/* Subheadline */}
             <p className="text-xl text-zinc-400 mb-8 max-w-2xl mx-auto">
-              The only speed alert app with AI prediction that warns you{" "}
-              <span className="text-white font-semibold">before</span> you enter speed traps. 
-              HUD mode, custom alerts, works offline.
+              Track practice hours, build safe habits with real-time coaching, and{" "}
+              <span className="text-white font-semibold">see actual progress</span> - not just miles driven.
+              Meet permit requirements faster.
             </p>
 
             {/* CTA Buttons */}
@@ -309,17 +309,17 @@ export default function LandingPage({ onEnterApp }) {
                 size="lg"
                 className="w-full sm:w-auto bg-cyan-600 hover:bg-cyan-700 text-lg px-8 py-6"
               >
-                Try Free Now
+                Start Free Training
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               <Button 
                 variant="outline"
                 size="lg"
                 className="w-full sm:w-auto border-zinc-700 hover:bg-zinc-800 text-lg px-8 py-6"
-                onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => document.getElementById('parents')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                <Play className="mr-2 w-5 h-5" />
-                Watch Demo
+                <Shield className="mr-2 w-5 h-5" />
+                For Parents
               </Button>
             </div>
 
@@ -329,17 +329,17 @@ export default function LandingPage({ onEnterApp }) {
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
                 ))}
-                <span className="ml-2">4.9/5 rating</span>
+                <span className="ml-2">4.9/5 from parents</span>
               </div>
               <div className="hidden sm:block w-px h-4 bg-zinc-700" />
               <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-green-500" />
-                <span>No credit card required</span>
+                <Clock className="w-4 h-4 text-cyan-500" />
+                <span>50 states supported</span>
               </div>
               <div className="hidden sm:block w-px h-4 bg-zinc-700" />
               <div className="flex items-center gap-2">
-                <Smartphone className="w-4 h-4 text-blue-500" />
-                <span>Works on any device</span>
+                <TrendingUp className="w-4 h-4 text-green-500" />
+                <span>10,000+ teens trained</span>
               </div>
             </div>
           </div>
@@ -350,13 +350,13 @@ export default function LandingPage({ onEnterApp }) {
             <div className="relative mx-auto max-w-4xl">
               {/* Phone mockup */}
               <div className="relative mx-auto w-72 sm:w-80">
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-[3rem] blur-3xl opacity-20" />
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-[3rem] blur-3xl opacity-20" />
                 <div className="relative bg-zinc-900 rounded-[2.5rem] p-3 border border-zinc-800">
                   <div className="bg-zinc-950 rounded-[2rem] overflow-hidden aspect-[9/19]">
                     {/* App screenshot placeholder */}
                     <div className="h-full flex flex-col items-center justify-center p-6 text-center">
-                      <div className="w-32 h-32 rounded-full border-4 border-cyan-500/30 flex items-center justify-center mb-4">
-                        <span className="text-5xl font-bold text-cyan-400">47</span>
+                      <div className="w-32 h-32 rounded-full border-4 border-green-500/30 flex items-center justify-center mb-4">
+                        <span className="text-5xl font-bold text-green-400">A+</span>
                       </div>
                       <p className="text-zinc-400 text-sm mb-2">CURRENT SPEED</p>
                       <div className="flex items-center gap-2 px-4 py-2 bg-green-500/20 rounded-full">
