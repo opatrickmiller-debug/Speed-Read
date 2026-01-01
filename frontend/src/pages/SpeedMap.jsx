@@ -1379,6 +1379,23 @@ export default function SpeedMap() {
           >
             <Maximize2 className="w-5 h-5 text-cyan-400" />
           </Button>
+          
+          {/* Fleet Dashboard Button */}
+          <Button
+            data-testid="fleet-dashboard-btn"
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowFleetDashboard(true)}
+            className={cn(
+              "backdrop-blur-xl bg-black/50 border border-white/10",
+              "hover:bg-black/70 hover:border-purple-500/50",
+              "rounded-none w-12 h-12",
+              "transition-colors duration-200"
+            )}
+            title="Fleet Dashboard"
+          >
+            <BarChart3 className="w-5 h-5 text-purple-400" />
+          </Button>
         </div>
         
         {/* Speed HUD - Draggable for user customization */}
