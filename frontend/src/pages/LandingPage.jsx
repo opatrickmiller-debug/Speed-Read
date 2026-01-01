@@ -431,7 +431,7 @@ export default function LandingPage({ onEnterApp }) {
               How It Works
             </h2>
             <p className="text-zinc-400 max-w-2xl mx-auto">
-              Get protected in under 60 seconds. No app store needed.
+              Start tracking progress in under 60 seconds. No app store needed.
             </p>
           </div>
 
@@ -439,21 +439,21 @@ export default function LandingPage({ onEnterApp }) {
             {[
               {
                 step: "1",
-                icon: Globe,
-                title: "Open in Browser",
-                description: "Visit our website on your phone. No download required - works instantly as a web app."
+                icon: Smartphone,
+                title: "Open & Mount",
+                description: "Visit our website on your phone, select your state, and mount it in your car. Works as a web app."
               },
               {
                 step: "2",
                 icon: Navigation,
-                title: "Enable Location",
-                description: "Allow location access so we can track your speed and fetch local speed limits."
+                title: "Practice Driving",
+                description: "DriveCoach automatically tracks your practice hours, day vs night, and monitors your driving habits."
               },
               {
                 step: "3",
-                icon: Shield,
-                title: "Drive Protected",
-                description: "Mount your phone and go. Get alerts when you exceed speed limits."
+                icon: TrendingUp,
+                title: "Improve & Share",
+                description: "Watch your safety score improve over time. Share progress with parents or instructors."
               }
             ].map((item, idx) => (
               <div key={idx} className="text-center">
