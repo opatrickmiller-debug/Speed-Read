@@ -10,7 +10,6 @@ import { SpeedometerPro } from "@/components/SpeedometerPro";
 import { SpeedLimitSign } from "@/components/SpeedLimitSign";
 import { AlertOverlay, AVAILABLE_LANGUAGES } from "@/components/AlertOverlay";
 import { SettingsPanel } from "@/components/SettingsPanel";
-import { TripHistory } from "@/components/TripHistory";
 import { AuthPanel } from "@/components/AuthPanel";
 import { FeaturesPanel } from "@/components/FeaturesPanel";
 import { WeatherAlertBanner } from "@/components/WeatherAlert";
