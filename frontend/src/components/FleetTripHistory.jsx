@@ -1,5 +1,5 @@
-// Trip History Component - Fleet Version
-// Displays list of past trips with safety scores
+// Practice Session History Component (Driver Training)
+// Displays list of practice drives with grades
 
 import React, { useState, useEffect } from 'react';
 import { MapPin, Clock, Gauge, AlertTriangle, ChevronRight, Calendar, TrendingUp, TrendingDown, Minus } from 'lucide-react';
@@ -7,8 +7,8 @@ import { cn } from '@/lib/utils';
 import { getTrips, getScores } from '@/services/tripService';
 import { formatDistance, formatSpeed } from '@/utils/units';
 
-// Score badge colors
-const getScoreColor = (score) => {
+// Grade colors
+const getGradeColor = (score) => {
   if (score >= 90) return 'bg-green-500/20 text-green-400 border-green-500/50';
   if (score >= 80) return 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50';
   if (score >= 70) return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
@@ -16,12 +16,23 @@ const getScoreColor = (score) => {
   return 'bg-red-500/20 text-red-400 border-red-500/50';
 };
 
-const getScoreLabel = (score) => {
+const getGrade = (score) => {
+  if (score >= 95) return 'A+';
+  if (score >= 90) return 'A';
+  if (score >= 85) return 'B+';
+  if (score >= 80) return 'B';
+  if (score >= 75) return 'C+';
+  if (score >= 70) return 'C';
+  if (score >= 60) return 'D';
+  return 'F';
+};
+
+const getGradeLabel = (score) => {
   if (score >= 90) return 'Excellent';
   if (score >= 80) return 'Good';
   if (score >= 70) return 'Fair';
   if (score >= 60) return 'Needs Work';
-  return 'Poor';
+  return 'Keep Practicing';
 };
 
 // Format duration
