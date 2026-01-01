@@ -413,7 +413,7 @@ export const SettingsPanel = ({
                     <div className="text-xs text-white font-medium">Zone 2</div>
                     <div className="flex justify-between text-xs">
                       <span className="text-zinc-300">Range: {thresholdRanges[0]?.maxLimit || 50} - {thresholdRanges[1]?.maxLimit || 65} {speedUnit}</span>
-                      <span className="text-cyan-400">+{thresholdRanges[1]?.offset || 5} {speedUnit}</span>
+                      <span className="text-cyan-400">+{thresholdRanges[1]?.offset ?? 0} {speedUnit}</span>
                     </div>
                     <div className="space-y-1">
                       <span className="text-xs text-zinc-400">Upper limit</span>
@@ -433,7 +433,7 @@ export const SettingsPanel = ({
                     <div className="space-y-1">
                       <span className="text-xs text-zinc-400">Buffer</span>
                       <Slider
-                        value={[thresholdRanges[1]?.offset || 5]}
+                        value={[thresholdRanges[1]?.offset ?? 0]}
                         onValueChange={([v]) => {
                           const newRanges = [...thresholdRanges];
                           newRanges[1] = { ...newRanges[1], offset: v };
@@ -449,7 +449,7 @@ export const SettingsPanel = ({
                     <div className="text-xs text-white font-medium">Zone 3</div>
                     <div className="flex justify-between text-xs">
                       <span className="text-zinc-300">Range: {thresholdRanges[1]?.maxLimit || 65} - {thresholdRanges[2]?.maxLimit === 999 ? '∞' : thresholdRanges[2]?.maxLimit} {speedUnit}</span>
-                      <span className="text-cyan-400">+{thresholdRanges[2]?.offset || 10} {speedUnit}</span>
+                      <span className="text-cyan-400">+{thresholdRanges[2]?.offset ?? 0} {speedUnit}</span>
                     </div>
                     <div className="space-y-1">
                       <span className="text-xs text-zinc-400">Upper limit</span>
@@ -469,7 +469,7 @@ export const SettingsPanel = ({
                     <div className="space-y-1">
                       <span className="text-xs text-zinc-400">Buffer</span>
                       <Slider
-                        value={[thresholdRanges[2]?.offset || 10]}
+                        value={[thresholdRanges[2]?.offset ?? 0]}
                         onValueChange={([v]) => {
                           const newRanges = [...thresholdRanges];
                           newRanges[2] = { ...newRanges[2], offset: v };
