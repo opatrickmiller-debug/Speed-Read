@@ -616,13 +616,13 @@ class DriveCoachAPITester:
         try:
             user_a_code = None
             for ref in self.created_referral_codes:
-                if ref['device_id'] == 'device_user_a_001':
+                if ref['device_id'] == self.device_a:
                     user_a_code = ref['code']
                     break
             
             if user_a_code:
                 data = {
-                    "device_id": "device_user_a_001",  # Same device trying to use own code
+                    "device_id": self.device_a,  # Same device trying to use own code
                     "referral_code": user_a_code,
                     "email": "user_a@example.com"
                 }
@@ -636,7 +636,7 @@ class DriveCoachAPITester:
         try:
             if user_a_code:
                 data = {
-                    "device_id": "device_user_b_002",  # User B trying to apply same code again
+                    "device_id": self.device_b,  # User B trying to apply same code again
                     "referral_code": user_a_code,
                     "email": "user_b@example.com"
                 }
