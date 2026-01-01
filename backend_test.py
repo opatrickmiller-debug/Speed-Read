@@ -1240,6 +1240,8 @@ class SpeedAlertAPITester:
         """Test updating trip location"""
         try:
             data = {
+                "trip_id": trip_id,
+                "device_id": "test_device_001",
                 "lat": 37.7750,
                 "lon": -122.4195,
                 "speed": 45.5,
