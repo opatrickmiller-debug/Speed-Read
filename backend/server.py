@@ -2296,6 +2296,11 @@ from routes.fleet import router as fleet_router, set_db as set_fleet_db
 set_fleet_db(db)
 app.include_router(fleet_router)
 
+# Import and configure practice hours routes
+from routes.practice import router as practice_router, set_db as set_practice_db
+set_practice_db(db)
+app.include_router(practice_router)
+
 app.include_router(api_router)
 
 app.add_middleware(
