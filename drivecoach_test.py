@@ -266,7 +266,7 @@ class DriveCoachAPITester:
             # Use user A's referral code
             user_a_code = None
             for ref in self.created_referral_codes:
-                if ref['device_id'] == 'device_user_a_001':
+                if ref['device_id'] == self.device_a:
                     user_a_code = ref['code']
                     break
             
