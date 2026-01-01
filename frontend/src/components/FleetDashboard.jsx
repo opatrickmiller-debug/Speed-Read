@@ -81,11 +81,43 @@ const ScoreRing = ({ score, size = 120, strokeWidth = 8 }) => {
   );
 };
 
-// Practice Hours Progress
-const PracticeHoursCard = ({ totalHours, nightHours, state, onStateChange }) => {
-  const requirements = STATE_REQUIREMENTS[state] || { total: 50, night: 10 };
-  const totalPercent = Math.min(100, (totalHours / requirements.total) * 100);
-  const nightPercent = Math.min(100, (nightHours / requirements.night) * 100);
+// Practice Hours Progress with Manual Entry
+const PracticeHoursCard = ({ practiceData, onStateChange, onAddSession, onRefresh }) => {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newSession, setNewSession] = useState({
+    session_type: 'day',
+    duration_minutes: 60,
+    date: new Date().toISOString().split('T')[0],
+    supervisor_name: '',
+    notes: ''
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await onAddSession(newSession);
+      setShowAddForm(false);
+      setNewSession({
+        session_type: 'day',
+        duration_minutes: 60,
+        date: new Date().toISOString().split('T')[0],
+        supervisor_name: '',
+        notes: ''
+      });
+      toast.success('Practice session added!');
+      onRefresh();
+    } catch (err) {
+      toast.error('Failed to add session');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!practiceData) return null;
+
+  const { total_hours, night_hours, selected_state, state_requirement_total, state_requirement_night, total_progress_percent, night_progress_percent, requirements_met } = practiceData;
   
   return (
     <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-3">
@@ -94,16 +126,82 @@ const PracticeHoursCard = ({ totalHours, nightHours, state, onStateChange }) => 
           <Clock className="w-4 h-4 text-cyan-400" />
           <span className="text-xs text-zinc-300 font-medium">Practice Hours</span>
         </div>
-        <select 
-          value={state}
-          onChange={(e) => onStateChange(e.target.value)}
-          className="bg-zinc-700 text-xs text-white px-2 py-1 rounded border border-zinc-600"
-        >
-          {Object.keys(STATE_REQUIREMENTS).sort().map(s => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <select 
+            value={selected_state}
+            onChange={(e) => onStateChange(e.target.value)}
+            className="bg-zinc-700 text-xs text-white px-2 py-1 rounded border border-zinc-600"
+          >
+            {Object.keys(STATE_REQUIREMENTS).sort().map(s => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="p-1 bg-cyan-500/20 border border-cyan-500/50 rounded hover:bg-cyan-500/30 transition-colors"
+          >
+            {showAddForm ? <X className="w-3.5 h-3.5 text-cyan-400" /> : <Plus className="w-3.5 h-3.5 text-cyan-400" />}
+          </button>
+        </div>
       </div>
+      
+      {/* Add Session Form */}
+      {showAddForm && (
+        <form onSubmit={handleSubmit} className="mb-3 p-2 bg-zinc-700/50 rounded-lg space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] text-zinc-400 block mb-1">Type</label>
+              <select
+                value={newSession.session_type}
+                onChange={(e) => setNewSession({...newSession, session_type: e.target.value})}
+                className="w-full bg-zinc-700 text-xs text-white px-2 py-1.5 rounded border border-zinc-600"
+              >
+                <option value="day">Day</option>
+                <option value="night">Night</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] text-zinc-400 block mb-1">Duration (min)</label>
+              <input
+                type="number"
+                min="1"
+                max="480"
+                value={newSession.duration_minutes}
+                onChange={(e) => setNewSession({...newSession, duration_minutes: parseInt(e.target.value) || 0})}
+                className="w-full bg-zinc-700 text-xs text-white px-2 py-1.5 rounded border border-zinc-600"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] text-zinc-400 block mb-1">Date</label>
+              <input
+                type="date"
+                value={newSession.date}
+                onChange={(e) => setNewSession({...newSession, date: e.target.value})}
+                className="w-full bg-zinc-700 text-xs text-white px-2 py-1.5 rounded border border-zinc-600"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] text-zinc-400 block mb-1">Supervisor</label>
+              <input
+                type="text"
+                placeholder="Name (optional)"
+                value={newSession.supervisor_name}
+                onChange={(e) => setNewSession({...newSession, supervisor_name: e.target.value})}
+                className="w-full bg-zinc-700 text-xs text-white px-2 py-1.5 rounded border border-zinc-600"
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={submitting || newSession.duration_minutes < 1}
+            className="w-full py-1.5 bg-cyan-500 text-white text-xs font-medium rounded hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {submitting ? 'Adding...' : 'Add Practice Session'}
+          </button>
+        </form>
+      )}
       
       {/* Total Hours */}
       <div className="mb-3">
@@ -111,41 +209,41 @@ const PracticeHoursCard = ({ totalHours, nightHours, state, onStateChange }) => 
           <span className="text-zinc-400 flex items-center gap-1">
             <Sun className="w-3 h-3" /> Total Hours
           </span>
-          <span className={cn("font-medium", totalPercent >= 100 ? "text-green-400" : "text-white")}>
-            {totalHours.toFixed(1)} / {requirements.total}
+          <span className={cn("font-medium", total_progress_percent >= 100 ? "text-green-400" : "text-white")}>
+            {total_hours.toFixed(1)} / {state_requirement_total}
           </span>
         </div>
         <div className="h-2 bg-zinc-700 rounded-full overflow-hidden">
           <div 
-            className={cn("h-full rounded-full transition-all", totalPercent >= 100 ? "bg-green-500" : "bg-cyan-500")}
-            style={{ width: `${totalPercent}%` }}
+            className={cn("h-full rounded-full transition-all", total_progress_percent >= 100 ? "bg-green-500" : "bg-cyan-500")}
+            style={{ width: `${Math.min(100, total_progress_percent)}%` }}
           />
         </div>
       </div>
       
       {/* Night Hours */}
-      {requirements.night > 0 && (
+      {state_requirement_night > 0 && (
         <div>
           <div className="flex justify-between text-xs mb-1">
             <span className="text-zinc-400 flex items-center gap-1">
               <Moon className="w-3 h-3" /> Night Hours
             </span>
-            <span className={cn("font-medium", nightPercent >= 100 ? "text-green-400" : "text-white")}>
-              {nightHours.toFixed(1)} / {requirements.night}
+            <span className={cn("font-medium", night_progress_percent >= 100 ? "text-green-400" : "text-white")}>
+              {night_hours.toFixed(1)} / {state_requirement_night}
             </span>
           </div>
           <div className="h-2 bg-zinc-700 rounded-full overflow-hidden">
             <div 
-              className={cn("h-full rounded-full transition-all", nightPercent >= 100 ? "bg-green-500" : "bg-purple-500")}
-              style={{ width: `${nightPercent}%` }}
+              className={cn("h-full rounded-full transition-all", night_progress_percent >= 100 ? "bg-green-500" : "bg-purple-500")}
+              style={{ width: `${Math.min(100, night_progress_percent)}%` }}
             />
           </div>
         </div>
       )}
       
-      {totalPercent >= 100 && nightPercent >= 100 && (
+      {requirements_met && (
         <p className="text-xs text-green-400 mt-2 flex items-center gap-1">
-          <CheckCircle className="w-3 h-3" /> {state} requirements met!
+          <CheckCircle className="w-3 h-3" /> {selected_state} requirements met!
         </p>
       )}
     </div>
