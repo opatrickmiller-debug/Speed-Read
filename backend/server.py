@@ -404,7 +404,6 @@ db = client[os.environ['DB_NAME']]
 trips_collection = db.trips
 users_collection = db.users
 speed_traps_collection = db.speed_traps
-families_collection = db.families
 badges_collection = db.badges
 stats_collection = db.user_stats
 password_resets_collection = db.password_resets
