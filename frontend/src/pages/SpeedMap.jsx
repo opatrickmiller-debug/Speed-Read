@@ -11,7 +11,6 @@ import { SpeedLimitSign } from "@/components/SpeedLimitSign";
 import { AlertOverlay, AVAILABLE_LANGUAGES } from "@/components/AlertOverlay";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { AuthPanel } from "@/components/AuthPanel";
-import { FeaturesPanel } from "@/components/FeaturesPanel";
 import { WeatherAlertBanner } from "@/components/WeatherAlert";
 import { OnboardingFlow, useOnboarding } from "@/components/OnboardingFlow";
 import { HUDMode } from "@/components/HUDMode";
