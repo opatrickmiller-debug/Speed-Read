@@ -112,7 +112,7 @@ export const SettingsPanel = ({
         <SheetHeader>
           <SheetTitle className="text-white font-bold uppercase tracking-wider flex items-center gap-2">
             <Settings className="w-5 h-5" />
-            SpeedShield
+            DriveCoach
           </SheetTitle>
           <SheetDescription className="text-zinc-200 text-xs">
             v{APP_VERSION}
