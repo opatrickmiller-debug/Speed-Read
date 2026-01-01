@@ -98,3 +98,31 @@ The TomTom fallback logic fix is working correctly. TomTom is NO LONGER being ca
 3. TomTom is only called when OSM finds absolutely no roads at all
 
 This resolves the user-reported issue of picking up side/cross road data incorrectly.
+
+## Phase 1 Fleet Module Testing
+
+### Test Focus
+- Trip creation/start/end API
+- Speeding incident logging
+- Driving event logging (hard brake)
+- Safety score calculation
+- Trip listing and filtering
+
+### Test Endpoints
+- POST /api/fleet/trips/start
+- POST /api/fleet/trips/{id}/end
+- POST /api/fleet/trips/{id}/location
+- POST /api/fleet/incidents/speeding/start
+- POST /api/fleet/incidents/speeding/{id}/end
+- POST /api/fleet/incidents/event
+- GET /api/fleet/trips
+- GET /api/fleet/scores
+- GET /api/fleet/incidents
+
+### Expected Behavior
+1. Trip can be started with device_id and location
+2. Location updates increment max_speed
+3. Speeding incidents calculate severity based on speed over limit
+4. Driving events log with G-force measurements
+5. Safety scores decrease with incidents
+6. Trip list returns trips for device
