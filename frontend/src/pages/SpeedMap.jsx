@@ -508,6 +508,9 @@ export default function SpeedMap() {
   // Features panel state
   const [showFeaturesPanel, setShowFeaturesPanel] = useState(false);
   
+  // Fleet Dashboard state
+  const [showFleetDashboard, setShowFleetDashboard] = useState(false);
+  
   // Previous position for speed calculation
   const prevPositionRef = useRef(null);
   const prevTimeRef = useRef(null);
