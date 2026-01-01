@@ -270,9 +270,9 @@ function CacheInfo() {
   };
 
   // Calculate on mount
-  useState(() => {
+  useEffect(() => {
     calculateCacheSize();
-  });
+  }, []);
 
   return (
     <div className="bg-zinc-900/50 border border-zinc-800 rounded p-3 space-y-2">
