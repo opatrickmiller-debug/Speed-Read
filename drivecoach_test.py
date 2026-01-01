@@ -50,9 +50,11 @@ class DriveCoachAPITester:
     def test_create_referral_code_user_a(self):
         """Test creating referral code for user A"""
         try:
+            timestamp = int(time.time())
+            self.device_a = f"device_user_a_{timestamp}"
             data = {
-                "device_id": "device_user_a_001",
-                "email": "user_a@example.com"
+                "device_id": self.device_a,
+                "email": f"user_a_{timestamp}@example.com"
             }
             response = requests.post(f"{self.base_url}/api/referral/code", json=data, timeout=10)
             
@@ -64,7 +66,7 @@ class DriveCoachAPITester:
                 if 'referral_code' in response_data and 'referral_link' in response_data:
                     referral_code = response_data['referral_code']
                     self.created_referral_codes.append({
-                        'device_id': 'device_user_a_001',
+                        'device_id': self.device_a,
                         'code': referral_code
                     })
                     details += f", Code: {referral_code}, Link: {response_data.get('referral_link')}"
