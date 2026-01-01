@@ -1,8 +1,8 @@
-// Fleet Dashboard Component
-// Shows safety scores, trends, achievements, and key metrics
+// Progress Dashboard Component (Driver Training)
+// Shows driving grades, practice hours, achievements, and skill analytics
 
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle, Activity, MapPin, Gauge, Flame, Trophy, Star, Download, FileText } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle, Activity, MapPin, Gauge, Flame, Trophy, Star, Download, Clock, Moon, Sun, Share2, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getScores, getTrips, getIncidents, getDeviceIdValue } from '@/services/tripService';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,78 +11,150 @@ import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-// Badge icons
-const BADGE_ICONS = {
-  first_trip: "🚗",
-  safe_week: "🛡️",
-  road_warrior: "🏆",
-  speed_demon_reformed: "😇",
-  night_owl: "🦉",
-  early_bird: "🐦",
-  marathon_driver: "🏃",
-  consistent: "📅",
-  explorer: "🗺️",
-  perfect_trip: "⭐",
+// US State Practice Hour Requirements (simplified)
+const STATE_REQUIREMENTS = {
+  AL: { total: 50, night: 10 }, AK: { total: 40, night: 10 }, AZ: { total: 30, night: 0 },
+  AR: { total: 60, night: 10 }, CA: { total: 50, night: 10 }, CO: { total: 50, night: 10 },
+  CT: { total: 40, night: 0 }, DE: { total: 50, night: 10 }, FL: { total: 50, night: 10 },
+  GA: { total: 40, night: 6 }, HI: { total: 50, night: 10 }, ID: { total: 50, night: 10 },
+  IL: { total: 50, night: 10 }, IN: { total: 50, night: 10 }, IA: { total: 20, night: 0 },
+  KS: { total: 50, night: 10 }, KY: { total: 60, night: 10 }, LA: { total: 50, night: 15 },
+  ME: { total: 70, night: 10 }, MD: { total: 60, night: 10 }, MA: { total: 40, night: 0 },
+  MI: { total: 50, night: 10 }, MN: { total: 50, night: 15 }, MS: { total: 30, night: 0 },
+  MO: { total: 40, night: 10 }, MT: { total: 50, night: 10 }, NE: { total: 50, night: 10 },
+  NV: { total: 50, night: 10 }, NH: { total: 40, night: 10 }, NJ: { total: 6, night: 0 },
+  NM: { total: 50, night: 10 }, NY: { total: 50, night: 15 }, NC: { total: 60, night: 10 },
+  ND: { total: 50, night: 10 }, OH: { total: 50, night: 10 }, OK: { total: 50, night: 10 },
+  OR: { total: 100, night: 10 }, PA: { total: 65, night: 10 }, RI: { total: 50, night: 10 },
+  SC: { total: 40, night: 10 }, SD: { total: 50, night: 0 }, TN: { total: 50, night: 10 },
+  TX: { total: 30, night: 10 }, UT: { total: 40, night: 10 }, VT: { total: 40, night: 10 },
+  VA: { total: 45, night: 15 }, WA: { total: 50, night: 10 }, WV: { total: 50, night: 10 },
+  WI: { total: 30, night: 10 }, WY: { total: 50, night: 10 }, DC: { total: 40, night: 10 },
+};
+
+// Grade labels
+const getGradeLabel = (score) => {
+  if (score >= 95) return { grade: 'A+', label: 'Excellent' };
+  if (score >= 90) return { grade: 'A', label: 'Great' };
+  if (score >= 85) return { grade: 'B+', label: 'Good' };
+  if (score >= 80) return { grade: 'B', label: 'Above Average' };
+  if (score >= 75) return { grade: 'C+', label: 'Average' };
+  if (score >= 70) return { grade: 'C', label: 'Needs Practice' };
+  if (score >= 60) return { grade: 'D', label: 'Needs Improvement' };
+  return { grade: 'F', label: 'Keep Practicing' };
+};
+
+const getGradeColor = (score) => {
+  if (score >= 90) return 'text-green-400';
+  if (score >= 80) return 'text-cyan-400';
+  if (score >= 70) return 'text-yellow-400';
+  if (score >= 60) return 'text-orange-400';
+  return 'text-red-400';
 };
 
 // Score ring component
-const ScoreRing = ({ score, size = 120, strokeWidth = 8, label }) => {
+const ScoreRing = ({ score, size = 120, strokeWidth = 8 }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const progress = ((100 - score) / 100) * circumference;
+  const { grade, label } = getGradeLabel(score);
   
   const getColor = (s) => {
-    if (s >= 90) return '#22c55e'; // green
-    if (s >= 80) return '#06b6d4'; // cyan
-    if (s >= 70) return '#eab308'; // yellow
-    if (s >= 60) return '#f97316'; // orange
-    return '#ef4444'; // red
+    if (s >= 90) return '#22c55e';
+    if (s >= 80) return '#06b6d4';
+    if (s >= 70) return '#eab308';
+    if (s >= 60) return '#f97316';
+    return '#ef4444';
   };
-  
-  const color = getColor(score);
   
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="transform -rotate-90">
-        {/* Background ring */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={strokeWidth}
-          className="text-zinc-700"
-        />
-        {/* Progress ring */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth={strokeWidth}
-          strokeDasharray={circumference}
-          strokeDashoffset={progress}
-          strokeLinecap="round"
-          className="transition-all duration-500"
-        />
+        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="currentColor" strokeWidth={strokeWidth} className="text-zinc-700" />
+        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke={getColor(score)} strokeWidth={strokeWidth} strokeDasharray={circumference} strokeDashoffset={progress} strokeLinecap="round" className="transition-all duration-500" />
       </svg>
-      {/* Center content */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold text-white">{score}</span>
-        {label && <span className="text-xs text-zinc-400 uppercase tracking-wider">{label}</span>}
+        <span className={cn("text-3xl font-bold", getGradeColor(score))}>{grade}</span>
+        <span className="text-[10px] text-zinc-400 uppercase">{label}</span>
       </div>
     </div>
   );
 };
 
-// Stat card component
-const StatCard = ({ icon: Icon, label, value, subValue, iconColor = "text-cyan-400", highlight = false }) => (
-  <div className={cn(
-    "bg-zinc-800/50 border rounded-lg p-3",
-    highlight ? "border-green-500/50 bg-green-500/10" : "border-zinc-700"
-  )}>
+// Practice Hours Progress
+const PracticeHoursCard = ({ totalHours, nightHours, state, onStateChange }) => {
+  const requirements = STATE_REQUIREMENTS[state] || { total: 50, night: 10 };
+  const totalPercent = Math.min(100, (totalHours / requirements.total) * 100);
+  const nightPercent = Math.min(100, (nightHours / requirements.night) * 100);
+  
+  return (
+    <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-3">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 text-cyan-400" />
+          <span className="text-xs text-zinc-300 font-medium">Practice Hours</span>
+        </div>
+        <select 
+          value={state}
+          onChange={(e) => onStateChange(e.target.value)}
+          className="bg-zinc-700 text-xs text-white px-2 py-1 rounded border border-zinc-600"
+        >
+          {Object.keys(STATE_REQUIREMENTS).sort().map(s => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+      </div>
+      
+      {/* Total Hours */}
+      <div className="mb-3">
+        <div className="flex justify-between text-xs mb-1">
+          <span className="text-zinc-400 flex items-center gap-1">
+            <Sun className="w-3 h-3" /> Total Hours
+          </span>
+          <span className={cn("font-medium", totalPercent >= 100 ? "text-green-400" : "text-white")}>
+            {totalHours.toFixed(1)} / {requirements.total}
+          </span>
+        </div>
+        <div className="h-2 bg-zinc-700 rounded-full overflow-hidden">
+          <div 
+            className={cn("h-full rounded-full transition-all", totalPercent >= 100 ? "bg-green-500" : "bg-cyan-500")}
+            style={{ width: `${totalPercent}%` }}
+          />
+        </div>
+      </div>
+      
+      {/* Night Hours */}
+      {requirements.night > 0 && (
+        <div>
+          <div className="flex justify-between text-xs mb-1">
+            <span className="text-zinc-400 flex items-center gap-1">
+              <Moon className="w-3 h-3" /> Night Hours
+            </span>
+            <span className={cn("font-medium", nightPercent >= 100 ? "text-green-400" : "text-white")}>
+              {nightHours.toFixed(1)} / {requirements.night}
+            </span>
+          </div>
+          <div className="h-2 bg-zinc-700 rounded-full overflow-hidden">
+            <div 
+              className={cn("h-full rounded-full transition-all", nightPercent >= 100 ? "bg-green-500" : "bg-purple-500")}
+              style={{ width: `${nightPercent}%` }}
+            />
+          </div>
+        </div>
+      )}
+      
+      {totalPercent >= 100 && nightPercent >= 100 && (
+        <p className="text-xs text-green-400 mt-2 flex items-center gap-1">
+          <CheckCircle className="w-3 h-3" /> {state} requirements met!
+        </p>
+      )}
+    </div>
+  );
+};
+
+// Skill Stat Card
+const SkillCard = ({ icon: Icon, label, value, subValue, iconColor = "text-cyan-400", highlight = false }) => (
+  <div className={cn("bg-zinc-800/50 border rounded-lg p-3", highlight ? "border-green-500/50 bg-green-500/10" : "border-zinc-700")}>
     <div className="flex items-center gap-2 mb-1">
       <Icon className={cn("w-4 h-4", iconColor)} />
       <span className="text-xs text-zinc-400 uppercase tracking-wider">{label}</span>
@@ -92,80 +164,16 @@ const StatCard = ({ icon: Icon, label, value, subValue, iconColor = "text-cyan-4
   </div>
 );
 
-// Trend indicator
-const TrendIndicator = ({ trend, className }) => {
-  const Icon = trend === 'improving' ? TrendingUp : 
-               trend === 'declining' ? TrendingDown : Minus;
-  const color = trend === 'improving' ? 'text-green-400' : 
-                trend === 'declining' ? 'text-red-400' : 'text-zinc-400';
-  
-  return (
-    <div className={cn("flex items-center gap-1 text-xs", color, className)}>
-      <Icon className="w-3 h-3" />
-      <span className="capitalize">{trend}</span>
-    </div>
-  );
-};
-
-// Streak Card
-const StreakCard = ({ currentStreak, longestStreak }) => (
-  <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 p-3 rounded-lg">
-    <div className="flex items-center gap-3">
-      <Flame className="w-6 h-6 text-orange-400" />
-      <div>
-        <p className="text-xl font-bold text-white">{currentStreak || 0}</p>
-        <p className="text-[10px] text-orange-300">Day Streak (Best: {longestStreak || 0})</p>
-      </div>
-    </div>
-  </div>
-);
-
-// Badges Display
-const BadgesDisplay = ({ earnedBadges = [], allBadges = {} }) => {
-  if (Object.keys(allBadges).length === 0) return null;
-  
-  return (
-    <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-3">
-      <div className="flex items-center gap-2 mb-2">
-        <Trophy className="w-4 h-4 text-yellow-400" />
-        <span className="text-xs text-zinc-400 uppercase tracking-wider">Achievements</span>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {Object.entries(allBadges).map(([key, badge]) => {
-          const earned = earnedBadges.includes(key);
-          return (
-            <div
-              key={key}
-              className={cn(
-                "flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] transition-all",
-                earned 
-                  ? "bg-yellow-500/20 border border-yellow-500/50 text-yellow-300" 
-                  : "bg-zinc-800/50 border border-zinc-700 text-zinc-600"
-              )}
-              title={badge.description}
-            >
-              <span>{BADGE_ICONS[key] || badge.icon}</span>
-            </div>
-          );
-        })}
-      </div>
-      <p className="text-[10px] text-zinc-500 mt-1.5">
-        {earnedBadges.length} / {Object.keys(allBadges).length} earned
-      </p>
-    </div>
-  );
-};
-
-// Recent incidents list
-const RecentIncidents = ({ incidents }) => {
+// Areas to Improve
+const AreasToImprove = ({ incidents }) => {
   if (!incidents || incidents.length === 0) {
     return (
-      <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-3">
-        <div className="flex items-center gap-2 mb-2">
+      <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+        <div className="flex items-center gap-2">
           <CheckCircle className="w-4 h-4 text-green-400" />
-          <span className="text-xs text-zinc-300">No Recent Issues</span>
+          <span className="text-xs text-green-300 font-medium">Great Job!</span>
         </div>
-        <p className="text-[10px] text-zinc-500">Great job! Keep driving safely.</p>
+        <p className="text-[10px] text-green-400/70 mt-1">No areas needing improvement. Keep it up!</p>
       </div>
     );
   }
@@ -181,23 +189,68 @@ const RecentIncidents = ({ incidents }) => {
     <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-3">
       <div className="flex items-center gap-2 mb-2">
         <AlertTriangle className="w-4 h-4 text-orange-400" />
-        <span className="text-xs text-zinc-300">Recent Issues</span>
+        <span className="text-xs text-zinc-300 font-medium">Areas to Improve</span>
       </div>
       <div className="space-y-1.5">
-        {incidents.slice(0, 4).map((incident, i) => (
+        {incidents.slice(0, 4).map((inc, i) => (
           <div key={i} className="flex items-center justify-between text-[10px]">
-            <div className="flex items-center gap-1.5">
-              <span className={cn("px-1 py-0.5 rounded", severityColor[incident.severity])}>
-                {incident.severity}
-              </span>
-              <span className="text-zinc-400 truncate max-w-[100px]">{incident.road_name || 'Unknown'}</span>
-            </div>
-            <span className="text-zinc-500">
-              {incident.max_speed} in {incident.posted_limit}
+            <span className={cn("px-1.5 py-0.5 rounded", severityColor[inc.severity])}>
+              {inc.severity === 'minor' ? 'Watch speed' : inc.severity === 'moderate' ? 'Slow down' : 'Too fast'}
             </span>
+            <span className="text-zinc-400">{inc.road_name || 'Unknown road'}</span>
           </div>
         ))}
       </div>
+    </div>
+  );
+};
+
+// Share/Parent Access Card
+const ShareAccessCard = ({ deviceId, onShare }) => {
+  const [copied, setCopied] = useState(false);
+  const shareCode = deviceId ? deviceId.slice(-8).toUpperCase() : 'LOADING';
+  
+  const handleCopy = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/progress/${shareCode}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast.success('Link copied! Share with parent or instructor');
+  };
+  
+  return (
+    <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Users className="w-4 h-4 text-purple-400" />
+          <span className="text-xs text-purple-300 font-medium">Parent/Instructor Access</span>
+        </div>
+      </div>
+      <p className="text-[10px] text-purple-400/70 mt-1 mb-2">Share your progress with a parent or instructor</p>
+      <div className="flex gap-2">
+        <div className="flex-1 bg-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-300 font-mono">
+          Code: {shareCode}
+        </div>
+        <button
+          onClick={handleCopy}
+          className="px-3 py-1.5 bg-purple-500/20 border border-purple-500/50 text-purple-300 text-xs rounded hover:bg-purple-500/30 transition-colors"
+        >
+          {copied ? 'Copied!' : 'Copy Link'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Trend indicator
+const TrendIndicator = ({ trend, className }) => {
+  const Icon = trend === 'improving' ? TrendingUp : trend === 'declining' ? TrendingDown : Minus;
+  const color = trend === 'improving' ? 'text-green-400' : trend === 'declining' ? 'text-red-400' : 'text-zinc-400';
+  const label = trend === 'improving' ? 'Improving!' : trend === 'declining' ? 'Needs work' : 'Steady';
+  
+  return (
+    <div className={cn("flex items-center gap-1 text-xs", color, className)}>
+      <Icon className="w-3 h-3" />
+      <span>{label}</span>
     </div>
   );
 };
@@ -208,38 +261,39 @@ export const FleetDashboard = ({ speedUnit = 'mph' }) => {
   const [scores, setScores] = useState(null);
   const [recentTrips, setRecentTrips] = useState([]);
   const [incidents, setIncidents] = useState([]);
-  const [gamificationStats, setGamificationStats] = useState(null);
-  const [allBadges, setAllBadges] = useState({});
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [selectedState, setSelectedState] = useState(() => {
+    return localStorage.getItem('drivecoach_state') || 'MN';
+  });
 
   useEffect(() => {
     loadData();
   }, [isAuthenticated]);
+  
+  useEffect(() => {
+    localStorage.setItem('drivecoach_state', selectedState);
+  }, [selectedState]);
 
-  // Export to CSV
   const handleExportCSV = async () => {
     setExporting(true);
     try {
       const deviceId = getDeviceIdValue();
       const response = await fetch(`${API}/fleet/export/csv?device_id=${deviceId}`);
-      
       if (!response.ok) throw new Error('Export failed');
       
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `speedshield_report_${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `drivecoach_progress_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
-      
-      toast.success('Report exported successfully');
+      toast.success('Progress report exported!');
     } catch (err) {
-      console.error('Export error:', err);
-      toast.error('Failed to export report');
+      toast.error('Failed to export');
     } finally {
       setExporting(false);
     }
@@ -248,30 +302,15 @@ export const FleetDashboard = ({ speedUnit = 'mph' }) => {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Fleet data (always load)
       const [scoresData, tripsData, incidentsData] = await Promise.all([
         getScores(),
-        getTrips(null, null, 7),
+        getTrips(null, null, 100),
         getIncidents(null, null, null, 10)
       ]);
       
       setScores(scoresData);
       setRecentTrips(tripsData.trips || []);
       setIncidents(incidentsData || []);
-      
-      // Gamification data (only if authenticated)
-      if (isAuthenticated) {
-        try {
-          const [statsRes, badgesRes] = await Promise.all([
-            axios.get(`${API}/stats`),
-            axios.get(`${API}/badges`)
-          ]);
-          setGamificationStats(statsRes.data);
-          setAllBadges(badgesRes.data.badges || {});
-        } catch (err) {
-          console.log("Gamification stats not available");
-        }
-      }
     } catch (err) {
       console.error('Error loading dashboard:', err);
     } finally {
@@ -287,102 +326,82 @@ export const FleetDashboard = ({ speedUnit = 'mph' }) => {
     );
   }
 
-  // Calculate stats from recent trips
-  const totalTripsThisWeek = recentTrips.length;
-  const totalMilesThisWeek = recentTrips.reduce((sum, t) => sum + (t.distance_miles || 0), 0);
-  const totalSpeedingThisWeek = recentTrips.reduce((sum, t) => sum + (t.speeding_incidents_count || 0), 0);
-  const safeTripsPercent = totalTripsThisWeek > 0 
-    ? Math.round((recentTrips.filter(t => (t.speeding_incidents_count || 0) === 0).length / totalTripsThisWeek) * 100)
-    : 100;
+  // Calculate practice hours from trips
+  const totalHours = recentTrips.reduce((sum, t) => sum + (t.duration_minutes || 0), 0) / 60;
+  const nightHours = recentTrips.reduce((sum, t) => {
+    const startTime = new Date(t.start_time);
+    const hour = startTime.getHours();
+    // Night = 9pm to 6am
+    if (hour >= 21 || hour < 6) {
+      return sum + (t.duration_minutes || 0) / 60;
+    }
+    return sum;
+  }, 0);
+  
+  const totalSessions = recentTrips.length;
+  const totalMiles = recentTrips.reduce((sum, t) => sum + (t.distance_miles || 0), 0);
+  const safeSessions = recentTrips.filter(t => (t.speeding_incidents_count || 0) === 0).length;
+  const safePercent = totalSessions > 0 ? Math.round((safeSessions / totalSessions) * 100) : 100;
 
   return (
     <div className="space-y-3">
-      {/* Main Score Section */}
+      {/* Driving Grade Section */}
       <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
         <div className="flex items-center justify-between">
-          {/* Weekly Score Ring */}
           <div className="flex flex-col items-center">
-            <ScoreRing 
-              score={scores?.weekly_score || 100} 
-              size={100}
-              label="Weekly"
-            />
+            <ScoreRing score={scores?.weekly_score || 100} size={100} />
             <TrendIndicator trend={scores?.trend || 'stable'} className="mt-1" />
           </div>
           
-          {/* Score Breakdown */}
           <div className="flex-1 ml-4 space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-xs text-zinc-400">Today</span>
-              <span className="text-base font-bold text-white">{scores?.daily_score || 100}</span>
+              <span className={cn("text-base font-bold", getGradeColor(scores?.daily_score || 100))}>
+                {getGradeLabel(scores?.daily_score || 100).grade}
+              </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-zinc-400">Monthly</span>
-              <span className="text-base font-bold text-white">{scores?.monthly_score || 100}</span>
+              <span className="text-xs text-zinc-400">This Month</span>
+              <span className={cn("text-base font-bold", getGradeColor(scores?.monthly_score || 100))}>
+                {getGradeLabel(scores?.monthly_score || 100).grade}
+              </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-zinc-400">Lifetime</span>
-              <span className="text-base font-bold text-white">{scores?.lifetime_score || 100}</span>
+              <span className="text-xs text-zinc-400">Overall</span>
+              <span className={cn("text-base font-bold", getGradeColor(scores?.lifetime_score || 100))}>
+                {getGradeLabel(scores?.lifetime_score || 100).grade}
+              </span>
             </div>
           </div>
         </div>
       </div>
       
-      {/* Streak Card (if authenticated) */}
-      {isAuthenticated && gamificationStats && (
-        <StreakCard 
-          currentStreak={gamificationStats.current_streak} 
-          longestStreak={gamificationStats.longest_streak} 
-        />
-      )}
+      {/* Practice Hours */}
+      <PracticeHoursCard 
+        totalHours={totalHours}
+        nightHours={nightHours}
+        state={selectedState}
+        onStateChange={setSelectedState}
+      />
       
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-2">
-        <StatCard 
-          icon={MapPin}
-          label="Trips"
-          value={totalTripsThisWeek}
-          subValue="this week"
-          iconColor="text-cyan-400"
-        />
-        <StatCard 
-          icon={Gauge}
-          label="Miles"
-          value={totalMilesThisWeek.toFixed(1)}
-          subValue="this week"
-          iconColor="text-green-400"
-        />
-        <StatCard 
-          icon={Star}
-          label="Safe %"
-          value={`${safeTripsPercent}%`}
-          iconColor="text-yellow-400"
-          highlight={safeTripsPercent >= 80}
-        />
-        <StatCard 
-          icon={Activity}
-          label="Total"
-          value={scores?.total_trips || 0}
-          subValue={`${(scores?.total_miles || 0).toFixed(0)} mi`}
-          iconColor="text-purple-400"
-        />
+        <SkillCard icon={MapPin} label="Sessions" value={totalSessions} subValue="practice drives" iconColor="text-cyan-400" />
+        <SkillCard icon={Gauge} label="Miles" value={totalMiles.toFixed(1)} subValue="driven" iconColor="text-green-400" />
+        <SkillCard icon={Star} label="Clean %" value={`${safePercent}%`} iconColor="text-yellow-400" highlight={safePercent >= 80} />
+        <SkillCard icon={Clock} label="Hours" value={totalHours.toFixed(1)} subValue="total practice" iconColor="text-purple-400" />
       </div>
       
-      {/* Badges (if authenticated) */}
-      {isAuthenticated && gamificationStats && (
-        <BadgesDisplay 
-          earnedBadges={gamificationStats.badges || []} 
-          allBadges={allBadges} 
-        />
-      )}
+      {/* Areas to Improve */}
+      <AreasToImprove incidents={incidents} />
       
-      {/* Recent Incidents */}
-      <RecentIncidents incidents={incidents} />
+      {/* Share with Parent/Instructor */}
+      <ShareAccessCard deviceId={getDeviceIdValue()} />
       
       {/* Export Button */}
       <button
         onClick={handleExportCSV}
-        disabled={exporting || (scores?.total_trips || 0) === 0}
+        disabled={exporting || totalSessions === 0}
         className={cn(
           "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-all",
           "bg-cyan-500/20 border border-cyan-500/50 text-cyan-400",
@@ -398,7 +417,7 @@ export const FleetDashboard = ({ speedUnit = 'mph' }) => {
         ) : (
           <>
             <Download className="w-4 h-4" />
-            <span className="text-sm font-medium">Export Report (CSV)</span>
+            <span className="text-sm font-medium">Export Progress Report</span>
           </>
         )}
       </button>
