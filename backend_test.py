@@ -1650,6 +1650,11 @@ class SpeedAlertAPITester:
             self.test_trip_workflow()
             self.test_trip_edge_cases()
             
+            # Run fleet & telematics tests
+            print("\n🚛 Testing Fleet & Telematics API...")
+            self.test_fleet_complete_workflow()
+            self.test_fleet_severity_calculations()
+            
             # Print summary
             print("=" * 60)
             print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} passed")
