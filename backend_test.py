@@ -1587,6 +1587,413 @@ class SpeedAlertAPITester:
                 except:
                     pass
 
+    # ==================== PRACTICE HOURS & SHARE ACCESS TESTS ====================
+    
+    def test_practice_hours_workflow(self):
+        """Test complete Practice Hours & Share Access workflow"""
+        print("\n🎓 Testing Practice Hours & Share Access Workflow...")
+        
+        # Test device ID for practice hours
+        device_id = "test_device_practice_001"
+        
+        # 1. Test User Settings
+        success = self.test_save_user_settings(device_id)
+        if not success:
+            print("❌ Cannot continue workflow - user settings failed")
+            return False
+        
+        # 2. Test Practice Sessions
+        session_id = self.test_create_practice_session(device_id)
+        if not session_id:
+            print("❌ Cannot continue workflow - practice session creation failed")
+            return False
+        
+        # 3. Test Get Practice Sessions
+        success = self.test_get_practice_sessions(device_id)
+        if not success:
+            print("❌ Getting practice sessions failed")
+            return False
+        
+        # 4. Test Practice Summary
+        success = self.test_get_practice_summary(device_id)
+        if not success:
+            print("❌ Getting practice summary failed")
+            return False
+        
+        # 5. Test Share Access Creation
+        share_code = self.test_create_share_access(device_id)
+        if not share_code:
+            print("❌ Cannot continue workflow - share access creation failed")
+            return False
+        
+        # 6. Test List Share Access
+        success = self.test_list_share_access(device_id)
+        if not success:
+            print("❌ Listing share access failed")
+            return False
+        
+        # 7. Test Shared Progress (Public Endpoint)
+        success = self.test_get_shared_progress(share_code)
+        if not success:
+            print("❌ Getting shared progress failed")
+            return False
+        
+        # 8. Test Delete Practice Session
+        success = self.test_delete_practice_session(session_id, device_id)
+        if not success:
+            print("❌ Deleting practice session failed")
+            return False
+        
+        # 9. Test Revoke Share Access
+        success = self.test_revoke_share_access(share_code, device_id)
+        if not success:
+            print("❌ Revoking share access failed")
+            return False
+        
+        print("✅ Complete Practice Hours & Share Access workflow successful!")
+        return True
+
+    def test_save_user_settings(self, device_id):
+        """Test saving user settings (selected state)"""
+        try:
+            data = {
+                "state": "TX"  # Texas
+            }
+            params = {"device_id": device_id}
+            response = requests.post(f"{self.base_url}/api/practice/settings", json=data, params=params, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                details += f", State: {response_data.get('state')}, Status: {response_data.get('status')}"
+            
+            self.log_test("Save User Settings", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Save User Settings", False, str(e))
+            return False
+
+    def test_get_user_settings(self, device_id):
+        """Test getting user settings"""
+        try:
+            params = {"device_id": device_id}
+            response = requests.get(f"{self.base_url}/api/practice/settings", params=params, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                details += f", Device ID: {response_data.get('device_id')}, State: {response_data.get('selected_state')}"
+            
+            self.log_test("Get User Settings", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Get User Settings", False, str(e))
+            return False
+
+    def test_create_practice_session(self, device_id):
+        """Test creating a practice session"""
+        try:
+            data = {
+                "device_id": device_id,
+                "session_type": "day",
+                "duration_minutes": 90.5,
+                "date": "2024-01-15",
+                "notes": "Highway driving practice",
+                "supervisor_name": "John Smith"
+            }
+            response = requests.post(f"{self.base_url}/api/practice/sessions", json=data, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                if 'session_id' in response_data:
+                    session_id = response_data['session_id']
+                    details += f", Session ID: {session_id}, Status: {response_data.get('status')}"
+                    self.log_test("Create Practice Session", success, details)
+                    return session_id
+                else:
+                    success = False
+                    details += ", Missing session_id in response"
+            
+            self.log_test("Create Practice Session", success, details)
+            return None
+        except Exception as e:
+            self.log_test("Create Practice Session", False, str(e))
+            return None
+
+    def test_get_practice_sessions(self, device_id):
+        """Test getting practice sessions list"""
+        try:
+            params = {
+                "device_id": device_id,
+                "limit": 10
+            }
+            response = requests.get(f"{self.base_url}/api/practice/sessions", params=params, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                session_count = len(response_data) if isinstance(response_data, list) else 0
+                details += f", Session count: {session_count}"
+                
+                # Check session structure if any sessions found
+                if session_count > 0:
+                    first_session = response_data[0]
+                    required_fields = ["id", "device_id", "session_type", "duration_minutes", "date"]
+                    has_all_fields = all(field in first_session for field in required_fields)
+                    if not has_all_fields:
+                        success = False
+                        details += ", Missing fields in session data"
+            
+            self.log_test("Get Practice Sessions", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Get Practice Sessions", False, str(e))
+            return False
+
+    def test_get_practice_summary(self, device_id):
+        """Test getting practice hours summary"""
+        try:
+            params = {"device_id": device_id}
+            response = requests.get(f"{self.base_url}/api/practice/summary", params=params, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                required_fields = ["device_id", "total_hours", "day_hours", "night_hours", "selected_state", "requirements_met"]
+                has_all_fields = all(field in response_data for field in required_fields)
+                
+                if has_all_fields:
+                    total_hours = response_data.get('total_hours')
+                    state = response_data.get('selected_state')
+                    requirements_met = response_data.get('requirements_met')
+                    details += f", Total Hours: {total_hours}, State: {state}, Requirements Met: {requirements_met}"
+                else:
+                    success = False
+                    details += f", Missing fields in response: {response_data}"
+            
+            self.log_test("Get Practice Summary", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Get Practice Summary", False, str(e))
+            return False
+
+    def test_create_share_access(self, device_id):
+        """Test creating a share access link"""
+        try:
+            data = {
+                "device_id": device_id,
+                "recipient_name": "Parent Smith",
+                "recipient_email": "parent@example.com",
+                "expires_days": 30
+            }
+            response = requests.post(f"{self.base_url}/api/practice/share", json=data, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                if 'share_code' in response_data and 'share_url' in response_data:
+                    share_code = response_data['share_code']
+                    share_url = response_data['share_url']
+                    expires_at = response_data.get('expires_at')
+                    details += f", Share Code: {share_code}, URL: {share_url}, Expires: {expires_at}"
+                    self.log_test("Create Share Access", success, details)
+                    return share_code
+                else:
+                    success = False
+                    details += ", Missing share_code or share_url in response"
+            
+            self.log_test("Create Share Access", success, details)
+            return None
+        except Exception as e:
+            self.log_test("Create Share Access", False, str(e))
+            return None
+
+    def test_list_share_access(self, device_id):
+        """Test listing share access links"""
+        try:
+            params = {"device_id": device_id}
+            response = requests.get(f"{self.base_url}/api/practice/share/list", params=params, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                share_count = len(response_data) if isinstance(response_data, list) else 0
+                details += f", Share count: {share_count}"
+                
+                # Check share structure if any shares found
+                if share_count > 0:
+                    first_share = response_data[0]
+                    required_fields = ["id", "device_id", "share_code", "recipient_name", "created_at", "expires_at"]
+                    has_all_fields = all(field in first_share for field in required_fields)
+                    if not has_all_fields:
+                        success = False
+                        details += ", Missing fields in share data"
+            
+            self.log_test("List Share Access", success, details)
+            return success
+        except Exception as e:
+            self.log_test("List Share Access", False, str(e))
+            return False
+
+    def test_get_shared_progress(self, share_code):
+        """Test getting shared progress data (public endpoint)"""
+        try:
+            response = requests.get(f"{self.base_url}/api/practice/shared/{share_code}", timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                required_fields = ["practice_hours", "safety_score", "total_trips", "recent_trips", "generated_at"]
+                has_all_fields = all(field in response_data for field in required_fields)
+                
+                if has_all_fields:
+                    practice_hours = response_data.get('practice_hours', {})
+                    safety_score = response_data.get('safety_score')
+                    total_trips = response_data.get('total_trips')
+                    total_hours = practice_hours.get('total_hours', 0)
+                    details += f", Total Hours: {total_hours}, Safety Score: {safety_score}, Trips: {total_trips}"
+                else:
+                    success = False
+                    details += f", Missing fields in response: {response_data}"
+            
+            self.log_test("Get Shared Progress", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Get Shared Progress", False, str(e))
+            return False
+
+    def test_delete_practice_session(self, session_id, device_id):
+        """Test deleting a practice session"""
+        try:
+            params = {"device_id": device_id}
+            response = requests.delete(f"{self.base_url}/api/practice/sessions/{session_id}", params=params, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                details += f", Status: {response_data.get('status')}"
+            
+            self.log_test("Delete Practice Session", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Delete Practice Session", False, str(e))
+            return False
+
+    def test_revoke_share_access(self, share_code, device_id):
+        """Test revoking a share access link"""
+        try:
+            params = {"device_id": device_id}
+            response = requests.delete(f"{self.base_url}/api/practice/share/{share_code}", params=params, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                details += f", Status: {response_data.get('status')}"
+            
+            self.log_test("Revoke Share Access", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Revoke Share Access", False, str(e))
+            return False
+
+    def test_practice_edge_cases(self):
+        """Test Practice Hours API edge cases"""
+        print("\n🔍 Testing Practice Hours API Edge Cases...")
+        
+        # Test invalid session creation
+        try:
+            data = {
+                "device_id": "test_device",
+                "session_type": "invalid_type",
+                "duration_minutes": -10,  # Invalid negative duration
+                "date": "invalid_date"
+            }
+            response = requests.post(f"{self.base_url}/api/practice/sessions", json=data, timeout=10)
+            success = response.status_code == 422
+            self.log_test("Invalid Practice Session Data", success, f"Status: {response.status_code} (expected 422)")
+        except Exception as e:
+            self.log_test("Invalid Practice Session Data", False, str(e))
+        
+        # Test non-existent session deletion
+        try:
+            params = {"device_id": "test_device"}
+            response = requests.delete(f"{self.base_url}/api/practice/sessions/non_existent_id", params=params, timeout=10)
+            success = response.status_code == 404
+            self.log_test("Non-existent Session Deletion", success, f"Status: {response.status_code} (expected 404)")
+        except Exception as e:
+            self.log_test("Non-existent Session Deletion", False, str(e))
+        
+        # Test invalid state setting
+        try:
+            data = {"state": "INVALID"}
+            params = {"device_id": "test_device"}
+            response = requests.post(f"{self.base_url}/api/practice/settings", json=data, params=params, timeout=10)
+            success = response.status_code == 400
+            self.log_test("Invalid State Setting", success, f"Status: {response.status_code} (expected 400)")
+        except Exception as e:
+            self.log_test("Invalid State Setting", False, str(e))
+        
+        # Test expired share link
+        try:
+            response = requests.get(f"{self.base_url}/api/practice/shared/EXPIRED123", timeout=10)
+            success = response.status_code in [404, 410]  # Not found or expired
+            self.log_test("Expired Share Link", success, f"Status: {response.status_code} (expected 404 or 410)")
+        except Exception as e:
+            self.log_test("Expired Share Link", False, str(e))
+
+    def test_state_requirements(self):
+        """Test state requirements endpoint"""
+        try:
+            response = requests.get(f"{self.base_url}/api/practice/requirements", timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                # Check for some expected states
+                expected_states = ["CA", "TX", "NY", "FL"]
+                found_states = [state for state in expected_states if state in response_data]
+                state_count = len(response_data) if isinstance(response_data, dict) else 0
+                details += f", State count: {state_count}, Found expected states: {found_states}"
+                
+                # Check structure of state requirements
+                if state_count > 0:
+                    first_state = list(response_data.keys())[0]
+                    state_req = response_data[first_state]
+                    if isinstance(state_req, dict) and "total" in state_req and "night" in state_req:
+                        details += f", Example: {first_state} requires {state_req['total']}h total, {state_req['night']}h night"
+                    else:
+                        success = False
+                        details += ", Invalid state requirement structure"
+            
+            self.log_test("Get State Requirements", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Get State Requirements", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting Speed Alert API Tests...")
