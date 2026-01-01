@@ -1,6 +1,6 @@
 {
-  "name": "SpeedShield",
-  "short_name": "SpeedShield",
+  "name": "DriveCoach",
+  "short_name": "DriveCoach",
   "description": "AI-powered speed alert app - Your shield against speed traps",
   "start_url": "/",
   "display": "standalone",
