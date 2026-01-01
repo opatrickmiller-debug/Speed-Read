@@ -246,28 +246,57 @@ function CacheInfo() {
   const clearCache = async () => {
     setIsClearing(true);
     try {
-      // Clear Service Worker caches
+      // 1. Clear ALL Service Worker caches
       if ('caches' in window) {
         const cacheNames = await caches.keys();
+        console.log('Clearing caches:', cacheNames);
         await Promise.all(cacheNames.map(name => caches.delete(name)));
       }
-      // Clear speed limit cache from localStorage (correct key)
-      localStorage.removeItem('speedLimitCache');
-      localStorage.removeItem('speedLimitCacheLastCleanup');
       
-      // Also clear any other app-related cache keys
-      const keys = Object.keys(localStorage);
-      keys.forEach(key => {
-        if (key.startsWith('speedLimit') || key.startsWith('cache')) {
+      // 2. Unregister Service Workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+          console.log('Unregistered service worker');
+        }
+      }
+      
+      // 3. Clear IndexedDB databases
+      if ('indexedDB' in window) {
+        const databases = await indexedDB.databases?.() || [];
+        for (const db of databases) {
+          if (db.name) {
+            indexedDB.deleteDatabase(db.name);
+            console.log('Deleted IndexedDB:', db.name);
+          }
+        }
+      }
+      
+      // 4. Clear ALL localStorage (except user preferences)
+      const keysToKeep = ['theme', 'speedUnit', 'hasVisitedApp', 'hasCompletedOnboarding'];
+      const allKeys = Object.keys(localStorage);
+      allKeys.forEach(key => {
+        if (!keysToKeep.includes(key)) {
           localStorage.removeItem(key);
         }
       });
+      console.log('Cleared localStorage');
       
+      // 5. Clear sessionStorage
+      sessionStorage.clear();
+      console.log('Cleared sessionStorage');
+      
+      // Wait a moment for storage to update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Recalculate cache size
       await calculateCacheSize();
-      toast.success('Cache cleared successfully!');
+      
+      toast.success('Cache cleared! Refresh for full effect.');
     } catch (e) {
       console.error('Could not clear cache:', e);
-      toast.error('Failed to clear cache');
+      toast.error('Failed to clear some cache data');
     }
     setIsClearing(false);
   };
