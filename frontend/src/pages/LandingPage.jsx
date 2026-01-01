@@ -129,40 +129,43 @@ const TESTIMONIALS = [
     rating: 5
   },
   {
-    name: "David R.",
-    role: "Motorcycle Rider",
-    image: "🏍️",
-    text: "The HUD mode is a game-changer for my helmet display. I can see my speed without looking down.",
+    name: "Mike R.",
+    role: "Driving Instructor",
+    image: "🚙",
+    text: "I recommend DriveCoach to all my students. The progress tracking helps me focus lessons on what they actually need.",
     rating: 5
   }
 ];
 
-// Pricing plans
+// Pricing plans - Training Focus
 const PRICING = [
   {
     name: "Free",
     price: "$0",
     period: "forever",
-    description: "Basic speed alerts",
+    description: "Start learning",
     features: [
-      "Real-time speed alerts",
-      "1 alert sound",
-      "Basic speed limit data",
-      "Ad-supported"
+      "5 practice sessions/month",
+      "Basic hour tracking",
+      "Speed alerts",
+      "1 parent share link"
     ],
     cta: "Get Started",
     highlighted: false
   },
   {
-    name: "Premium",
-    price: "$3.99",
+    name: "Student",
+    price: "$4.99",
     period: "/month",
-    description: "Full protection",
+    description: "Full training suite",
     features: [
-      "Everything in Free",
-      "AI Speed Prediction",
-      "HUD Windshield Mode",
-      "6 custom alert sounds",
+      "Unlimited practice sessions",
+      "Detailed safety scores",
+      "Day/night hour tracking",
+      "3 share links",
+      "Progress badges",
+      "CSV/PDF exports"
+    ],
       "12+ voice languages",
       "Dynamic thresholds",
       "No ads",
