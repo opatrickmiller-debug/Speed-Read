@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Circle, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Crosshair, WifiOff, Database, Trophy, Maximize2, Smartphone, AlertTriangle } from "lucide-react";
+import { MapPin, Crosshair, WifiOff, Database, Trophy, Maximize2, Smartphone, AlertTriangle, BarChart3 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -22,9 +22,12 @@ import { SpeedPredictionBanner, SpeedPredictionIndicator, useBearing, useSpeedPr
 import { NetworkStatusBadge, BatteryWarningBadge } from "@/components/MobileSettings";
 import { DraggableContainer } from "@/components/DraggableHUD";
 import { DraggableCompass } from "@/components/Compass";
+import { FleetDashboard } from "@/components/FleetDashboard";
+import { FleetTripHistory } from "@/components/FleetTripHistory";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import * as tripService from "@/services/tripService";
 import { 
   cacheSpeedLimit, 
   getCachedSpeedLimit, 
