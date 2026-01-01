@@ -328,8 +328,9 @@ class DriveCoachAPITester:
         """Test registering a new instructor"""
         try:
             timestamp = int(time.time())
+            self.instructor_email = f"instructor_{timestamp}@drivingschool.com"
             data = {
-                "email": f"instructor_{timestamp}@drivingschool.com",
+                "email": self.instructor_email,
                 "password": "InstructorPass123!",
                 "name": "John Smith",
                 "phone": "+1-555-0123",
