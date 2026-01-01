@@ -66,66 +66,66 @@ const useAutoWake = () => {
   return { isWaking, isAwake };
 };
 
-// Feature data
+// Feature data - Driver Training Focus
 const FEATURES = [
   {
+    icon: Clock,
+    title: "Automatic Hour Tracking",
+    description: "Log practice hours automatically. Track day vs night driving to meet your state's permit requirements.",
+    color: "text-cyan-400",
+    bgColor: "bg-cyan-500/10"
+  },
+  {
+    icon: TrendingUp,
+    title: "Safety Scores & Grades",
+    description: "Get a driving grade (A+ to F) based on speed compliance, smooth braking, and safe habits.",
+    color: "text-green-400",
+    bgColor: "bg-green-500/10"
+  },
+  {
     icon: AlertTriangle,
-    title: "AI Speed Prediction",
-    description: "Warns you BEFORE entering lower speed zones. Our AI looks ahead and alerts you in advance.",
+    title: "Real-Time Speed Coaching",
+    description: "Audio alerts when approaching speed limits. Learn to recognize zones before it becomes a habit.",
     color: "text-amber-400",
     bgColor: "bg-amber-500/10"
   },
   {
     icon: Eye,
-    title: "HUD Windshield Mode",
-    description: "Mirror display projects onto your windshield. Keep your eyes on the road, not your phone.",
-    color: "text-cyan-400",
-    bgColor: "bg-cyan-500/10"
-  },
-  {
-    icon: Volume2,
-    title: "Customizable Alerts",
-    description: "6 different alert sounds, adjustable volume, and voice warnings in 12+ languages.",
+    title: "Parent Dashboard",
+    description: "Parents see real progress, not just location. View safety scores, practice hours, and trip history.",
     color: "text-purple-400",
     bgColor: "bg-purple-500/10"
   },
   {
-    icon: Zap,
-    title: "Dynamic Thresholds",
-    description: "Set different tolerances for different speed zones. +0 in school zones, +10 on highways.",
-    color: "text-green-400",
-    bgColor: "bg-green-500/10"
-  },
-  {
-    icon: Wifi,
-    title: "Works Offline",
-    description: "Speed limits cached locally. Works even with poor cell signal in rural areas.",
+    icon: Shield,
+    title: "Share with Instructors",
+    description: "Connect with your driving instructor. They can track your progress and provide targeted feedback.",
     color: "text-blue-400",
     bgColor: "bg-blue-500/10"
   },
   {
-    icon: Battery,
-    title: "Battery Optimized",
-    description: "Low power mode and smart GPS reduce battery drain. Drive all day on one charge.",
+    icon: Smartphone,
+    title: "Works Everywhere",
+    description: "No special hardware needed. Works offline, optimized for battery life. Mount and drive.",
     color: "text-orange-400",
     bgColor: "bg-orange-500/10"
   }
 ];
 
-// Testimonials
+// Testimonials - Driver Training Focus
 const TESTIMONIALS = [
   {
-    name: "Marcus T.",
-    role: "Uber Driver",
-    image: "🚗",
-    text: "I drive 8+ hours a day. This app has saved me from at least 3 tickets in the past month. The AI prediction feature is incredible.",
+    name: "Sarah M.",
+    role: "Parent of New Driver",
+    image: "👩",
+    text: "My son went from a C to an A+ in just 3 weeks. The real-time feedback taught him habits I couldn't explain in words.",
     rating: 5
   },
   {
     name: "Jennifer L.",
     role: "Mom of Teen Driver",
     image: "👩",
-    text: "Finally have peace of mind when my daughter drives. The voice alerts keep her aware without being distracting.",
+    text: "Finally have peace of mind when my daughter drives. I can see her actual safety score, not just where she went.",
     rating: 5
   },
   {
