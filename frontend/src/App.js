@@ -7,15 +7,17 @@ import { InstallPrompt } from "@/components/InstallPrompt";
 import SpeedMap from "@/pages/SpeedMap";
 import LandingPage from "@/pages/LandingPage";
 import SharedProgress from "@/pages/SharedProgress";
+import InstructorPortal from "@/pages/InstructorPortal";
 
 function App() {
   // Check if user has visited the app before
   const [showLanding, setShowLanding] = useState(() => {
     const hasVisited = localStorage.getItem('hasVisitedApp');
     const directToApp = window.location.search.includes('app=1');
-    // Also check if accessing shared progress page
+    // Also check if accessing shared progress page or instructor portal
     const isSharedProgress = window.location.pathname.startsWith('/progress/');
-    return !hasVisited && !directToApp && !isSharedProgress;
+    const isInstructor = window.location.pathname.startsWith('/instructor');
+    return !hasVisited && !directToApp && !isSharedProgress && !isInstructor;
   });
 
   const enterApp = () => {
@@ -23,8 +25,11 @@ function App() {
     setShowLanding(false);
   };
 
-  // If showing landing page, render it (but not for shared progress pages)
-  if (showLanding && !window.location.pathname.startsWith('/progress/')) {
+  // If showing landing page, render it (but not for shared progress or instructor pages)
+  const isSpecialPage = window.location.pathname.startsWith('/progress/') || 
+                        window.location.pathname.startsWith('/instructor');
+  
+  if (showLanding && !isSpecialPage) {
     return (
       <div className="App">
         <LandingPage onEnterApp={enterApp} />
@@ -51,6 +56,7 @@ function App() {
           <Routes>
             <Route path="/" element={<SpeedMap />} />
             <Route path="/progress/:shareCode" element={<SharedProgress />} />
+            <Route path="/instructor" element={<InstructorPortal />} />
           </Routes>
         </BrowserRouter>
         <Toaster 
