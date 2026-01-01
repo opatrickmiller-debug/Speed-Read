@@ -1424,7 +1424,7 @@ export default function SpeedMap() {
           </div>
           
           <div className="mt-6 border-t border-zinc-700 pt-4">
-            <h3 className="text-sm font-medium text-zinc-300 mb-3">Recent Trips</h3>
+            <h3 className="text-sm font-medium text-zinc-300 mb-3">Practice Sessions</h3>
             <FleetTripHistory speedUnit={speedUnit} />
           </div>
         </SheetContent>
