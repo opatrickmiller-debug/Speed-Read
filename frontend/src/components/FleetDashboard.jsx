@@ -674,6 +674,9 @@ export const FleetDashboard = ({ speedUnit = 'mph' }) => {
       {/* Share with Parent/Instructor */}
       <ShareAccessCard deviceId={getDeviceIdValue()} />
       
+      {/* Referral Card */}
+      <ReferralCard />
+      
       {/* Export Button */}
       <button
         onClick={handleExportCSV}
