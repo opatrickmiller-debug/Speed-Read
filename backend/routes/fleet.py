@@ -73,8 +73,12 @@ async def end_trip(trip_id: str, end_data: TripEnd):
     
     now = datetime.now(timezone.utc)
     start_time = trip["start_time"]
+    
+    # Handle both string and datetime objects
     if isinstance(start_time, str):
         start_time = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+    elif start_time.tzinfo is None:
+        start_time = start_time.replace(tzinfo=timezone.utc)
     
     duration_minutes = (now - start_time).total_seconds() / 60
     
