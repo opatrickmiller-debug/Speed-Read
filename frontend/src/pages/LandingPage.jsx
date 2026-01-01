@@ -478,10 +478,10 @@ export default function LandingPage({ onEnterApp }) {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Loved by Drivers
+              Trusted by Families
             </h2>
             <p className="text-zinc-400 max-w-2xl mx-auto">
-              Join thousands of drivers who&apos;ve saved money and stayed safe.
+              Join thousands of families who&apos;ve used DriveCoach to train confident, safe drivers.
             </p>
           </div>
 
