@@ -2,11 +2,12 @@
 // Shows safety scores, trends, achievements, and key metrics
 
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle, Activity, MapPin, Gauge, Flame, Trophy, Award, Star } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle, Activity, MapPin, Gauge, Flame, Trophy, Star, Download, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getScores, getTrips, getIncidents } from '@/services/tripService';
+import { getScores, getTrips, getIncidents, getDeviceIdValue } from '@/services/tripService';
 import { useAuth } from '@/contexts/AuthContext';
 import axios from 'axios';
+import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
