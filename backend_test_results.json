@@ -1,334 +1,382 @@
 {
   "summary": {
-    "total_tests": 54,
-    "passed_tests": 49,
-    "success_rate": 90.74074074074075,
-    "timestamp": "2026-01-01T21:36:32.707234"
+    "total_tests": 62,
+    "passed_tests": 59,
+    "success_rate": 95.16129032258065,
+    "timestamp": "2026-01-01T21:37:22.586082"
   },
   "test_results": [
     {
       "test": "API Root Endpoint",
       "success": true,
       "details": "Status: 200, Response: {'message': 'Speed Alert API', 'version': '1.0.0'}",
-      "timestamp": "2026-01-01T21:36:09.333310"
+      "timestamp": "2026-01-01T21:37:03.248871"
     },
     {
       "test": "User Registration",
       "success": true,
-      "details": "Status: 200, User ID: 6956e8c91baa9fc585202aa7, Email: test_user_1767303369@example.com",
-      "timestamp": "2026-01-01T21:36:09.652296"
+      "details": "Status: 200, User ID: 6956e8ff1baa9fc585202ab1, Email: test_user_1767303423@example.com",
+      "timestamp": "2026-01-01T21:37:03.519198"
     },
     {
       "test": "User Login",
       "success": true,
-      "details": "Status: 200, Token received, User ID: 6956e8c91baa9fc585202aa7",
-      "timestamp": "2026-01-01T21:36:09.916286"
+      "details": "Status: 200, Token received, User ID: 6956e8ff1baa9fc585202ab1",
+      "timestamp": "2026-01-01T21:37:03.819043"
     },
     {
       "test": "Get User Profile",
       "success": true,
-      "details": "Status: 200, User ID: 6956e8c91baa9fc585202aa7, Email: test_user_1767303369@example.com",
-      "timestamp": "2026-01-01T21:36:09.958674"
+      "details": "Status: 200, User ID: 6956e8ff1baa9fc585202ab1, Email: test_user_1767303423@example.com",
+      "timestamp": "2026-01-01T21:37:03.859728"
     },
     {
       "test": "Speed Limit - Valid Location",
       "success": true,
       "details": "Status: 200, Speed Limit: 25, Unit: mph, Road: South Van Ness Avenue, Source: openstreetmap",
-      "timestamp": "2026-01-01T21:36:11.034586"
+      "timestamp": "2026-01-01T21:37:03.902181"
     },
     {
       "test": "Speed Limit - Invalid Parameters",
       "success": true,
       "details": "Status: 422 (expected 422 for invalid params)",
-      "timestamp": "2026-01-01T21:36:11.071224"
+      "timestamp": "2026-01-01T21:37:03.938876"
     },
     {
       "test": "Speed Limit - Missing Parameters",
       "success": true,
       "details": "Status: 422 (expected 422 for missing params)",
-      "timestamp": "2026-01-01T21:36:11.149066"
+      "timestamp": "2026-01-01T21:37:03.974517"
     },
     {
       "test": "Speed Limit - Remote Location",
       "success": true,
       "details": "Status: 200, Speed Limit: None (should be null), Source: none",
-      "timestamp": "2026-01-01T21:36:14.672980"
+      "timestamp": "2026-01-01T21:37:04.012536"
     },
     {
       "test": "API Response Time",
       "success": true,
-      "details": "Response time: 0.05s, Status: 200",
-      "timestamp": "2026-01-01T21:36:14.723826"
+      "details": "Response time: 0.04s, Status: 200",
+      "timestamp": "2026-01-01T21:37:04.051175"
     },
     {
       "test": "Speed Prediction - Valid Location",
       "success": true,
       "details": "Status: 200, Upcoming limits: 2, Direction: N, Warning: \u26a0\ufe0f SLOW DOWN: 25 mph zone in 200m",
-      "timestamp": "2026-01-01T21:36:16.407947"
+      "timestamp": "2026-01-01T21:37:05.987553"
     },
     {
       "test": "Speed Prediction - Invalid Parameters",
       "success": true,
       "details": "Status: 422 (expected 422 for invalid params)",
-      "timestamp": "2026-01-01T21:36:16.443919"
+      "timestamp": "2026-01-01T21:37:06.026196"
     },
     {
       "test": "Speed Prediction - Missing Parameters",
       "success": true,
       "details": "Status: 422 (expected 422 for missing params)",
-      "timestamp": "2026-01-01T21:36:16.481356"
+      "timestamp": "2026-01-01T21:37:06.063114"
     },
     {
       "test": "Speed Prediction - Different Bearings",
       "success": true,
       "details": "Bearing 0\u00b0 \u2192 N \u2713, Bearing 90\u00b0 \u2192 E \u2713, Bearing 180\u00b0 \u2192 S \u2713, Bearing 270\u00b0 \u2192 W \u2713",
-      "timestamp": "2026-01-01T21:36:25.141593"
+      "timestamp": "2026-01-01T21:37:14.833800"
     },
     {
       "test": "Speed Prediction - Response Time",
       "success": true,
-      "details": "Response time: 1.74s, Status: 200",
-      "timestamp": "2026-01-01T21:36:26.881725"
+      "details": "Response time: 1.59s, Status: 200",
+      "timestamp": "2026-01-01T21:37:16.423917"
     },
     {
       "test": "Get User Stats",
       "success": true,
       "details": "Status: 200, Trips: 0, Distance: 0.0, Badges: 0",
-      "timestamp": "2026-01-01T21:36:26.937848"
+      "timestamp": "2026-01-01T21:37:16.503373"
     },
     {
       "test": "Get All Badges",
       "success": true,
       "details": "Status: 200, Badge count: 10, Found expected badges: ['first_trip', 'safe_week', 'road_warrior']",
-      "timestamp": "2026-01-01T21:36:26.975415"
+      "timestamp": "2026-01-01T21:37:16.541313"
     },
     {
       "test": "Generate Report",
       "success": true,
       "details": "Status: 200, No trips found for the specified period",
-      "timestamp": "2026-01-01T21:36:27.023572"
+      "timestamp": "2026-01-01T21:37:16.580976"
     },
     {
       "test": "Create Family",
       "success": false,
       "details": "Status: 404",
-      "timestamp": "2026-01-01T21:36:27.058546"
+      "timestamp": "2026-01-01T21:37:16.614659"
     },
     {
       "test": "Get Family",
       "success": false,
       "details": "Status: 404",
-      "timestamp": "2026-01-01T21:36:27.094695"
+      "timestamp": "2026-01-01T21:37:16.647956"
     },
     {
       "test": "Join Family - Invalid Code",
       "success": true,
       "details": "Status: 404 (expected 404 for invalid code)",
-      "timestamp": "2026-01-01T21:36:27.131459"
+      "timestamp": "2026-01-01T21:37:16.685031"
     },
     {
       "test": "Leave Family",
       "success": true,
       "details": "Status: 404 (no family to leave - expected for new user)",
-      "timestamp": "2026-01-01T21:36:27.167960"
+      "timestamp": "2026-01-01T21:37:16.763549"
     },
     {
       "test": "Get Nearby Traps",
       "success": true,
       "details": "Status: 200, Trap count: 0",
-      "timestamp": "2026-01-01T21:36:27.204909"
+      "timestamp": "2026-01-01T21:37:16.804094"
     },
     {
       "test": "Report Speed Trap",
       "success": true,
-      "details": "Status: 200, Trap ID: 6956e8db1baa9fc585202aa8, New: True",
-      "timestamp": "2026-01-01T21:36:27.246805"
+      "details": "Status: 200, Trap ID: 6956e90c1baa9fc585202ab2, New: True",
+      "timestamp": "2026-01-01T21:37:16.843283"
     },
     {
       "test": "Dismiss Speed Trap",
       "success": true,
       "details": "Status: 200, Message: Trap dismissed and deactivated",
-      "timestamp": "2026-01-01T21:36:27.285148"
+      "timestamp": "2026-01-01T21:37:16.884180"
     },
     {
       "test": "Speed Trap - Invalid Parameters",
       "success": true,
       "details": "Status: 422 (expected 422 for invalid params)",
-      "timestamp": "2026-01-01T21:36:27.321365"
+      "timestamp": "2026-01-01T21:37:16.920340"
     },
     {
       "test": "Start Trip",
       "success": true,
-      "details": "Status: 200, Trip ID: 6956e8db1baa9fc585202aa9",
-      "timestamp": "2026-01-01T21:36:27.363206"
+      "details": "Status: 200, Trip ID: 6956e90c1baa9fc585202ab3",
+      "timestamp": "2026-01-01T21:37:16.957280"
     },
     {
       "test": "Add Data Point",
       "success": true,
       "details": "Status: 200, Response: {'message': 'Data point added'}",
-      "timestamp": "2026-01-01T21:36:27.442654"
+      "timestamp": "2026-01-01T21:37:16.998569"
     },
     {
       "test": "Add Data Point",
       "success": true,
       "details": "Status: 200, Response: {'message': 'Data point added'}",
-      "timestamp": "2026-01-01T21:36:27.984168"
+      "timestamp": "2026-01-01T21:37:17.537327"
     },
     {
       "test": "Add Data Point",
       "success": true,
       "details": "Status: 200, Response: {'message': 'Data point added'}",
-      "timestamp": "2026-01-01T21:36:28.521204"
+      "timestamp": "2026-01-01T21:37:18.079745"
     },
     {
       "test": "End Trip",
       "success": true,
       "details": "Status: 200, Max Speed: 45.5, Alerts: 3",
-      "timestamp": "2026-01-01T21:36:29.067204"
+      "timestamp": "2026-01-01T21:37:18.623041"
     },
     {
       "test": "Get Trips List",
       "success": true,
       "details": "Status: 200, Trip count: 1, Total: 1",
-      "timestamp": "2026-01-01T21:36:29.107679"
+      "timestamp": "2026-01-01T21:37:18.670682"
     },
     {
       "test": "Get Trip Detail",
       "success": true,
       "details": "Status: 200, Data points: 3, Max speed: 45.5",
-      "timestamp": "2026-01-01T21:36:29.146679"
+      "timestamp": "2026-01-01T21:37:18.710580"
     },
     {
       "test": "Invalid Trip ID (Add Data Point)",
       "success": true,
       "details": "Status: 400 (expected 400)",
-      "timestamp": "2026-01-01T21:36:29.181939"
+      "timestamp": "2026-01-01T21:37:18.747780"
     },
     {
       "test": "Non-existent Trip Detail",
       "success": true,
       "details": "Status: 404 (expected 404)",
-      "timestamp": "2026-01-01T21:36:29.262132"
+      "timestamp": "2026-01-01T21:37:18.784719"
     },
     {
       "test": "Fleet Trip Start",
       "success": true,
-      "details": "Status: 200, Trip ID: f9f078c5-7254-41ec-9db2-1d1d42935ce8, Status: active",
-      "timestamp": "2026-01-01T21:36:29.338070"
+      "details": "Status: 200, Trip ID: ff6b5afc-f139-4d59-9fba-b4287d89e4a0, Status: active",
+      "timestamp": "2026-01-01T21:37:18.824819"
     },
     {
       "test": "Fleet Trip Location Update",
       "success": true,
       "details": "Status: 200, Max Speed: 45.5, Status: updated",
-      "timestamp": "2026-01-01T21:36:29.376010"
+      "timestamp": "2026-01-01T21:37:18.906395"
     },
     {
       "test": "Fleet Trip Location Update",
       "success": true,
       "details": "Status: 200, Max Speed: 45.5, Status: updated",
-      "timestamp": "2026-01-01T21:36:29.913994"
+      "timestamp": "2026-01-01T21:37:19.445348"
     },
     {
       "test": "Fleet Trip Location Update",
       "success": true,
       "details": "Status: 200, Max Speed: 45.5, Status: updated",
-      "timestamp": "2026-01-01T21:36:30.449525"
+      "timestamp": "2026-01-01T21:37:19.995746"
     },
     {
       "test": "Fleet Speeding Incident Start",
       "success": true,
-      "details": "Status: 200, Incident ID: 84953b1b-55b7-48d3-95dc-b0e015ed7695, Severity: severe, Score Impact: -10",
-      "timestamp": "2026-01-01T21:36:30.990005"
+      "details": "Status: 200, Incident ID: 0359e1f9-a5a1-4adc-bf68-f9a7339439d5, Severity: severe, Score Impact: -10",
+      "timestamp": "2026-01-01T21:37:20.537852"
     },
     {
       "test": "Fleet Speeding Incident End",
       "success": true,
       "details": "Status: 200, Final Severity: severe, Score Impact: -10",
-      "timestamp": "2026-01-01T21:36:32.062654"
+      "timestamp": "2026-01-01T21:37:21.575196"
     },
     {
       "test": "Fleet Driving Event (Hard Brake)",
       "success": true,
-      "details": "Status: 200, Event ID: 1d8dcd8d-037b-433e-bf87-5151dfa97732, Severity: severe, Score Impact: -5",
-      "timestamp": "2026-01-01T21:36:32.106348"
+      "details": "Status: 200, Event ID: fc912e08-b453-4894-9740-62d0631584e4, Severity: severe, Score Impact: -5",
+      "timestamp": "2026-01-01T21:37:21.614942"
     },
     {
       "test": "Fleet Trip End",
       "success": true,
       "details": "Status: 200, Safety Score: 85, Distance: 0.0mi, Incidents: 1",
-      "timestamp": "2026-01-01T21:36:32.148023"
+      "timestamp": "2026-01-01T21:37:21.656211"
     },
     {
       "test": "Fleet Trips List",
       "success": true,
-      "details": "Status: 200, Trip count: 3, Total: 3",
-      "timestamp": "2026-01-01T21:36:32.186478"
+      "details": "Status: 200, Trip count: 4, Total: 4",
+      "timestamp": "2026-01-01T21:37:21.693981"
     },
     {
       "test": "Fleet Safety Scores",
       "success": true,
-      "details": "Status: 200, Daily: 85, Weekly: 85, Trips: 3, Miles: 0.0",
-      "timestamp": "2026-01-01T21:36:32.223651"
+      "details": "Status: 200, Daily: 85, Weekly: 85, Trips: 4, Miles: 0.0",
+      "timestamp": "2026-01-01T21:37:21.732617"
     },
     {
       "test": "Fleet Incidents List",
       "success": true,
-      "details": "Status: 200, Incident count: 7",
-      "timestamp": "2026-01-01T21:36:32.261816"
+      "details": "Status: 200, Incident count: 12",
+      "timestamp": "2026-01-01T21:37:21.767607"
     },
     {
       "test": "Fleet Severity Calculations",
       "success": true,
       "details": "60mph in 55mph \u2192 minor \u2713; 70mph in 55mph \u2192 moderate \u2713; 80mph in 55mph \u2192 severe \u2713; 85mph in 55mph \u2192 extreme \u2713",
-      "timestamp": "2026-01-01T21:36:32.416330"
+      "timestamp": "2026-01-01T21:37:21.920952"
     },
     {
       "test": "Save User Settings",
-      "success": false,
-      "details": "Status: 422",
-      "timestamp": "2026-01-01T21:36:32.455419"
+      "success": true,
+      "details": "Status: 200, State: TX, Status: saved",
+      "timestamp": "2026-01-01T21:37:21.971640"
+    },
+    {
+      "test": "Create Practice Session",
+      "success": true,
+      "details": "Status: 200, Session ID: 55fc250a-d749-452c-9db5-538a371183e6, Status: created",
+      "timestamp": "2026-01-01T21:37:22.009197"
+    },
+    {
+      "test": "Get Practice Sessions",
+      "success": true,
+      "details": "Status: 200, Session count: 1",
+      "timestamp": "2026-01-01T21:37:22.045891"
+    },
+    {
+      "test": "Get Practice Summary",
+      "success": true,
+      "details": "Status: 200, Total Hours: 1.5, State: TX, Requirements Met: False",
+      "timestamp": "2026-01-01T21:37:22.089643"
+    },
+    {
+      "test": "Create Share Access",
+      "success": true,
+      "details": "Status: 200, Share Code: 4NQDC0WQ, URL: http://road-mentor.preview.emergentagent.com/progress/4NQDC0WQ, Expires: 2026-01-31T21:37:22.122677Z",
+      "timestamp": "2026-01-01T21:37:22.127708"
+    },
+    {
+      "test": "List Share Access",
+      "success": true,
+      "details": "Status: 200, Share count: 1",
+      "timestamp": "2026-01-01T21:37:22.164670"
+    },
+    {
+      "test": "Get Shared Progress",
+      "success": true,
+      "details": "Status: 200, Total Hours: 1.5, Safety Score: 100, Trips: 0",
+      "timestamp": "2026-01-01T21:37:22.205025"
+    },
+    {
+      "test": "Delete Practice Session",
+      "success": true,
+      "details": "Status: 200, Status: deleted",
+      "timestamp": "2026-01-01T21:37:22.243685"
+    },
+    {
+      "test": "Revoke Share Access",
+      "success": true,
+      "details": "Status: 200, Status: revoked",
+      "timestamp": "2026-01-01T21:37:22.285231"
     },
     {
       "test": "Invalid Practice Session Data",
       "success": true,
       "details": "Status: 422 (expected 422)",
-      "timestamp": "2026-01-01T21:36:32.488309"
+      "timestamp": "2026-01-01T21:37:22.319668"
     },
     {
       "test": "Non-existent Session Deletion",
       "success": true,
       "details": "Status: 404 (expected 404)",
-      "timestamp": "2026-01-01T21:36:32.525779"
+      "timestamp": "2026-01-01T21:37:22.352983"
     },
     {
       "test": "Invalid State Setting",
-      "success": false,
-      "details": "Status: 422 (expected 400)",
-      "timestamp": "2026-01-01T21:36:32.562728"
+      "success": true,
+      "details": "Status: 400 (expected 400)",
+      "timestamp": "2026-01-01T21:37:22.431105"
     },
     {
       "test": "Expired Share Link",
       "success": true,
       "details": "Status: 404 (expected 404 or 410)",
-      "timestamp": "2026-01-01T21:36:32.598384"
+      "timestamp": "2026-01-01T21:37:22.468161"
     },
     {
       "test": "Get State Requirements",
       "success": true,
       "details": "Status: 200, State count: 51, Found expected states: ['CA', 'TX', 'NY', 'FL'], Example: AL requires 50h total, 10h night",
-      "timestamp": "2026-01-01T21:36:32.631806"
+      "timestamp": "2026-01-01T21:37:22.508064"
     },
     {
       "test": "Delete Trip",
       "success": true,
       "details": "Status: 200, Response: {'message': 'Trip deleted'}",
-      "timestamp": "2026-01-01T21:36:32.669033"
+      "timestamp": "2026-01-01T21:37:22.545280"
     },
     {
       "test": "Delete Trip",
       "success": false,
       "details": "Status: 400",
-      "timestamp": "2026-01-01T21:36:32.706345"
+      "timestamp": "2026-01-01T21:37:22.585154"
     }
   ]
 }
