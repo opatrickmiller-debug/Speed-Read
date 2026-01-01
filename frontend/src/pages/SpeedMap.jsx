@@ -501,12 +501,6 @@ export default function SpeedMap() {
     }
   }, []);
   
-  // Trip recording state
-  const [isRecording, setIsRecording] = useState(false);
-  const [currentTripId, setCurrentTripId] = useState(null);
-  const [currentTripStats, setCurrentTripStats] = useState(null);
-  const tripDataRef = useRef({ speeds: [], alerts: 0 });
-  
   // Demo mode state
   const demoIntervalRef = useRef(null);
   const [demoSpeed, setDemoSpeed] = useState(0);
