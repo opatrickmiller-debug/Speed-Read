@@ -305,12 +305,16 @@ async def get_shared_progress(share_code: str):
     
     # Check expiration
     expires_at = share.get("expires_at")
-    if isinstance(expires_at, str):
-        expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
-    
     now = datetime.now(timezone.utc)
-    if expires_at and expires_at < now:
-        raise HTTPException(status_code=410, detail="Share link has expired")
+    
+    if expires_at:
+        if isinstance(expires_at, str):
+            expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+        elif expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        
+        if expires_at < now:
+            raise HTTPException(status_code=410, detail="Share link has expired")
     
     device_id = share["device_id"]
     
