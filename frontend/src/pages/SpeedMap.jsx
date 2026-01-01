@@ -504,9 +504,6 @@ export default function SpeedMap() {
   const demoIntervalRef = useRef(null);
   const [demoSpeed, setDemoSpeed] = useState(0);
   
-  // Features panel state
-  const [showFeaturesPanel, setShowFeaturesPanel] = useState(false);
-  
   // Fleet Dashboard state
   const [showFleetDashboard, setShowFleetDashboard] = useState(false);
   
