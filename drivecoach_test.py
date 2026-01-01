@@ -228,7 +228,7 @@ class DriveCoachAPITester:
     def test_referral_rewards_user_b(self):
         """Test getting rewards for user B (referee)"""
         try:
-            params = {"device_id": "device_user_b_002"}
+            params = {"device_id": self.device_b}
             response = requests.get(f"{self.base_url}/api/referral/rewards", params=params, timeout=10)
             
             success = response.status_code == 200
