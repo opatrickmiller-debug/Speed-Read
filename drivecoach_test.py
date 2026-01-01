@@ -362,10 +362,13 @@ class DriveCoachAPITester:
     def test_instructor_login(self):
         """Test instructor login"""
         try:
-            # Use the same email from registration
-            timestamp = int(time.time())
+            # Use the same email from registration (stored in class)
+            if not hasattr(self, 'instructor_email'):
+                self.log_test("Instructor Login", False, "No instructor email stored from registration")
+                return False
+                
             data = {
-                "email": f"instructor_{timestamp}@drivingschool.com",
+                "email": self.instructor_email,
                 "password": "InstructorPass123!"
             }
             response = requests.post(f"{self.base_url}/api/instructor/login", json=data, timeout=10)
