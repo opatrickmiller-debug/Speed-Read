@@ -1946,9 +1946,11 @@ class SpeedAlertAPITester:
         
         # Test invalid state setting
         try:
-            data = {"state": "INVALID"}
-            params = {"device_id": "test_device"}
-            response = requests.post(f"{self.base_url}/api/practice/settings", json=data, params=params, timeout=10)
+            params = {
+                "device_id": "test_device",
+                "state": "INVALID"
+            }
+            response = requests.post(f"{self.base_url}/api/practice/settings", params=params, timeout=10)
             success = response.status_code == 400
             self.log_test("Invalid State Setting", success, f"Status: {response.status_code} (expected 400)")
         except Exception as e:
