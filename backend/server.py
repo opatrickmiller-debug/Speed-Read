@@ -2467,6 +2467,11 @@ async def dismiss_trap(request: Request, trap_id: str, user: dict = Depends(requ
 
 # ==================== APP CONFIGURATION ====================
 
+# Import and configure fleet routes
+from routes.fleet import router as fleet_router, set_db as set_fleet_db
+set_fleet_db(db)
+app.include_router(fleet_router)
+
 app.include_router(api_router)
 
 app.add_middleware(
