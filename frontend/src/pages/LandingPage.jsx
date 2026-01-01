@@ -791,20 +791,20 @@ export default function LandingPage({ onEnterApp }) {
       {/* Final CTA */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-r from-cyan-950 to-blue-950 border border-cyan-500/20">
+          <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-r from-cyan-950 to-purple-950 border border-cyan-500/20">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Ready to Stop Worrying About Speed Traps?
+              Ready to Become a Confident Driver?
             </h2>
             <p className="text-zinc-400 mb-8 max-w-2xl mx-auto">
-              Join thousands of drivers who drive with confidence. 
-              Free to start, no credit card required.
+              Join thousands of families building better drivers. 
+              Free to start, track your progress today.
             </p>
             <Button 
               onClick={onEnterApp}
               size="lg"
               className="bg-white text-zinc-900 hover:bg-zinc-100 text-lg px-8 py-6"
             >
-              Get Started Free
+              Start Training Free
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </div>
