@@ -1,16 +1,13 @@
 import { useState } from "react";
-import { Trophy, FileText, Users, AlertTriangle, X, ChevronLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Trophy, FileText, AlertTriangle, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GamificationPanel } from "@/components/GamificationPanel";
 import { ExportReportPanel } from "@/components/ExportReportPanel";
-import { FamilyPanel } from "@/components/FamilyPanel";
 import { SpeedTrapPanel } from "@/components/SpeedTrapPanel";
 
 const TABS = [
   { id: "stats", label: "Stats", icon: Trophy, color: "text-yellow-400" },
   { id: "report", label: "Report", icon: FileText, color: "text-sky-400" },
-  { id: "family", label: "Family", icon: Users, color: "text-purple-400" },
   { id: "traps", label: "Traps", icon: AlertTriangle, color: "text-orange-400" },
 ];
 
@@ -62,7 +59,6 @@ export function FeaturesPanel({ isOpen, onClose, currentPosition }) {
       <div className="flex-1 overflow-y-auto p-4">
         {activeTab === "stats" && <GamificationPanel />}
         {activeTab === "report" && <ExportReportPanel />}
-        {activeTab === "family" && <FamilyPanel />}
         {activeTab === "traps" && <SpeedTrapPanel currentPosition={currentPosition} />}
       </div>
     </div>
