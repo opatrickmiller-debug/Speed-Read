@@ -295,12 +295,17 @@ wget https://download.geofabrik.de/north-america/us/minnesota-latest.osm.bz2
 
 ## Server Sizing
 
+### By Coverage Area
+
 | Region | Data Size | RAM | SSD | Monthly Cost |
 |--------|-----------|-----|-----|--------------|
-| Minnesota | 500MB | 2GB | 20GB | $6-12 |
-| US Midwest | 2GB | 4GB | 50GB | $20-24 |
+| Single State (MN, TX, etc.) | 500MB-1GB | 2GB | 20GB | $6-12 |
+| US Region (Midwest, etc.) | 2-3GB | 4GB | 50GB | $20-24 |
 | Full USA | 10GB | 8GB | 150GB | $40-80 |
-| North America | 15GB | 16GB | 200GB | $80-160 |
+| USA + Canada | 13GB | 12GB | 180GB | $60-100 |
+| Full Europe | 25GB | 16GB | 250GB | $80-160 |
+| USA + Europe | 35GB | 24GB | 350GB | $120-200 |
+| **Full Planet** | **75GB** | **64GB** | **1.2TB** | **$90-500** |
 
 ### Recommended VPS Providers
 
