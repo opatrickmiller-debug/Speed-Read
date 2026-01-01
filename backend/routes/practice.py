@@ -331,7 +331,7 @@ async def get_shared_progress(share_code: str):
         trend = scores.trend
         total_trips = scores.total_trips
         total_miles = scores.total_miles
-    except:
+    except Exception:
         safety_score = 100
         trend = "stable"
         total_trips = 0
