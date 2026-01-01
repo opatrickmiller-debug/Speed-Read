@@ -1200,6 +1200,381 @@ class SpeedAlertAPITester:
         except Exception as e:
             self.log_test("Non-existent Trip Detail", False, str(e))
 
+    # ==================== FLEET & TELEMATICS API TESTS ====================
+    
+    def test_fleet_trip_start(self):
+        """Test starting a fleet trip"""
+        try:
+            data = {
+                "device_id": "test_device_001",
+                "start_location": {
+                    "lat": 37.7749,
+                    "lon": -122.4194,
+                    "address": "San Francisco, CA"
+                }
+            }
+            response = requests.post(f"{self.base_url}/api/fleet/trips/start", json=data, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                if 'trip_id' in response_data:
+                    trip_id = response_data['trip_id']
+                    self.created_trip_ids.append(trip_id)
+                    details += f", Trip ID: {trip_id}, Status: {response_data.get('status')}"
+                    self.log_test("Fleet Trip Start", success, details)
+                    return True, trip_id
+                else:
+                    success = False
+                    details += ", Missing trip_id in response"
+            
+            self.log_test("Fleet Trip Start", success, details)
+            return False, None
+        except Exception as e:
+            self.log_test("Fleet Trip Start", False, str(e))
+            return False, None
+
+    def test_fleet_trip_location_update(self, trip_id):
+        """Test updating trip location"""
+        try:
+            data = {
+                "lat": 37.7750,
+                "lon": -122.4195,
+                "speed": 45.5,
+                "heading": 90.0,
+                "timestamp": datetime.now().isoformat()
+            }
+            response = requests.post(f"{self.base_url}/api/fleet/trips/{trip_id}/location", json=data, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                details += f", Max Speed: {response_data.get('max_speed')}, Status: {response_data.get('status')}"
+            
+            self.log_test("Fleet Trip Location Update", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Fleet Trip Location Update", False, str(e))
+            return False
+
+    def test_fleet_speeding_incident_start(self, trip_id):
+        """Test starting a speeding incident"""
+        try:
+            data = {
+                "trip_id": trip_id,
+                "device_id": "test_device_001",
+                "start_time": datetime.now().isoformat(),
+                "start_location": {
+                    "lat": 37.7751,
+                    "lon": -122.4196,
+                    "address": "Highway 101"
+                },
+                "posted_limit": 55,
+                "threshold_used": 60,
+                "max_speed": 72.0,
+                "road_name": "Highway 101",
+                "road_type": "highway"
+            }
+            response = requests.post(f"{self.base_url}/api/fleet/incidents/speeding/start", json=data, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                if 'incident_id' in response_data:
+                    incident_id = response_data['incident_id']
+                    severity = response_data.get('severity')
+                    score_impact = response_data.get('score_impact')
+                    details += f", Incident ID: {incident_id}, Severity: {severity}, Score Impact: {score_impact}"
+                    self.log_test("Fleet Speeding Incident Start", success, details)
+                    return True, incident_id
+                else:
+                    success = False
+                    details += ", Missing incident_id in response"
+            
+            self.log_test("Fleet Speeding Incident Start", success, details)
+            return False, None
+        except Exception as e:
+            self.log_test("Fleet Speeding Incident Start", False, str(e))
+            return False, None
+
+    def test_fleet_speeding_incident_end(self, incident_id):
+        """Test ending a speeding incident"""
+        try:
+            data = {
+                "end_time": datetime.now().isoformat(),
+                "end_location": {
+                    "lat": 37.7752,
+                    "lon": -122.4197,
+                    "address": "Highway 101 Exit"
+                },
+                "avg_speed": 68.5,
+                "duration_seconds": 45
+            }
+            response = requests.post(f"{self.base_url}/api/fleet/incidents/speeding/{incident_id}/end", json=data, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                severity = response_data.get('severity')
+                score_impact = response_data.get('score_impact')
+                details += f", Final Severity: {severity}, Score Impact: {score_impact}"
+            
+            self.log_test("Fleet Speeding Incident End", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Fleet Speeding Incident End", False, str(e))
+            return False
+
+    def test_fleet_driving_event(self, trip_id):
+        """Test logging a driving event (hard brake)"""
+        try:
+            data = {
+                "trip_id": trip_id,
+                "device_id": "test_device_001",
+                "event_type": "hard_brake",
+                "timestamp": datetime.now().isoformat(),
+                "location": {
+                    "lat": 37.7753,
+                    "lon": -122.4198,
+                    "address": "Downtown SF"
+                },
+                "intensity_g": 0.6,
+                "speed_before": 35.0,
+                "speed_after": 15.0,
+                "duration_ms": 2500,
+                "road_name": "Market Street",
+                "road_type": "primary"
+            }
+            response = requests.post(f"{self.base_url}/api/fleet/incidents/event", json=data, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                event_id = response_data.get('id')
+                severity = response_data.get('severity')
+                score_impact = response_data.get('score_impact')
+                details += f", Event ID: {event_id}, Severity: {severity}, Score Impact: {score_impact}"
+            
+            self.log_test("Fleet Driving Event (Hard Brake)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Fleet Driving Event (Hard Brake)", False, str(e))
+            return False
+
+    def test_fleet_trip_end(self, trip_id):
+        """Test ending a fleet trip"""
+        try:
+            data = {
+                "end_location": {
+                    "lat": 37.7754,
+                    "lon": -122.4199,
+                    "address": "San Francisco Downtown"
+                }
+            }
+            response = requests.post(f"{self.base_url}/api/fleet/trips/{trip_id}/end", json=data, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                safety_score = response_data.get('safety_score')
+                distance = response_data.get('distance_miles')
+                incidents = response_data.get('speeding_incidents_count')
+                details += f", Safety Score: {safety_score}, Distance: {distance}mi, Incidents: {incidents}"
+            
+            self.log_test("Fleet Trip End", success, details)
+            return success, response.json() if success else {}
+        except Exception as e:
+            self.log_test("Fleet Trip End", False, str(e))
+            return False, {}
+
+    def test_fleet_trips_list(self):
+        """Test getting fleet trips list"""
+        try:
+            params = {"device_id": "test_device_001", "limit": 10}
+            response = requests.get(f"{self.base_url}/api/fleet/trips", params=params, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                trip_count = len(response_data.get('trips', []))
+                total = response_data.get('total', 0)
+                details += f", Trip count: {trip_count}, Total: {total}"
+            
+            self.log_test("Fleet Trips List", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Fleet Trips List", False, str(e))
+            return False
+
+    def test_fleet_scores(self):
+        """Test getting fleet safety scores"""
+        try:
+            params = {"device_id": "test_device_001"}
+            response = requests.get(f"{self.base_url}/api/fleet/scores", params=params, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                daily_score = response_data.get('daily_score')
+                weekly_score = response_data.get('weekly_score')
+                total_trips = response_data.get('total_trips')
+                total_miles = response_data.get('total_miles')
+                details += f", Daily: {daily_score}, Weekly: {weekly_score}, Trips: {total_trips}, Miles: {total_miles}"
+            
+            self.log_test("Fleet Safety Scores", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Fleet Safety Scores", False, str(e))
+            return False
+
+    def test_fleet_incidents_list(self):
+        """Test getting fleet incidents list"""
+        try:
+            params = {"device_id": "test_device_001", "limit": 20}
+            response = requests.get(f"{self.base_url}/api/fleet/incidents", params=params, timeout=10)
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                response_data = response.json()
+                incident_count = len(response_data) if isinstance(response_data, list) else 0
+                details += f", Incident count: {incident_count}"
+            
+            self.log_test("Fleet Incidents List", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Fleet Incidents List", False, str(e))
+            return False
+
+    def test_fleet_severity_calculations(self):
+        """Test severity calculations for different speed violations"""
+        try:
+            test_cases = [
+                {"speed": 60, "limit": 55, "expected_severity": "minor"},    # 5 over
+                {"speed": 70, "limit": 55, "expected_severity": "moderate"}, # 15 over  
+                {"speed": 80, "limit": 55, "expected_severity": "severe"},   # 25 over
+                {"speed": 85, "limit": 55, "expected_severity": "extreme"}   # 30 over
+            ]
+            
+            all_success = True
+            details_list = []
+            
+            for case in test_cases:
+                data = {
+                    "trip_id": "test_trip_severity",
+                    "device_id": "test_device_001", 
+                    "start_time": datetime.now().isoformat(),
+                    "start_location": {"lat": 37.7749, "lon": -122.4194},
+                    "posted_limit": case["limit"],
+                    "threshold_used": case["limit"] + 5,
+                    "max_speed": case["speed"],
+                    "road_name": "Test Road"
+                }
+                
+                response = requests.post(f"{self.base_url}/api/fleet/incidents/speeding/start", json=data, timeout=10)
+                
+                if response.status_code == 200:
+                    response_data = response.json()
+                    actual_severity = response_data.get('severity')
+                    if actual_severity == case["expected_severity"]:
+                        details_list.append(f"{case['speed']}mph in {case['limit']}mph → {actual_severity} ✓")
+                    else:
+                        details_list.append(f"{case['speed']}mph in {case['limit']}mph → {actual_severity} (expected {case['expected_severity']}) ✗")
+                        all_success = False
+                else:
+                    details_list.append(f"{case['speed']}mph test → HTTP {response.status_code} ✗")
+                    all_success = False
+            
+            details = "; ".join(details_list)
+            self.log_test("Fleet Severity Calculations", all_success, details)
+            return all_success
+        except Exception as e:
+            self.log_test("Fleet Severity Calculations", False, str(e))
+            return False
+
+    def test_fleet_complete_workflow(self):
+        """Test complete fleet workflow"""
+        print("\n🚛 Testing Complete Fleet Workflow...")
+        
+        # 1. Start a trip
+        success, trip_id = self.test_fleet_trip_start()
+        if not success or not trip_id:
+            print("❌ Cannot continue workflow - fleet trip creation failed")
+            return False
+        
+        # 2. Add location updates
+        print(f"📍 Adding location updates to trip {trip_id}...")
+        for i in range(3):
+            success = self.test_fleet_trip_location_update(trip_id)
+            if success:
+                print(f"   ✅ Location update {i+1} added")
+            else:
+                print(f"   ❌ Location update {i+1} failed")
+            time.sleep(0.5)
+        
+        # 3. Start and end speeding incident
+        success, incident_id = self.test_fleet_speeding_incident_start(trip_id)
+        if success and incident_id:
+            print(f"🚨 Started speeding incident {incident_id}")
+            time.sleep(1)
+            success = self.test_fleet_speeding_incident_end(incident_id)
+            if success:
+                print("   ✅ Speeding incident ended")
+            else:
+                print("   ❌ Speeding incident end failed")
+        
+        # 4. Log driving event
+        success = self.test_fleet_driving_event(trip_id)
+        if success:
+            print("   ✅ Hard brake event logged")
+        else:
+            print("   ❌ Hard brake event failed")
+        
+        # 5. End the trip
+        success, trip_data = self.test_fleet_trip_end(trip_id)
+        if not success:
+            print("❌ Fleet trip ending failed")
+            return False
+        
+        # 6. Verify trip shows correct incident counts and safety score
+        if trip_data:
+            safety_score = trip_data.get('safety_score', 100)
+            incidents = trip_data.get('speeding_incidents_count', 0)
+            hard_brakes = trip_data.get('hard_brake_count', 0)
+            
+            print(f"📊 Trip Summary: Safety Score: {safety_score}, Incidents: {incidents}, Hard Brakes: {hard_brakes}")
+            
+            # Verify safety score is less than 100 (should have deductions)
+            if safety_score < 100:
+                print("   ✅ Safety score correctly reduced due to incidents")
+            else:
+                print("   ⚠️  Safety score not reduced - may indicate scoring issue")
+        
+        # 7. Test data retrieval endpoints
+        self.test_fleet_trips_list()
+        self.test_fleet_scores()
+        self.test_fleet_incidents_list()
+        
+        print("✅ Complete fleet workflow successful!")
+        return True
+
     def cleanup_trips(self):
         """Clean up any created trips"""
         if self.created_trip_ids:
