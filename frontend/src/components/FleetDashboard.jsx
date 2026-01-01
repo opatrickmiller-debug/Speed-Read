@@ -211,10 +211,39 @@ export const FleetDashboard = ({ speedUnit = 'mph' }) => {
   const [gamificationStats, setGamificationStats] = useState(null);
   const [allBadges, setAllBadges] = useState({});
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     loadData();
   }, [isAuthenticated]);
+
+  // Export to CSV
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      const deviceId = getDeviceIdValue();
+      const response = await fetch(`${API}/fleet/export/csv?device_id=${deviceId}`);
+      
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `speedshield_report_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      
+      toast.success('Report exported successfully');
+    } catch (err) {
+      console.error('Export error:', err);
+      toast.error('Failed to export report');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
