@@ -166,52 +166,48 @@ const PRICING = [
       "Progress badges",
       "CSV/PDF exports"
     ],
-      "12+ voice languages",
-      "Dynamic thresholds",
-      "No ads",
-      "Priority support"
-    ],
     cta: "Start Free Trial",
     highlighted: true,
     badge: "Most Popular"
   },
   {
-    name: "Annual",
-    price: "$29.99",
+    name: "Family",
+    price: "$49.99",
     period: "/year",
-    description: "Save 37%",
+    description: "Perfect for permit period",
     features: [
-      "Everything in Premium",
-      "Billed annually",
-      "Save $17.89/year",
-      "Family sharing (5 devices)"
+      "Everything in Student",
+      "Multiple teen drivers",
+      "Parent dashboard",
+      "Priority support",
+      "Save 17%"
     ],
     cta: "Best Value",
     highlighted: false
   }
 ];
 
-// FAQ data
+// FAQ data - Training Focus
 const FAQS = [
   {
-    question: "How does the AI speed prediction work?",
-    answer: "Our AI analyzes your direction of travel and checks speed limits up to 1km ahead. When it detects you're approaching a lower speed zone, it warns you in advance so you have time to slow down safely."
+    question: "How does practice hour tracking work?",
+    answer: "DriveCoach automatically detects when you start driving (speed > 5 mph) and logs your practice time. It tracks day vs night hours separately to meet your state's permit requirements."
   },
   {
-    question: "Does it work without internet?",
-    answer: "Yes! Speed limits are cached on your device. Once you've driven a route, the speed limits are stored locally and work even without cell signal."
+    question: "What states are supported?",
+    answer: "We have requirements for all 50 US states plus DC. Select your state in settings and we'll show your progress toward the required hours (typically 30-100 total, with 10-15 at night)."
   },
   {
-    question: "How is this different from Waze or Google Maps?",
-    answer: "Unlike navigation apps, we're focused 100% on speed safety. Our unique features like HUD windshield mode, AI prediction, and customizable alert thresholds aren't available anywhere else."
+    question: "How do safety scores work?",
+    answer: "Your driving grade (A+ to F) is based on speed compliance, smooth braking, and consistent driving. Each trip gets a score, and we track your weekly and monthly averages."
   },
   {
-    question: "Will it drain my battery?",
-    answer: "We've optimized for all-day use. Low Power Mode reduces GPS polling when you're stationary, and smart caching minimizes data usage. Most users see less than 10% battery drain per hour."
+    question: "Can my parents see my driving?",
+    answer: "Yes! You can share a progress link with parents or instructors. They'll see your safety scores, practice hours, and trip history - but not your exact location in real-time."
   },
   {
-    question: "Is my location data private?",
-    answer: "Absolutely. Your location data never leaves your device. We don't track, store, or sell your driving history. Everything is processed locally."
+    question: "Is my data private?",
+    answer: "Your location data stays on your device. Parents only see what you choose to share via the progress link. We never sell your data or track you without consent."
   }
 ];
 
