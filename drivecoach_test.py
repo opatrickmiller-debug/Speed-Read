@@ -647,9 +647,8 @@ class DriveCoachAPITester:
         
         # Test duplicate email registration (should fail)
         try:
-            timestamp = int(time.time())
             data = {
-                "email": f"instructor_{timestamp}@drivingschool.com",  # Same email as before
+                "email": self.instructor_email,  # Same email as before
                 "password": "AnotherPass123!",
                 "name": "Jane Doe",
                 "school_name": "Another School"
