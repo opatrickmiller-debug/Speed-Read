@@ -926,8 +926,8 @@ export default function SpeedMap() {
     }
 
     const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
+      async (position) => {
+        const { latitude, longitude, heading } = position.coords;
         setCurrentPosition({ lat: latitude, lng: longitude });
         setIsLoadingLocation(false);
         
@@ -937,6 +937,25 @@ export default function SpeedMap() {
         // GPS speed is in meters/second, convert to mph (1 m/s = 2.237 mph)
         const gpsSpeedMph = position.coords.speed !== null ? position.coords.speed * 2.237 : 0;
         const isMoving = gpsSpeedMph > 2;
+        
+        // Fleet tracking: Auto-start trip when moving
+        try {
+          const tripStarted = await tripService.checkAutoTripStart(gpsSpeedMph, { lat: latitude, lon: longitude });
+          if (tripStarted) {
+            toast.success("Trip started", { duration: 2000 });
+          }
+          
+          // Update trip location if trip is active
+          if (tripService.isTripping()) {
+            await tripService.updateTripLocation(
+              { lat: latitude, lon: longitude },
+              gpsSpeedMph,
+              heading
+            );
+          }
+        } catch (err) {
+          console.error("Fleet tracking error:", err);
+        }
         
         // Detect transition from moving to stopped
         const justStopped = wasMovingRef.current && !isMoving;
