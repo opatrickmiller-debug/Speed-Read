@@ -94,7 +94,144 @@ OVERPASS_SERVER_URL=http://your-server-ip:8080/api/interpreter
 
 ---
 
-## Detailed Setup
+## Worldwide Coverage
+
+### Data Requirements for Full Planet
+
+| Component | Size | Notes |
+|-----------|------|-------|
+| **Planet PBF Download** | ~75 GB | Compressed OSM data |
+| **Overpass Database** | **500 GB - 1.2 TB** | Processed & indexed |
+| **Weekly Updates** | ~3-5 GB/week | Diff files |
+| **Initial Load Time** | 24-72 hours | Depends on hardware |
+
+### Recommended Server Specs (Worldwide)
+
+| Resource | Minimum | Recommended | High Performance |
+|----------|---------|-------------|------------------|
+| **Storage** | 1 TB SSD | 2 TB NVMe | 4 TB NVMe RAID |
+| **RAM** | 32 GB | 64 GB | 128 GB |
+| **CPU** | 8 cores | 16 cores | 32 cores |
+| **Bandwidth** | 100 Mbps | 1 Gbps | 10 Gbps |
+
+### Docker Setup for Full Planet
+
+```yaml
+version: '3'
+services:
+  overpass:
+    image: wiktorn/overpass-api
+    container_name: overpass-planet
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      OVERPASS_META: "yes"
+      OVERPASS_MODE: "init"
+      # Full planet data
+      OVERPASS_PLANET_URL: "https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf"
+      OVERPASS_DIFF_URL: "https://planet.openstreetmap.org/replication/day/"
+      OVERPASS_RULES_LOAD: "20"
+      # Allow more RAM for planet data
+      OVERPASS_SPACE: "50000000000"  # 50GB for temp space
+    volumes:
+      - overpass-planet-db:/db
+    deploy:
+      resources:
+        limits:
+          memory: 64G
+
+volumes:
+  overpass-planet-db:
+```
+
+### Estimated Monthly Costs (Worldwide)
+
+| Provider | Specs | Monthly Cost |
+|----------|-------|-------------|
+| **Hetzner Dedicated** | 64GB RAM, 2x1TB NVMe | €80-120 (~$90-130) |
+| **OVH Dedicated** | 64GB RAM, 2TB SSD | €90-150 (~$100-160) |
+| **AWS EC2 r5.2xlarge** | 64GB RAM, 1TB EBS | $400-500 |
+| **DigitalOcean** | 64GB RAM, 1TB | $480 |
+| **Self-hosted (home)** | Your hardware | Electric only |
+
+---
+
+## Regional Extracts
+
+### Available Regions from Geofabrik
+
+Download smaller extracts for faster setup and lower costs:
+
+#### North America
+| Region | Size (compressed) | DB Size | URL |
+|--------|-------------------|---------|-----|
+| Full USA | ~10 GB | ~80 GB | `north-america/us-latest.osm.bz2` |
+| US Midwest | ~2 GB | ~15 GB | `north-america/us-midwest-latest.osm.bz2` |
+| US Northeast | ~1.5 GB | ~12 GB | `north-america/us-northeast-latest.osm.bz2` |
+| US South | ~2.5 GB | ~20 GB | `north-america/us-south-latest.osm.bz2` |
+| US West | ~2 GB | ~15 GB | `north-america/us-west-latest.osm.bz2` |
+| California | ~1 GB | ~8 GB | `north-america/us/california-latest.osm.bz2` |
+| Texas | ~600 MB | ~5 GB | `north-america/us/texas-latest.osm.bz2` |
+| Canada | ~3 GB | ~25 GB | `north-america/canada-latest.osm.bz2` |
+
+#### Europe
+| Region | Size (compressed) | DB Size | URL |
+|--------|-------------------|---------|-----|
+| Full Europe | ~25 GB | ~200 GB | `europe-latest.osm.bz2` |
+| Germany | ~4 GB | ~30 GB | `europe/germany-latest.osm.bz2` |
+| France | ~4 GB | ~30 GB | `europe/france-latest.osm.bz2` |
+| UK | ~1.5 GB | ~12 GB | `europe/great-britain-latest.osm.bz2` |
+| Italy | ~1.5 GB | ~12 GB | `europe/italy-latest.osm.bz2` |
+| Spain | ~1 GB | ~8 GB | `europe/spain-latest.osm.bz2` |
+
+#### Other Regions
+| Region | Size (compressed) | DB Size | URL |
+|--------|-------------------|---------|-----|
+| Australia | ~1 GB | ~8 GB | `australia-oceania/australia-latest.osm.bz2` |
+| Japan | ~2 GB | ~15 GB | `asia/japan-latest.osm.bz2` |
+| Brazil | ~1.5 GB | ~12 GB | `south-america/brazil-latest.osm.bz2` |
+
+**Full list:** https://download.geofabrik.de/
+
+### Multi-Region Setup
+
+For coverage across multiple regions, you can either:
+
+**Option A: Multiple Containers**
+```yaml
+version: '3'
+services:
+  overpass-usa:
+    image: wiktorn/overpass-api
+    ports: ["8081:80"]
+    environment:
+      OVERPASS_PLANET_URL: "https://download.geofabrik.de/north-america/us-latest.osm.bz2"
+    volumes: [overpass-usa:/db]
+
+  overpass-europe:
+    image: wiktorn/overpass-api
+    ports: ["8082:80"]
+    environment:
+      OVERPASS_PLANET_URL: "https://download.geofabrik.de/europe-latest.osm.bz2"
+    volumes: [overpass-europe:/db]
+
+volumes:
+  overpass-usa:
+  overpass-europe:
+```
+
+Then configure SpeedShield backend to route queries based on coordinates.
+
+**Option B: Merge Extracts**
+```bash
+# Download multiple regions
+wget https://download.geofabrik.de/north-america/us-latest.osm.pbf
+wget https://download.geofabrik.de/europe-latest.osm.pbf
+
+# Merge with osmium
+osmium merge us-latest.osm.pbf europe-latest.osm.pbf -o us-europe-merged.osm.pbf
+```
 
 ### Option A: Docker (Recommended)
 
