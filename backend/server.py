@@ -403,14 +403,13 @@ db = client[os.environ['DB_NAME']]
 # Collections
 trips_collection = db.trips
 users_collection = db.users
-speed_traps_collection = db.speed_traps
 badges_collection = db.badges
 stats_collection = db.user_stats
 password_resets_collection = db.password_resets
 
 # Create the main app
 app = FastAPI(
-    title="Speed Alert API",
+    title="DriveCoach API",
     docs_url="/api/docs" if os.environ.get('DEBUG') else None,  # Disable docs in production
     redoc_url=None
 )
