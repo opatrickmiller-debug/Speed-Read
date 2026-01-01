@@ -228,7 +228,7 @@ export default function LandingPage({ onEnterApp }) {
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
                 <Gauge className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold">SpeedShield</span>
+              <span className="text-xl font-bold">DriveCoach</span>
             </div>
 
             {/* Desktop Nav */}
@@ -635,7 +635,7 @@ export default function LandingPage({ onEnterApp }) {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
                 <Gauge className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold">SpeedShield</span>
+              <span className="font-bold">DriveCoach</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-zinc-500">
               <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
@@ -643,7 +643,7 @@ export default function LandingPage({ onEnterApp }) {
               <a href="#" className="hover:text-white transition-colors">Contact</a>
             </div>
             <div className="text-sm text-zinc-600">
-              © 2025 SpeedShield. All rights reserved.
+              © 2025 DriveCoach. All rights reserved.
             </div>
           </div>
         </div>

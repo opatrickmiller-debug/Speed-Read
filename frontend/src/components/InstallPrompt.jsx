@@ -91,7 +91,7 @@ export const InstallPrompt = () => {
         
         <div className="flex-1 min-w-0">
           <h3 className="text-white font-semibold text-sm">
-            Install SpeedShield
+            Install DriveCoach
           </h3>
           <p className="text-zinc-400 text-xs mt-1">
             Add to home screen for quick access and offline use

@@ -195,7 +195,7 @@ export function MobileSettingsSection({
               className="w-full py-3 px-4 bg-sky-500/20 border border-sky-500/50 rounded-lg text-sky-400 font-mono text-sm hover:bg-sky-500/30 transition-colors flex items-center justify-center gap-2"
             >
               <Download className="w-4 h-4" />
-              Install SpeedShield
+              Install DriveCoach
             </button>
           ) : isIOS ? (
             <div className="bg-zinc-900/50 border border-zinc-800 rounded p-3 text-xs text-zinc-400 font-mono">
