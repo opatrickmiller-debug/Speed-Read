@@ -603,3 +603,172 @@ async def generate_daily_summary(device_id: str, date: str) -> dict:
         "daily_score": daily_score,
         "score_change": score_change
     }
+
+# ============ EXPORT ENDPOINTS ============
+
+from fastapi.responses import StreamingResponse
+import csv
+import io
+
+@router.get("/export/csv")
+async def export_trips_csv(
+    device_id: str,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None
+):
+    """Export trips as CSV file"""
+    query = {"device_id": device_id, "status": "completed"}
+    
+    if from_date:
+        query["start_time"] = {"$gte": datetime.fromisoformat(from_date)}
+    if to_date:
+        if "start_time" in query:
+            query["start_time"]["$lte"] = datetime.fromisoformat(to_date)
+        else:
+            query["start_time"] = {"$lte": datetime.fromisoformat(to_date)}
+    
+    trips = await db.trips.find(query, {"_id": 0, "path": 0, "speed_samples": 0}) \
+        .sort("start_time", -1) \
+        .to_list(1000)
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header row
+    writer.writerow([
+        "Date", "Start Time", "End Time", "Duration (min)", "Distance (mi)",
+        "Start Address", "End Address", "Max Speed", "Avg Speed",
+        "Speeding Incidents", "Hard Brakes", "Safety Score"
+    ])
+    
+    # Data rows
+    for trip in trips:
+        start_time = trip.get("start_time")
+        if isinstance(start_time, datetime):
+            date_str = start_time.strftime("%Y-%m-%d")
+            start_str = start_time.strftime("%H:%M")
+        else:
+            date_str = str(start_time)[:10] if start_time else ""
+            start_str = str(start_time)[11:16] if start_time else ""
+        
+        end_time = trip.get("end_time")
+        if isinstance(end_time, datetime):
+            end_str = end_time.strftime("%H:%M")
+        else:
+            end_str = str(end_time)[11:16] if end_time else ""
+        
+        writer.writerow([
+            date_str,
+            start_str,
+            end_str,
+            round(trip.get("duration_minutes", 0), 1),
+            round(trip.get("distance_miles", 0), 2),
+            trip.get("start_location", {}).get("address", ""),
+            trip.get("end_location", {}).get("address", ""),
+            round(trip.get("max_speed_mph", 0), 1),
+            round(trip.get("avg_speed_mph", 0), 1),
+            trip.get("speeding_incidents_count", 0),
+            trip.get("hard_brake_count", 0),
+            trip.get("safety_score", 100)
+        ])
+    
+    # Get incidents too
+    incidents = await db.speeding_incidents.find(
+        {"device_id": device_id},
+        {"_id": 0}
+    ).sort("start_time", -1).to_list(500)
+    
+    if incidents:
+        writer.writerow([])  # Empty row
+        writer.writerow(["SPEEDING INCIDENTS"])
+        writer.writerow([
+            "Date", "Time", "Road", "Posted Limit", "Max Speed",
+            "Over Limit", "Duration (sec)", "Severity"
+        ])
+        
+        for inc in incidents:
+            start_time = inc.get("start_time")
+            if isinstance(start_time, datetime):
+                date_str = start_time.strftime("%Y-%m-%d")
+                time_str = start_time.strftime("%H:%M")
+            else:
+                date_str = str(start_time)[:10] if start_time else ""
+                time_str = str(start_time)[11:16] if start_time else ""
+            
+            writer.writerow([
+                date_str,
+                time_str,
+                inc.get("road_name", "Unknown"),
+                inc.get("posted_limit", 0),
+                round(inc.get("max_speed", 0), 1),
+                round(inc.get("speed_over_limit", 0), 1),
+                inc.get("duration_seconds", 0),
+                inc.get("severity", "")
+            ])
+    
+    output.seek(0)
+    
+    # Generate filename
+    filename = f"speedshield_report_{datetime.now().strftime('%Y%m%d')}.csv"
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@router.get("/export/summary")
+async def export_summary(device_id: str):
+    """Get exportable summary data"""
+    now = datetime.now(timezone.utc)
+    
+    # Get all trips
+    trips = await db.trips.find(
+        {"device_id": device_id, "status": "completed"},
+        {"_id": 0, "path": 0, "speed_samples": 0}
+    ).sort("start_time", -1).to_list(1000)
+    
+    # Get all incidents
+    incidents = await db.speeding_incidents.find(
+        {"device_id": device_id},
+        {"_id": 0}
+    ).sort("start_time", -1).to_list(500)
+    
+    # Calculate summary stats
+    total_trips = len(trips)
+    total_distance = sum(t.get("distance_miles", 0) for t in trips)
+    total_duration = sum(t.get("duration_minutes", 0) for t in trips)
+    total_speeding = sum(t.get("speeding_incidents_count", 0) for t in trips)
+    total_hard_brakes = sum(t.get("hard_brake_count", 0) for t in trips)
+    safe_trips = sum(1 for t in trips if t.get("speeding_incidents_count", 0) == 0)
+    
+    # Severity breakdown
+    severity_counts = {"minor": 0, "moderate": 0, "severe": 0, "extreme": 0}
+    for inc in incidents:
+        sev = inc.get("severity", "minor")
+        if sev in severity_counts:
+            severity_counts[sev] += 1
+    
+    # Average score
+    scores = [t.get("safety_score", 100) for t in trips]
+    avg_score = round(sum(scores) / len(scores)) if scores else 100
+    
+    return {
+        "generated_at": now.isoformat(),
+        "device_id": device_id,
+        "summary": {
+            "total_trips": total_trips,
+            "total_distance_miles": round(total_distance, 1),
+            "total_duration_hours": round(total_duration / 60, 1),
+            "average_safety_score": avg_score,
+            "safe_trip_percentage": round((safe_trips / total_trips * 100) if total_trips > 0 else 100, 1)
+        },
+        "incidents": {
+            "total_speeding": total_speeding,
+            "total_hard_brakes": total_hard_brakes,
+            "by_severity": severity_counts
+        },
+        "trips": trips[:50],  # Last 50 trips
+        "recent_incidents": incidents[:20]  # Last 20 incidents
+    }
