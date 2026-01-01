@@ -612,19 +612,9 @@ export const FleetDashboard = ({ speedUnit = 'mph' }) => {
     );
   }
 
-  // Calculate practice hours from trips
-  const totalHours = recentTrips.reduce((sum, t) => sum + (t.duration_minutes || 0), 0) / 60;
-  const nightHours = recentTrips.reduce((sum, t) => {
-    const startTime = new Date(t.start_time);
-    const hour = startTime.getHours();
-    // Night = 9pm to 6am
-    if (hour >= 21 || hour < 6) {
-      return sum + (t.duration_minutes || 0) / 60;
-    }
-    return sum;
-  }, 0);
-  
-  const totalSessions = recentTrips.length;
+  // Use practice data from backend, fallback to calculated values
+  const totalHours = practiceData?.total_hours || recentTrips.reduce((sum, t) => sum + (t.duration_minutes || 0), 0) / 60;
+  const totalSessions = practiceData?.total_sessions || recentTrips.length;
   const totalMiles = recentTrips.reduce((sum, t) => sum + (t.distance_miles || 0), 0);
   const safeSessions = recentTrips.filter(t => (t.speeding_incidents_count || 0) === 0).length;
   const safePercent = totalSessions > 0 ? Math.round((safeSessions / totalSessions) * 100) : 100;
@@ -664,10 +654,10 @@ export const FleetDashboard = ({ speedUnit = 'mph' }) => {
       
       {/* Practice Hours */}
       <PracticeHoursCard 
-        totalHours={totalHours}
-        nightHours={nightHours}
-        state={selectedState}
-        onStateChange={setSelectedState}
+        practiceData={practiceData}
+        onStateChange={handleStateChange}
+        onAddSession={handleAddPracticeSession}
+        onRefresh={loadPracticeData}
       />
       
       {/* Stats Grid */}
