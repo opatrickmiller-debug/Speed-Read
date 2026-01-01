@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Smartphone, 
   Battery, 
@@ -13,6 +13,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { useNetworkStatus, useBatteryStatus, useInstallPrompt, useOfflineQueue } from "@/utils/mobileOptimizations";
+import { toast } from "sonner";
 
 /**
  * Mobile Settings Section for the Settings Panel
