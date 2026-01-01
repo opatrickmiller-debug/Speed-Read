@@ -358,12 +358,12 @@ export default function LandingPage({ onEnterApp }) {
                       <div className="w-32 h-32 rounded-full border-4 border-green-500/30 flex items-center justify-center mb-4">
                         <span className="text-5xl font-bold text-green-400">A+</span>
                       </div>
-                      <p className="text-zinc-400 text-sm mb-2">CURRENT SPEED</p>
+                      <p className="text-zinc-400 text-sm mb-2">DRIVING GRADE</p>
                       <div className="flex items-center gap-2 px-4 py-2 bg-green-500/20 rounded-full">
                         <Check className="w-4 h-4 text-green-400" />
-                        <span className="text-green-400 text-sm font-medium">SAFE</span>
+                        <span className="text-green-400 text-sm font-medium">EXCELLENT</span>
                       </div>
-                      <p className="text-zinc-600 text-xs mt-4">Speed Limit: 55 mph</p>
+                      <p className="text-zinc-600 text-xs mt-4">32.5 hours logged</p>
                     </div>
                   </div>
                 </div>
@@ -378,10 +378,10 @@ export default function LandingPage({ onEnterApp }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              { value: "$287", label: "Avg. ticket cost saved" },
-              { value: "500ms", label: "Alert response time" },
-              { value: "99.2%", label: "Speed limit accuracy" },
-              { value: "24/7", label: "Offline availability" }
+              { value: "50", label: "States supported" },
+              { value: "10K+", label: "Teens trained" },
+              { value: "2M+", label: "Practice hours logged" },
+              { value: "A+", label: "Avg. graduate grade" }
             ].map((stat, idx) => (
               <div key={idx} className="text-center">
                 <div className="text-3xl sm:text-4xl font-bold text-white mb-1">{stat.value}</div>
@@ -398,11 +398,11 @@ export default function LandingPage({ onEnterApp }) {
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
               Everything You Need to{" "}
-              <span className="text-cyan-400">Drive Safe</span>
+              <span className="text-cyan-400">Learn to Drive</span>
             </h2>
             <p className="text-zinc-400 max-w-2xl mx-auto">
-              Powerful features designed by drivers, for drivers. 
-              Stay protected without distraction.
+              Track progress, build safe habits, and meet your state&apos;s permit requirements.
+              The complete driver training toolkit.
             </p>
           </div>
 
