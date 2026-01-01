@@ -1216,13 +1216,6 @@ export default function SpeedMap() {
             <Crosshair className="w-5 h-5 text-zinc-300" />
           </Button>
           
-          <TripHistory
-            isRecording={isRecording}
-            onStartRecording={handleStartRecording}
-            onStopRecording={handleStopRecording}
-            currentTripStats={currentTripStats}
-          />
-          
           <Button
             data-testid="features-btn"
             variant="ghost"
