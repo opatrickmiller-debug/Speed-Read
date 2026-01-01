@@ -1377,13 +1377,6 @@ export default function SpeedMap() {
         </div>
       </div>
       
-      {/* Features Panel */}
-      <FeaturesPanel 
-        isOpen={showFeaturesPanel} 
-        onClose={() => setShowFeaturesPanel(false)}
-        currentPosition={currentPosition}
-      />
-      
       {/* Fleet Dashboard Sheet */}
       <Sheet open={showFleetDashboard} onOpenChange={setShowFleetDashboard}>
         <SheetContent 
