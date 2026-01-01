@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Circle, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Crosshair, WifiOff, Database, Trophy, Maximize2, Smartphone, AlertTriangle, BarChart3 } from "lucide-react";
+import { MapPin, Crosshair, WifiOff, Database, Maximize2, Smartphone, AlertTriangle, BarChart3 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
 
