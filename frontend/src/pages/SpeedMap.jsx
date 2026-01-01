@@ -399,7 +399,7 @@ export default function SpeedMap() {
     return saved !== null ? parseFloat(saved) : 0.85; // Default 85% opacity
   });
   
-  // Dynamic threshold ranges (speed limit -> allowed over)
+  // Dynamic threshold ranges (speed limit -> allowed over) - ALL DEFAULT TO 0
   const [thresholdRanges, setThresholdRanges] = useState(() => {
     const saved = localStorage.getItem('thresholdRanges');
     if (saved) {
@@ -408,15 +408,15 @@ export default function SpeedMap() {
       } catch {
         return [
           { minLimit: 0, maxLimit: 45, offset: 0 },
-          { minLimit: 45, maxLimit: 65, offset: 5 },
-          { minLimit: 65, maxLimit: 80, offset: 10 },
+          { minLimit: 45, maxLimit: 65, offset: 0 },
+          { minLimit: 65, maxLimit: 80, offset: 0 },
         ];
       }
     }
     return [
       { minLimit: 0, maxLimit: 45, offset: 0 },
-      { minLimit: 45, maxLimit: 65, offset: 5 },
-      { minLimit: 65, maxLimit: 80, offset: 10 },
+      { minLimit: 45, maxLimit: 65, offset: 0 },
+      { minLimit: 65, maxLimit: 80, offset: 0 },
     ];
   });
   
