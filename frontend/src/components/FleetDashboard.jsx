@@ -510,19 +510,13 @@ export const FleetDashboard = ({ speedUnit = 'mph' }) => {
   const [scores, setScores] = useState(null);
   const [recentTrips, setRecentTrips] = useState([]);
   const [incidents, setIncidents] = useState([]);
+  const [practiceData, setPracticeData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
-  const [selectedState, setSelectedState] = useState(() => {
-    return localStorage.getItem('drivecoach_state') || 'MN';
-  });
 
   useEffect(() => {
     loadData();
   }, [isAuthenticated]);
-  
-  useEffect(() => {
-    localStorage.setItem('drivecoach_state', selectedState);
-  }, [selectedState]);
 
   const handleExportCSV = async () => {
     setExporting(true);
@@ -548,6 +542,46 @@ export const FleetDashboard = ({ speedUnit = 'mph' }) => {
     }
   };
 
+  const loadPracticeData = async () => {
+    try {
+      const deviceId = getDeviceIdValue();
+      const response = await fetch(`${API}/practice/summary?device_id=${deviceId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setPracticeData(data);
+      }
+    } catch (err) {
+      console.error('Error loading practice data:', err);
+    }
+  };
+
+  const handleStateChange = async (state) => {
+    try {
+      const deviceId = getDeviceIdValue();
+      await fetch(`${API}/practice/settings?device_id=${deviceId}&state=${state}`, {
+        method: 'POST'
+      });
+      loadPracticeData();
+    } catch (err) {
+      console.error('Error saving state:', err);
+    }
+  };
+
+  const handleAddPracticeSession = async (sessionData) => {
+    const deviceId = getDeviceIdValue();
+    const response = await fetch(`${API}/practice/sessions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        device_id: deviceId,
+        ...sessionData
+      })
+    });
+    
+    if (!response.ok) throw new Error('Failed to add session');
+    return response.json();
+  };
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -560,6 +594,9 @@ export const FleetDashboard = ({ speedUnit = 'mph' }) => {
       setScores(scoresData);
       setRecentTrips(tripsData.trips || []);
       setIncidents(incidentsData || []);
+      
+      // Load practice data separately
+      await loadPracticeData();
     } catch (err) {
       console.error('Error loading dashboard:', err);
     } finally {
