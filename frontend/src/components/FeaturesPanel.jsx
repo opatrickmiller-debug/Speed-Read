@@ -1,18 +1,16 @@
 import { useState } from "react";
-import { Trophy, FileText, AlertTriangle, ChevronLeft } from "lucide-react";
+import { FileText, AlertTriangle, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { GamificationPanel } from "@/components/GamificationPanel";
 import { ExportReportPanel } from "@/components/ExportReportPanel";
 import { SpeedTrapPanel } from "@/components/SpeedTrapPanel";
 
 const TABS = [
-  { id: "stats", label: "Stats", icon: Trophy, color: "text-yellow-400" },
   { id: "report", label: "Report", icon: FileText, color: "text-sky-400" },
   { id: "traps", label: "Traps", icon: AlertTriangle, color: "text-orange-400" },
 ];
 
 export function FeaturesPanel({ isOpen, onClose, currentPosition }) {
-  const [activeTab, setActiveTab] = useState("stats");
+  const [activeTab, setActiveTab] = useState("report");
 
   if (!isOpen) return null;
 
