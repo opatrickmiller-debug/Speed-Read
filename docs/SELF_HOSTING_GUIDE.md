@@ -2,16 +2,18 @@
 
 ## Overview
 
-This guide explains how to run your own Overpass API server for SpeedShield, giving you unlimited speed limit queries without rate limits.
+This guide explains how to run your own Overpass API server for SpeedShield, giving you unlimited speed limit queries without rate limits. Supports regional or worldwide coverage.
 
 ---
 
 ## Table of Contents
 1. [Quick Start (Recommended)](#quick-start)
-2. [Detailed Setup](#detailed-setup)
-3. [Server Sizing](#server-sizing)
-4. [Maintenance](#maintenance)
-5. [Troubleshooting](#troubleshooting)
+2. [Worldwide Coverage](#worldwide-coverage)
+3. [Regional Extracts](#regional-extracts)
+4. [Detailed Setup](#detailed-setup)
+5. [Server Sizing](#server-sizing)
+6. [Maintenance](#maintenance)
+7. [Troubleshooting](#troubleshooting)
 
 ---
 
