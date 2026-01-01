@@ -946,32 +946,6 @@ export default function SpeedMap() {
     };
   }, [calculateSpeed, fetchSpeedLimit, demoMode, updateBearing]);
 
-  // Record trip data points every 5 seconds while recording
-  useEffect(() => {
-    if (!isRecording || !currentPosition) return;
-    
-    const interval = setInterval(() => {
-      recordDataPoint(
-        currentPosition.lat,
-        currentPosition.lng,
-        displaySpeed,
-        speedLimit,
-        isSpeeding
-      );
-    }, 5000);
-    
-    // Record initial data point
-    recordDataPoint(
-      currentPosition.lat,
-      currentPosition.lng,
-      displaySpeed,
-      speedLimit,
-      isSpeeding
-    );
-    
-    return () => clearInterval(interval);
-  }, [isRecording, currentPosition, displaySpeed, speedLimit, isSpeeding, recordDataPoint]);
-
   // Demo mode simulation
   useEffect(() => {
     if (demoMode) {
