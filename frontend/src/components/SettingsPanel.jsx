@@ -1,4 +1,4 @@
-import { Settings, Volume2, VolumeX, Gauge, Mic, MicOff, Globe, Database, Trash2, Zap, Timer, CloudRain, Music, Smartphone, Signal, RotateCcw, Move, ChevronDown, ChevronUp, Sliders, Eye, Sun, Moon, Navigation } from "lucide-react";
+import { Settings, Volume2, VolumeX, Gauge, Mic, MicOff, Globe, Database, Trash2, Zap, Timer, CloudRain, Music, Smartphone, Signal, RotateCcw, Move, Sliders, Eye, Sun, Moon, Navigation } from "lucide-react";
 import React, { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -25,7 +25,7 @@ import { MobileSettingsSection } from "@/components/MobileSettings";
 import { isMetric } from "@/utils/units";
 
 // App version
-const APP_VERSION = "2.2.0";
+const APP_VERSION = "2.3.0";
 
 // AI Prediction threshold (35 mph = ~56 km/h)
 const AI_THRESHOLD_MPH = 35;
@@ -68,22 +68,13 @@ export const SettingsPanel = ({
   compassEnabled, setCompassEnabled,
 }) => {
   const [cacheStats, setCacheStats] = useState(() => getCacheStats());
-  const [showAdvanced, setShowAdvanced] = useState(() => {
-    return localStorage.getItem('showAdvancedSettings') === 'true';
-  });
+  const [activeTab, setActiveTab] = useState('settings'); // 'settings' or 'advanced'
 
   // Refresh cache stats
   React.useEffect(() => {
     const interval = setInterval(() => setCacheStats(getCacheStats()), 2000);
     return () => clearInterval(interval);
   }, []);
-
-  // Save advanced toggle preference
-  const toggleAdvanced = () => {
-    const newValue = !showAdvanced;
-    setShowAdvanced(newValue);
-    localStorage.setItem('showAdvancedSettings', newValue.toString());
-  };
 
   const testVoice = () => {
     if ('speechSynthesis' in window) {
@@ -121,569 +112,571 @@ export const SettingsPanel = ({
         <SheetHeader>
           <SheetTitle className="text-white font-bold uppercase tracking-wider flex items-center gap-2">
             <Settings className="w-5 h-5" />
-            Settings
+            SpeedShield
           </SheetTitle>
           <SheetDescription className="text-zinc-200 text-xs">
-            Configure your SpeedShield experience
+            v{APP_VERSION}
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6">
-          
-          {/* ============ BASIC SETTINGS ============ */}
-          
-          {/* Audio Alerts */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {audioEnabled ? <Volume2 className="w-5 h-5 text-cyan-500" /> : <VolumeX className="w-5 h-5 text-zinc-200" />}
-                <span className="text-sm font-medium text-white">Sound Alerts</span>
-              </div>
-              <Switch checked={audioEnabled} onCheckedChange={setAudioEnabled} />
-            </div>
-            
-            {audioEnabled && (
-              <div className="pl-8 space-y-3">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-white">Volume</span>
-                  <span className="text-cyan-400">{Math.round(alertVolume * 100)}%</span>
-                </div>
-                <Slider
-                  value={[alertVolume]}
-                  onValueChange={([v]) => setAlertVolume(v)}
-                  min={0} max={1} step={0.1}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Voice Alerts */}
-          <div className="space-y-3 pt-3 border-t border-zinc-400">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {voiceEnabled ? <Mic className="w-5 h-5 text-green-500" /> : <MicOff className="w-5 h-5 text-zinc-200" />}
-                <span className="text-sm font-medium text-white">Voice Alerts</span>
-              </div>
-              <Switch checked={voiceEnabled} onCheckedChange={setVoiceEnabled} />
-            </div>
-            
-            {voiceEnabled && (
-              <div className="pl-8 space-y-2">
-                <Select value={voiceLanguage} onValueChange={setVoiceLanguage}>
-                  <SelectTrigger className="bg-zinc-500 border-zinc-400 text-white h-9">
-                    <Globe className="w-4 h-4 mr-2 text-white" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-500 border-zinc-400">
-                    {AVAILABLE_LANGUAGES.map((lang) => (
-                      <SelectItem key={lang.code} value={lang.code} className="text-white">
-                        {lang.flag} {lang.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <button onClick={testVoice} className="text-xs text-cyan-500 hover:text-cyan-400">
-                  Test voice
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Unit System */}
-          <div className="space-y-2 pt-3 border-t border-zinc-400">
-            <div className="flex items-center gap-3">
-              <Gauge className="w-5 h-5 text-orange-500" />
-              <span className="text-sm font-medium text-white">Units</span>
-            </div>
-            <div className="pl-8 flex gap-2">
-              <button
-                onClick={() => { setSpeedUnit('mph'); localStorage.setItem('speedUnit', 'mph'); }}
-                className={cn(
-                  "px-4 py-2 text-xs font-mono rounded transition-colors flex flex-col items-center",
-                  speedUnit === 'mph'
-                    ? "bg-orange-500/20 border border-orange-500/50 text-orange-400"
-                    : "bg-zinc-500/50 border border-zinc-400 text-white hover:border-zinc-500"
-                )}
-              >
-                <span className="uppercase font-bold">Imperial</span>
-                <span className="text-[10px] opacity-70">mph / miles</span>
-              </button>
-              <button
-                onClick={() => { setSpeedUnit('km/h'); localStorage.setItem('speedUnit', 'km/h'); }}
-                className={cn(
-                  "px-4 py-2 text-xs font-mono rounded transition-colors flex flex-col items-center",
-                  speedUnit === 'km/h'
-                    ? "bg-orange-500/20 border border-orange-500/50 text-orange-400"
-                    : "bg-zinc-500/50 border border-zinc-400 text-white hover:border-zinc-500"
-                )}
-              >
-                <span className="uppercase font-bold">Metric</span>
-                <span className="text-[10px] opacity-70">km/h / km</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Alert Delay */}
-          <div className="space-y-3 pt-3 border-t border-zinc-400">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Timer className="w-5 h-5 text-yellow-500" />
-                <span className="text-sm font-medium text-white">Alert Delay</span>
-              </div>
-              <span className="text-yellow-400 text-sm font-mono">{alertDelay}s</span>
-            </div>
-            <div className="pl-8">
-              <Slider
-                value={[alertDelay]}
-                onValueChange={([v]) => { setAlertDelay(v); localStorage.setItem('alertDelay', v.toString()); }}
-                min={0} max={10} step={1}
-              />
-              <p className="text-xs text-zinc-200 mt-1">Wait before alerting</p>
-            </div>
-          </div>
-
-          {/* Keep Screen On */}
-          <div className="space-y-2 pt-3 border-t border-zinc-400">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Smartphone className={cn("w-5 h-5", wakeLockActive ? "text-cyan-500" : "text-zinc-200")} />
-                <span className="text-sm font-medium text-white">Keep Screen On</span>
-              </div>
-              <Switch checked={wakeLockEnabled} onCheckedChange={onWakeLockToggle} />
-            </div>
-            {wakeLockActive && (
-              <p className="text-xs text-green-400 pl-8">✓ Screen will stay on while driving</p>
-            )}
-          </div>
-
-          {/* ============ ADVANCED SETTINGS TOGGLE ============ */}
-          
+        {/* Tab Buttons */}
+        <div className="flex gap-2 mt-4">
           <button
-            onClick={toggleAdvanced}
+            onClick={() => setActiveTab('settings')}
             className={cn(
-              "w-full flex items-center justify-between px-4 py-3 rounded-lg",
-              "bg-zinc-500/50 border border-zinc-400 hover:border-zinc-400",
-              "transition-colors"
+              "flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium rounded-lg transition-all",
+              activeTab === 'settings'
+                ? "bg-cyan-500/20 border-2 border-cyan-500 text-cyan-400"
+                : "bg-zinc-500/50 border-2 border-zinc-500 text-zinc-300 hover:border-zinc-400"
             )}
           >
-            <div className="flex items-center gap-3">
-              <Sliders className="w-5 h-5 text-purple-400" />
-              <span className="text-sm font-medium text-white">Advanced Settings</span>
-            </div>
-            {showAdvanced ? (
-              <ChevronUp className="w-5 h-5 text-white" />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-white" />
-            )}
+            <Settings className="w-4 h-4" />
+            Settings
           </button>
+          <button
+            onClick={() => setActiveTab('advanced')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium rounded-lg transition-all",
+              activeTab === 'advanced'
+                ? "bg-purple-500/20 border-2 border-purple-500 text-purple-400"
+                : "bg-zinc-500/50 border-2 border-zinc-500 text-zinc-300 hover:border-zinc-400"
+            )}
+          >
+            <Sliders className="w-4 h-4" />
+            Advanced
+          </button>
+        </div>
 
-          {/* ============ ADVANCED SETTINGS (COLLAPSIBLE) ============ */}
-          
-          {showAdvanced && (
-            <div className="space-y-6 pl-2 border-l-2 border-purple-500/50">
-              
-              {/* Display Options */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
-                  <Eye className="w-4 h-4" />
-                  Display
+        {/* Settings Tab Content */}
+        {activeTab === 'settings' && (
+          <div className="mt-6 space-y-6">
+            
+            {/* Audio Alerts */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {audioEnabled ? <Volume2 className="w-5 h-5 text-cyan-500" /> : <VolumeX className="w-5 h-5 text-zinc-200" />}
+                  <span className="text-sm font-medium text-white">Sound Alerts</span>
                 </div>
-                
-                {/* Opacity */}
-                <div className="space-y-2">
+                <Switch checked={audioEnabled} onCheckedChange={setAudioEnabled} />
+              </div>
+              
+              {audioEnabled && (
+                <div className="pl-8 space-y-3">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-white">Transparency</span>
-                    <span className="text-cyan-400">{Math.round((1 - speedometerOpacity) * 100)}%</span>
+                    <span className="text-white">Volume</span>
+                    <span className="text-cyan-400">{Math.round(alertVolume * 100)}%</span>
                   </div>
                   <Slider
-                    value={[speedometerOpacity]}
-                    onValueChange={([v]) => setSpeedometerOpacity(v)}
-                    min={0.2} max={1} step={0.05}
+                    value={[alertVolume]}
+                    onValueChange={([v]) => setAlertVolume(v)}
+                    min={0} max={1} step={0.1}
                   />
                 </div>
-                
-                {/* Compass Toggle */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Navigation className="w-4 h-4 text-cyan-400" />
-                    <span className="text-xs text-white">Compass</span>
-                  </div>
-                  <Switch checked={compassEnabled} onCheckedChange={setCompassEnabled} />
-                </div>
+              )}
+            </div>
 
-                {/* Reset Position */}
+            {/* Voice Alerts */}
+            <div className="space-y-3 pt-3 border-t border-zinc-400">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {voiceEnabled ? <Mic className="w-5 h-5 text-green-500" /> : <MicOff className="w-5 h-5 text-zinc-200" />}
+                  <span className="text-sm font-medium text-white">Voice Alerts</span>
+                </div>
+                <Switch checked={voiceEnabled} onCheckedChange={setVoiceEnabled} />
+              </div>
+              
+              {voiceEnabled && (
+                <div className="pl-8 space-y-2">
+                  <Select value={voiceLanguage} onValueChange={setVoiceLanguage}>
+                    <SelectTrigger className="bg-zinc-500 border-zinc-400 text-white h-9">
+                      <Globe className="w-4 h-4 mr-2 text-white" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-500 border-zinc-400">
+                      {AVAILABLE_LANGUAGES.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code} className="text-white">
+                          {lang.flag} {lang.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <button onClick={testVoice} className="text-xs text-cyan-500 hover:text-cyan-400">
+                    Test voice
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Unit System */}
+            <div className="space-y-2 pt-3 border-t border-zinc-400">
+              <div className="flex items-center gap-3">
+                <Gauge className="w-5 h-5 text-orange-500" />
+                <span className="text-sm font-medium text-white">Units</span>
+              </div>
+              <div className="pl-8 flex gap-2">
                 <button
-                  onClick={() => {
-                    localStorage.removeItem('speedHudPosition');
-                    localStorage.removeItem('speedHudPosition_locked');
-                    localStorage.removeItem('compassPosition');
-                    localStorage.removeItem('compassPosition_locked');
-                    window.location.reload();
-                  }}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-zinc-500/50 border border-zinc-400 text-white hover:text-purple-400 hover:border-purple-500/50 rounded transition-colors"
+                  onClick={() => { setSpeedUnit('mph'); localStorage.setItem('speedUnit', 'mph'); }}
+                  className={cn(
+                    "px-4 py-2 text-xs font-mono rounded transition-colors flex flex-col items-center",
+                    speedUnit === 'mph'
+                      ? "bg-orange-500/20 border border-orange-500/50 text-orange-400"
+                      : "bg-zinc-500/50 border border-zinc-400 text-white hover:border-zinc-500"
+                  )}
                 >
-                  <RotateCcw className="w-3 h-3" />
-                  Reset Positions
+                  <span className="uppercase font-bold">Imperial</span>
+                  <span className="text-[10px] opacity-70">mph / miles</span>
+                </button>
+                <button
+                  onClick={() => { setSpeedUnit('km/h'); localStorage.setItem('speedUnit', 'km/h'); }}
+                  className={cn(
+                    "px-4 py-2 text-xs font-mono rounded transition-colors flex flex-col items-center",
+                    speedUnit === 'km/h'
+                      ? "bg-orange-500/20 border border-orange-500/50 text-orange-400"
+                      : "bg-zinc-500/50 border border-zinc-400 text-white hover:border-zinc-500"
+                  )}
+                >
+                  <span className="uppercase font-bold">Metric</span>
+                  <span className="text-[10px] opacity-70">km/h / km</span>
                 </button>
               </div>
+            </div>
 
-              {/* Alert Threshold */}
-              <div className="space-y-3 pt-3 border-t border-zinc-400/50">
-                <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
-                  <Zap className="w-4 h-4" />
-                  Alert Threshold
+            {/* Alert Delay */}
+            <div className="space-y-3 pt-3 border-t border-zinc-400">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Timer className="w-5 h-5 text-yellow-500" />
+                  <span className="text-sm font-medium text-white">Alert Delay</span>
                 </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-white">Smart Threshold</span>
-                  <Switch checked={useDynamicThreshold} onCheckedChange={setUseDynamicThreshold} />
-                </div>
-                
-                {useDynamicThreshold ? (
-                  <div className="space-y-4">
-                    {/* Zone 1 */}
-                    <div className="space-y-2 bg-zinc-500/30 p-3 rounded">
-                      <div className="text-xs text-white font-medium">Zone 1</div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-zinc-300">Range: 0 - {thresholdRanges[0]?.maxLimit || 50} {speedUnit}</span>
-                        <span className="text-cyan-400">+{thresholdRanges[0]?.offset || 0} {speedUnit}</span>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-xs text-zinc-400">Upper limit</span>
-                        <Slider
-                          value={[thresholdRanges[0]?.maxLimit || 50]}
-                          onValueChange={([v]) => {
-                            const newRanges = [...thresholdRanges];
-                            newRanges[0] = { ...newRanges[0], maxLimit: v };
-                            newRanges[1] = { ...newRanges[1], minLimit: v };
-                            setThresholdRanges(newRanges);
-                          }}
-                          min={20} max={70} step={5}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-xs text-zinc-400">Buffer</span>
-                        <Slider
-                          value={[thresholdRanges[0]?.offset || 0]}
-                          onValueChange={([v]) => {
-                            const newRanges = [...thresholdRanges];
-                            newRanges[0] = { ...newRanges[0], offset: v };
-                            setThresholdRanges(newRanges);
-                          }}
-                          min={0} max={15} step={1}
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Zone 2 */}
-                    <div className="space-y-2 bg-zinc-500/30 p-3 rounded">
-                      <div className="text-xs text-white font-medium">Zone 2</div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-zinc-300">Range: {thresholdRanges[0]?.maxLimit || 50} - {thresholdRanges[1]?.maxLimit || 65} {speedUnit}</span>
-                        <span className="text-cyan-400">+{thresholdRanges[1]?.offset || 5} {speedUnit}</span>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-xs text-zinc-400">Upper limit</span>
-                        <Slider
-                          value={[thresholdRanges[1]?.maxLimit || 65]}
-                          onValueChange={([v]) => {
-                            const minVal = (thresholdRanges[0]?.maxLimit || 50) + 5;
-                            const newVal = Math.max(minVal, v);
-                            const newRanges = [...thresholdRanges];
-                            newRanges[1] = { ...newRanges[1], maxLimit: newVal };
-                            newRanges[2] = { ...newRanges[2], minLimit: newVal };
-                            setThresholdRanges(newRanges);
-                          }}
-                          min={35} max={85} step={5}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-xs text-zinc-400">Buffer</span>
-                        <Slider
-                          value={[thresholdRanges[1]?.offset || 5]}
-                          onValueChange={([v]) => {
-                            const newRanges = [...thresholdRanges];
-                            newRanges[1] = { ...newRanges[1], offset: v };
-                            setThresholdRanges(newRanges);
-                          }}
-                          min={0} max={15} step={1}
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Zone 3 */}
-                    <div className="space-y-2 bg-zinc-500/30 p-3 rounded">
-                      <div className="text-xs text-white font-medium">Zone 3</div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-zinc-300">Range: {thresholdRanges[1]?.maxLimit || 65} - {thresholdRanges[2]?.maxLimit === 999 ? '∞' : thresholdRanges[2]?.maxLimit} {speedUnit}</span>
-                        <span className="text-cyan-400">+{thresholdRanges[2]?.offset || 10} {speedUnit}</span>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-xs text-zinc-400">Upper limit</span>
-                        <Slider
-                          value={[thresholdRanges[2]?.maxLimit === 999 ? 100 : (thresholdRanges[2]?.maxLimit || 100)]}
-                          onValueChange={([v]) => {
-                            const minVal = (thresholdRanges[1]?.maxLimit || 65) + 5;
-                            const newVal = Math.max(minVal, v);
-                            const newRanges = [...thresholdRanges];
-                            newRanges[2] = { ...newRanges[2], maxLimit: newVal >= 100 ? 999 : newVal };
-                            setThresholdRanges(newRanges);
-                          }}
-                          min={50} max={100} step={5}
-                        />
-                        <span className="text-xs text-zinc-500">Slide to max for unlimited</span>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-xs text-zinc-400">Buffer</span>
-                        <Slider
-                          value={[thresholdRanges[2]?.offset || 10]}
-                          onValueChange={([v]) => {
-                            const newRanges = [...thresholdRanges];
-                            newRanges[2] = { ...newRanges[2], offset: v };
-                            setThresholdRanges(newRanges);
-                          }}
-                          min={0} max={20} step={1}
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Reset to defaults button */}
-                    <button
-                      onClick={() => {
-                        setThresholdRanges([
-                          { minLimit: 0, maxLimit: 45, offset: 0 },
-                          { minLimit: 45, maxLimit: 65, offset: 5 },
-                          { minLimit: 65, maxLimit: 80, offset: 10 },
-                        ]);
-                      }}
-                      className="w-full text-xs text-zinc-400 hover:text-cyan-400 transition-colors py-1"
-                    >
-                      Reset to defaults
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-white">Fixed Buffer</span>
-                      <span className="text-cyan-400">+{thresholdOffset} {speedUnit}</span>
-                    </div>
-                    <Slider
-                      value={[thresholdOffset]}
-                      onValueChange={([v]) => setThresholdOffset(v)}
-                      min={0} max={15} step={1}
-                    />
-                  </div>
-                )}
-                
-                {currentSpeedLimit && (
-                  <p className="text-xs text-zinc-200 mt-2">
-                    Current zone alert: {currentSpeedLimit + currentThreshold} {speedUnit}
-                  </p>
-                )}
+                <span className="text-yellow-400 text-sm font-mono">{alertDelay}s</span>
               </div>
-
-              {/* Sound Customization */}
-              <div className="space-y-3 pt-3 border-t border-zinc-400/50">
-                <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
-                  <Music className="w-4 h-4" />
-                  Alert Sound
-                </div>
-                <SoundSelector
-                  selectedSound={alertSound}
-                  onSelect={setAlertSound}
-                  volume={alertVolume}
-                  onVolumeChange={setAlertVolume}
+              <div className="pl-8">
+                <Slider
+                  value={[alertDelay]}
+                  onValueChange={([v]) => { setAlertDelay(v); localStorage.setItem('alertDelay', v.toString()); }}
+                  min={0} max={10} step={1}
                 />
+                <p className="text-xs text-zinc-200 mt-1">Wait before alerting</p>
               </div>
+            </div>
 
-              {/* AI Prediction */}
-              <div className="space-y-2 pt-3 border-t border-zinc-400/50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-cyan-400" />
-                    <span className="text-xs text-white">AI Speed Prediction</span>
-                  </div>
-                  <Switch checked={speedPredictionEnabled} onCheckedChange={setSpeedPredictionEnabled} />
+            {/* Keep Screen On */}
+            <div className="space-y-2 pt-3 border-t border-zinc-400">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Smartphone className={cn("w-5 h-5", wakeLockActive ? "text-cyan-500" : "text-zinc-200")} />
+                  <span className="text-sm font-medium text-white">Keep Screen On</span>
                 </div>
-                <p className="text-xs text-zinc-200">Warns before entering lower speed zones</p>
-                <p className="text-[10px] text-zinc-400 italic">
-                  Only active at {isMetric() ? `${AI_THRESHOLD_KMH}+ km/h` : `${AI_THRESHOLD_MPH}+ mph`} for accuracy
-                </p>
+                <Switch checked={wakeLockEnabled} onCheckedChange={onWakeLockToggle} />
               </div>
+              {wakeLockActive && (
+                <p className="text-xs text-green-400 pl-8">✓ Screen will stay on while driving</p>
+              )}
+            </div>
 
-              {/* Weather Alerts */}
-              <div className="space-y-2 pt-3 border-t border-zinc-400/50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CloudRain className="w-4 h-4 text-blue-400" />
-                    <span className="text-xs text-white">Weather Alerts</span>
-                  </div>
-                  <Switch checked={weatherAlertsEnabled} onCheckedChange={setWeatherAlertsEnabled} />
-                </div>
+            {/* Theme */}
+            <div className="space-y-3 pt-3 border-t border-zinc-400">
+              <div className="flex items-center gap-3">
+                {theme === 'dark' ? <Moon className="w-5 h-5 text-purple-400" /> : <Sun className="w-5 h-5 text-yellow-500" />}
+                <span className="text-sm font-medium text-white">Theme</span>
               </div>
-
-              {/* Mobile Optimization */}
-              <div className="space-y-3 pt-3 border-t border-zinc-400/50">
-                <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
-                  <Signal className="w-4 h-4" />
-                  Mobile
-                </div>
-                <MobileSettingsSection
-                  dataSaverEnabled={dataSaverEnabled}
-                  setDataSaverEnabled={setDataSaverEnabled}
-                  lowPowerMode={lowPowerMode}
-                  setLowPowerMode={setLowPowerMode}
-                />
-              </div>
-
-              {/* Offline Cache */}
-              <div className="space-y-3 pt-3 border-t border-zinc-400/50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Database className="w-4 h-4 text-yellow-400" />
-                    <span className="text-xs text-white">Offline Cache</span>
-                  </div>
-                  <Switch checked={offlineCacheEnabled} onCheckedChange={setOfflineCacheEnabled} />
-                </div>
-                
-                {offlineCacheEnabled && (
-                  <div className="space-y-2">
-                    <div className="text-xs space-y-1 bg-zinc-500/50 p-2 rounded">
-                      <div className="flex justify-between">
-                        <span className="text-zinc-200">Cached:</span>
-                        <span className="text-white">{cacheStats.validEntries} / {cacheStats.maxEntries || 500}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                        <span className="text-green-400/70">Auto-managed</span>
-                      </div>
-                    </div>
-                    
-                    {/* Clear Cache Button */}
-                    <button
-                      onClick={() => {
-                        clearCache();
-                        setCacheStats(getCacheStats());
-                        alert('Cache cleared!');
-                      }}
-                      disabled={cacheStats.validEntries === 0}
-                      className={cn(
-                        "w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
-                        cacheStats.validEntries > 0
-                          ? "bg-zinc-500/50 border border-zinc-400 text-white hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400"
-                          : "bg-zinc-500/30 border border-zinc-400 text-zinc-200 cursor-not-allowed"
-                      )}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      Clear Cache
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* App Updates */}
-              <div className="space-y-3 pt-3 border-t border-zinc-400/50">
-                <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
-                  <RotateCcw className="w-4 h-4" />
-                  App Updates
-                </div>
+              <div className="pl-8 flex gap-2">
                 <button
-                  onClick={() => {
-                    if ('serviceWorker' in navigator) {
-                      navigator.serviceWorker.getRegistrations().then(registrations => {
-                        registrations.forEach(reg => {
-                          reg.update();
-                          if (reg.waiting) {
-                            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-                          }
+                  onClick={() => setTheme('light')}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
+                    theme === 'light'
+                      ? "bg-yellow-500/20 border border-yellow-500/50 text-yellow-400"
+                      : "bg-zinc-500/50 border border-zinc-400 text-white hover:border-zinc-500"
+                  )}
+                >
+                  <Sun className="w-3 h-3" />
+                  Light
+                </button>
+                <button
+                  onClick={() => setTheme('dark')}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
+                    theme === 'dark'
+                      ? "bg-purple-500/20 border border-purple-500/50 text-purple-400"
+                      : "bg-zinc-500/50 border border-zinc-400 text-white hover:border-zinc-500"
+                  )}
+                >
+                  <Moon className="w-3 h-3" />
+                  Dark
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Advanced Tab Content */}
+        {activeTab === 'advanced' && (
+          <div className="mt-6 space-y-6">
+            
+            {/* Display Options */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
+                <Eye className="w-4 h-4" />
+                Display
+              </div>
+              
+              {/* Opacity */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-white">Transparency</span>
+                  <span className="text-cyan-400">{Math.round((1 - speedometerOpacity) * 100)}%</span>
+                </div>
+                <Slider
+                  value={[speedometerOpacity]}
+                  onValueChange={([v]) => setSpeedometerOpacity(v)}
+                  min={0.2} max={1} step={0.05}
+                />
+              </div>
+              
+              {/* Compass Toggle */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Navigation className="w-4 h-4 text-cyan-400" />
+                  <span className="text-xs text-white">Compass</span>
+                </div>
+                <Switch checked={compassEnabled} onCheckedChange={setCompassEnabled} />
+              </div>
+
+              {/* Reset Position */}
+              <button
+                onClick={() => {
+                  localStorage.removeItem('speedHudPosition');
+                  localStorage.removeItem('speedHudPosition_locked');
+                  localStorage.removeItem('compassPosition');
+                  localStorage.removeItem('compassPosition_locked');
+                  window.location.reload();
+                }}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-zinc-500/50 border border-zinc-400 text-white hover:text-purple-400 hover:border-purple-500/50 rounded transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Reset Positions
+              </button>
+            </div>
+
+            {/* Alert Threshold */}
+            <div className="space-y-3 pt-3 border-t border-zinc-400/50">
+              <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
+                <Zap className="w-4 h-4" />
+                Alert Threshold
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-white">Smart Threshold</span>
+                <Switch checked={useDynamicThreshold} onCheckedChange={setUseDynamicThreshold} />
+              </div>
+              
+              {useDynamicThreshold ? (
+                <div className="space-y-4">
+                  {/* Zone 1 */}
+                  <div className="space-y-2 bg-zinc-500/30 p-3 rounded">
+                    <div className="text-xs text-white font-medium">Zone 1</div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-zinc-300">Range: 0 - {thresholdRanges[0]?.maxLimit || 50} {speedUnit}</span>
+                      <span className="text-cyan-400">+{thresholdRanges[0]?.offset || 0} {speedUnit}</span>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-zinc-400">Upper limit</span>
+                      <Slider
+                        value={[thresholdRanges[0]?.maxLimit || 50]}
+                        onValueChange={([v]) => {
+                          const newRanges = [...thresholdRanges];
+                          newRanges[0] = { ...newRanges[0], maxLimit: v };
+                          newRanges[1] = { ...newRanges[1], minLimit: v };
+                          setThresholdRanges(newRanges);
+                        }}
+                        min={20} max={70} step={5}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-zinc-400">Buffer</span>
+                      <Slider
+                        value={[thresholdRanges[0]?.offset || 0]}
+                        onValueChange={([v]) => {
+                          const newRanges = [...thresholdRanges];
+                          newRanges[0] = { ...newRanges[0], offset: v };
+                          setThresholdRanges(newRanges);
+                        }}
+                        min={0} max={15} step={1}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Zone 2 */}
+                  <div className="space-y-2 bg-zinc-500/30 p-3 rounded">
+                    <div className="text-xs text-white font-medium">Zone 2</div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-zinc-300">Range: {thresholdRanges[0]?.maxLimit || 50} - {thresholdRanges[1]?.maxLimit || 65} {speedUnit}</span>
+                      <span className="text-cyan-400">+{thresholdRanges[1]?.offset || 5} {speedUnit}</span>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-zinc-400">Upper limit</span>
+                      <Slider
+                        value={[thresholdRanges[1]?.maxLimit || 65]}
+                        onValueChange={([v]) => {
+                          const minVal = (thresholdRanges[0]?.maxLimit || 50) + 5;
+                          const newVal = Math.max(minVal, v);
+                          const newRanges = [...thresholdRanges];
+                          newRanges[1] = { ...newRanges[1], maxLimit: newVal };
+                          newRanges[2] = { ...newRanges[2], minLimit: newVal };
+                          setThresholdRanges(newRanges);
+                        }}
+                        min={35} max={85} step={5}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-zinc-400">Buffer</span>
+                      <Slider
+                        value={[thresholdRanges[1]?.offset || 5]}
+                        onValueChange={([v]) => {
+                          const newRanges = [...thresholdRanges];
+                          newRanges[1] = { ...newRanges[1], offset: v };
+                          setThresholdRanges(newRanges);
+                        }}
+                        min={0} max={15} step={1}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Zone 3 */}
+                  <div className="space-y-2 bg-zinc-500/30 p-3 rounded">
+                    <div className="text-xs text-white font-medium">Zone 3</div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-zinc-300">Range: {thresholdRanges[1]?.maxLimit || 65} - {thresholdRanges[2]?.maxLimit === 999 ? '∞' : thresholdRanges[2]?.maxLimit} {speedUnit}</span>
+                      <span className="text-cyan-400">+{thresholdRanges[2]?.offset || 10} {speedUnit}</span>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-zinc-400">Upper limit</span>
+                      <Slider
+                        value={[thresholdRanges[2]?.maxLimit === 999 ? 100 : (thresholdRanges[2]?.maxLimit || 100)]}
+                        onValueChange={([v]) => {
+                          const minVal = (thresholdRanges[1]?.maxLimit || 65) + 5;
+                          const newVal = Math.max(minVal, v);
+                          const newRanges = [...thresholdRanges];
+                          newRanges[2] = { ...newRanges[2], maxLimit: newVal >= 100 ? 999 : newVal };
+                          setThresholdRanges(newRanges);
+                        }}
+                        min={50} max={100} step={5}
+                      />
+                      <span className="text-xs text-zinc-500">Slide to max for unlimited</span>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-zinc-400">Buffer</span>
+                      <Slider
+                        value={[thresholdRanges[2]?.offset || 10]}
+                        onValueChange={([v]) => {
+                          const newRanges = [...thresholdRanges];
+                          newRanges[2] = { ...newRanges[2], offset: v };
+                          setThresholdRanges(newRanges);
+                        }}
+                        min={0} max={20} step={1}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Reset to defaults button */}
+                  <button
+                    onClick={() => {
+                      setThresholdRanges([
+                        { minLimit: 0, maxLimit: 45, offset: 0 },
+                        { minLimit: 45, maxLimit: 65, offset: 5 },
+                        { minLimit: 65, maxLimit: 80, offset: 10 },
+                      ]);
+                    }}
+                    className="w-full text-xs text-zinc-400 hover:text-cyan-400 transition-colors py-1"
+                  >
+                    Reset to defaults
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-white">Fixed Buffer</span>
+                    <span className="text-cyan-400">+{thresholdOffset} {speedUnit}</span>
+                  </div>
+                  <Slider
+                    value={[thresholdOffset]}
+                    onValueChange={([v]) => setThresholdOffset(v)}
+                    min={0} max={15} step={1}
+                  />
+                </div>
+              )}
+              
+              {currentSpeedLimit && (
+                <p className="text-xs text-zinc-200 mt-2">
+                  Current zone alert: {currentSpeedLimit + currentThreshold} {speedUnit}
+                </p>
+              )}
+            </div>
+
+            {/* Sound Customization */}
+            <div className="space-y-3 pt-3 border-t border-zinc-400/50">
+              <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
+                <Music className="w-4 h-4" />
+                Alert Sound
+              </div>
+              <SoundSelector
+                selectedSound={alertSound}
+                onSelect={setAlertSound}
+                volume={alertVolume}
+                onVolumeChange={setAlertVolume}
+              />
+            </div>
+
+            {/* AI Prediction */}
+            <div className="space-y-2 pt-3 border-t border-zinc-400/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-cyan-400" />
+                  <span className="text-xs text-white">AI Speed Prediction</span>
+                </div>
+                <Switch checked={speedPredictionEnabled} onCheckedChange={setSpeedPredictionEnabled} />
+              </div>
+              <p className="text-xs text-zinc-200">Warns before entering lower speed zones</p>
+              <p className="text-[10px] text-zinc-400 italic">
+                Only active at {isMetric() ? `${AI_THRESHOLD_KMH}+ km/h` : `${AI_THRESHOLD_MPH}+ mph`} for accuracy
+              </p>
+            </div>
+
+            {/* Weather Alerts */}
+            <div className="space-y-2 pt-3 border-t border-zinc-400/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CloudRain className="w-4 h-4 text-blue-400" />
+                  <span className="text-xs text-white">Weather Alerts</span>
+                </div>
+                <Switch checked={weatherAlertsEnabled} onCheckedChange={setWeatherAlertsEnabled} />
+              </div>
+            </div>
+
+            {/* Mobile Optimization */}
+            <div className="space-y-3 pt-3 border-t border-zinc-400/50">
+              <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
+                <Signal className="w-4 h-4" />
+                Mobile
+              </div>
+              <MobileSettingsSection
+                dataSaverEnabled={dataSaverEnabled}
+                setDataSaverEnabled={setDataSaverEnabled}
+                lowPowerMode={lowPowerMode}
+                setLowPowerMode={setLowPowerMode}
+              />
+            </div>
+
+            {/* Offline Cache */}
+            <div className="space-y-3 pt-3 border-t border-zinc-400/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Database className="w-4 h-4 text-yellow-400" />
+                  <span className="text-xs text-white">Offline Cache</span>
+                </div>
+                <Switch checked={offlineCacheEnabled} onCheckedChange={setOfflineCacheEnabled} />
+              </div>
+              
+              {offlineCacheEnabled && (
+                <div className="space-y-2">
+                  <div className="text-xs space-y-1 bg-zinc-500/50 p-2 rounded">
+                    <div className="flex justify-between">
+                      <span className="text-zinc-200">Cached:</span>
+                      <span className="text-white">{cacheStats.validEntries} / {cacheStats.maxEntries || 500}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <span className="text-green-400/70">Auto-managed</span>
+                    </div>
+                  </div>
+                  
+                  {/* Clear Cache Button */}
+                  <button
+                    onClick={() => {
+                      clearCache();
+                      setCacheStats(getCacheStats());
+                      alert('Cache cleared!');
+                    }}
+                    disabled={cacheStats.validEntries === 0}
+                    className={cn(
+                      "w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
+                      cacheStats.validEntries > 0
+                        ? "bg-zinc-500/50 border border-zinc-400 text-white hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400"
+                        : "bg-zinc-500/30 border border-zinc-400 text-zinc-200 cursor-not-allowed"
+                    )}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Clear Cache
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* App Updates */}
+            <div className="space-y-3 pt-3 border-t border-zinc-400/50">
+              <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
+                <RotateCcw className="w-4 h-4" />
+                App Updates
+              </div>
+              <button
+                onClick={() => {
+                  if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(registrations => {
+                      registrations.forEach(reg => {
+                        reg.update();
+                        if (reg.waiting) {
+                          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                        }
+                      });
+                    });
+                    // Clear caches and reload
+                    if ('caches' in window) {
+                      caches.keys().then(names => {
+                        Promise.all(names.map(name => caches.delete(name))).then(() => {
+                          window.location.reload(true);
                         });
                       });
-                      // Clear caches and reload
-                      if ('caches' in window) {
-                        caches.keys().then(names => {
-                          Promise.all(names.map(name => caches.delete(name))).then(() => {
-                            window.location.reload(true);
-                          });
-                        });
-                      } else {
-                        window.location.reload(true);
-                      }
                     } else {
                       window.location.reload(true);
                     }
-                  }}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-cyan-500/10 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/100/20 rounded transition-colors"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  Check for Updates
-                </button>
-                <p className="text-xs text-zinc-200">Force refresh to get latest version</p>
-              </div>
-
-              {/* Theme */}
-              <div className="space-y-3 pt-3 border-t border-zinc-400/50">
-                <div className="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase">
-                  {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                  Theme
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setTheme('dark')}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
-                      theme === 'dark'
-                        ? "bg-purple-500/20 border border-purple-500/50 text-purple-400"
-                        : "bg-zinc-500/50 border border-zinc-400 text-white hover:border-zinc-500"
-                    )}
-                  >
-                    <Moon className="w-3 h-3" />
-                    Dark
-                  </button>
-                  <button
-                    onClick={() => setTheme('light')}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono rounded transition-colors",
-                      theme === 'light'
-                        ? "bg-yellow-500/20 border border-yellow-500/50 text-yellow-400"
-                        : "bg-zinc-500/50 border border-zinc-400 text-white hover:border-zinc-500"
-                    )}
-                  >
-                    <Sun className="w-3 h-3" />
-                    Light
-                  </button>
-                </div>
-              </div>
-
-              {/* Demo Mode */}
-              <div className="space-y-2 pt-3 border-t border-zinc-400/50">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-white">Demo Mode</span>
-                  <Switch checked={demoMode} onCheckedChange={setDemoMode} />
-                </div>
-              </div>
-
-              {/* Clear All Data */}
-              <button
-                onClick={() => {
-                  if (confirm('Clear all app data?')) {
-                    localStorage.clear();
-                    if ('caches' in window) caches.keys().then(names => names.forEach(n => caches.delete(n)));
-                    window.location.href = window.location.origin + '/?cleared=' + Date.now();
+                  } else {
+                    window.location.reload(true);
                   }
                 }}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-red-500/20 border border-red-500/50 text-red-400 hover:bg-red-500/200/20 rounded transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-cyan-500/10 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/20 rounded transition-colors"
               >
-                <Trash2 className="w-3 h-3" />
-                Clear All App Data
+                <RotateCcw className="w-3 h-3" />
+                Check for Updates
               </button>
+              <p className="text-xs text-zinc-200">Force refresh to get latest version</p>
             </div>
-          )}
 
-          {/* Version */}
-          <p className="text-xs text-zinc-200 text-center pt-4 border-t border-zinc-400">
-            SpeedShield v{APP_VERSION}
-          </p>
-        </div>
+            {/* Demo Mode */}
+            <div className="space-y-2 pt-3 border-t border-zinc-400/50">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-white">Demo Mode</span>
+                <Switch checked={demoMode} onCheckedChange={setDemoMode} />
+              </div>
+            </div>
+
+            {/* Clear All Data */}
+            <button
+              onClick={() => {
+                if (confirm('Clear all app data?')) {
+                  localStorage.clear();
+                  if ('caches' in window) caches.keys().then(names => names.forEach(n => caches.delete(n)));
+                  window.location.href = window.location.origin + '/?cleared=' + Date.now();
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono bg-red-500/20 border border-red-500/50 text-red-400 hover:bg-red-500/30 rounded transition-colors"
+            >
+              <Trash2 className="w-3 h-3" />
+              Clear All App Data
+            </button>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );
