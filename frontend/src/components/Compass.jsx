@@ -178,15 +178,6 @@ export function CompassBadge({ heading, size = "md", theme = "dark" }) {
         )}
         style={{ transform: 'rotate(-45deg)' }}
       />
-      
-      {/* Heading degrees in center-bottom */}
-      <div className={cn(
-        "absolute bottom-1.5 font-mono font-bold",
-        theme === "dark" ? "text-white/80" : "text-black/80",
-        s.text
-      )}>
-        {heading !== null ? `${Math.round(heading)}°` : '--'}
-      </div>
     </div>
   );
 }
