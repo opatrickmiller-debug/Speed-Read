@@ -119,7 +119,7 @@ class DriveCoachAPITester:
             # Find user A's referral code
             user_a_code = None
             for ref in self.created_referral_codes:
-                if ref['device_id'] == 'device_user_a_001':
+                if ref['device_id'] == self.device_a:
                     user_a_code = ref['code']
                     break
             
@@ -127,10 +127,11 @@ class DriveCoachAPITester:
                 self.log_test("Apply Referral Code", False, "No referral code found for user A")
                 return False
             
+            timestamp = int(time.time())
             data = {
-                "device_id": "device_user_b_002",
+                "device_id": self.device_b,
                 "referral_code": user_a_code,
-                "email": "user_b@example.com"
+                "email": f"user_b_{timestamp}@example.com"
             }
             response = requests.post(f"{self.base_url}/api/referral/apply", json=data, timeout=10)
             
