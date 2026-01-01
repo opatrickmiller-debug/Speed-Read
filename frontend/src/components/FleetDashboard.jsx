@@ -2,12 +2,13 @@
 // Shows driving grades, practice hours, achievements, and skill analytics
 
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle, Activity, MapPin, Gauge, Flame, Trophy, Star, Download, Clock, Moon, Sun, Share2, Users, Plus, X, Copy, Link, Trash2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle, Activity, MapPin, Gauge, Flame, Trophy, Star, Download, Clock, Moon, Sun, Share2, Users, Plus, X, Copy, Link, Trash2, Gift } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getScores, getTrips, getIncidents, getDeviceIdValue } from '@/services/tripService';
 import { useAuth } from '@/contexts/AuthContext';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { ReferralCard } from '@/components/ReferralCard';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
