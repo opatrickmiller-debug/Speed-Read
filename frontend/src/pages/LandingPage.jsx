@@ -524,7 +524,7 @@ export default function LandingPage({ onEnterApp }) {
               </span>
             </h2>
             <p className="text-zinc-400 max-w-2xl mx-auto text-lg">
-              Don't just track location. See their speed, safety score, and practice hours. 
+              Don&apos;t just track location. See their speed, safety score, and practice hours. 
               Help them become better drivers, not just watched drivers.
             </p>
           </div>
