@@ -2301,6 +2301,16 @@ from routes.practice import router as practice_router, set_db as set_practice_db
 set_practice_db(db)
 app.include_router(practice_router)
 
+# Import and configure referral routes
+from routes.referral import router as referral_router, set_db as set_referral_db
+set_referral_db(db)
+app.include_router(referral_router)
+
+# Import and configure instructor routes
+from routes.instructor import router as instructor_router, set_db as set_instructor_db
+set_instructor_db(db)
+app.include_router(instructor_router)
+
 app.include_router(api_router)
 
 app.add_middleware(
