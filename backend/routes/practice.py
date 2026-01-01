@@ -268,10 +268,14 @@ async def list_share_access(device_id: str):
     active_shares = []
     for share in shares:
         expires_at = share.get("expires_at")
-        if isinstance(expires_at, str):
-            expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
-        if expires_at and expires_at > now:
-            active_shares.append(share)
+        if expires_at:
+            if isinstance(expires_at, str):
+                expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+            elif expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            
+            if expires_at > now:
+                active_shares.append(share)
     
     return active_shares
 
