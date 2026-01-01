@@ -507,6 +507,185 @@ export default function LandingPage({ onEnterApp }) {
         </div>
       </section>
 
+      {/* For Parents Section - NEW */}
+      <section id="parents" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-purple-950/20 to-zinc-950">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 mb-6">
+              <Shield className="w-4 h-4 text-purple-400" />
+              <span className="text-sm text-purple-400 font-medium">For Parents of Teen Drivers</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              Know How Your Teen{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">
+                Really Drives
+              </span>
+            </h2>
+            <p className="text-zinc-400 max-w-2xl mx-auto text-lg">
+              Don't just track location. See their speed, safety score, and practice hours. 
+              Help them become better drivers, not just watched drivers.
+            </p>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
+            {[
+              { value: "68%", label: "of teens use apps while driving", color: "text-red-400" },
+              { value: "#1", label: "cause of teen death is car crashes", color: "text-orange-400" },
+              { value: "50%", label: "crash risk reduction with practice", color: "text-green-400" },
+              { value: "30-100", label: "supervised hours required for permits", color: "text-cyan-400" }
+            ].map((stat, idx) => (
+              <div key={idx} className="text-center p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800">
+                <div className={cn("text-3xl sm:text-4xl font-bold mb-2", stat.color)}>{stat.value}</div>
+                <div className="text-sm text-zinc-400">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Features for Parents */}
+          <div className="grid md:grid-cols-3 gap-6 mb-16">
+            {[
+              {
+                icon: Eye,
+                title: "Real-Time Speed Visibility",
+                description: "See when they speed, not just where they go. Know if they're driving safely.",
+                color: "text-cyan-400"
+              },
+              {
+                icon: Clock,
+                title: "Practice Hour Tracking",
+                description: "Automatically track day and night hours. Meet state permit requirements.",
+                color: "text-purple-400"
+              },
+              {
+                icon: TrendingUp,
+                title: "Progress Reports",
+                description: "Weekly safety scores. See improvement over time. Share with instructors.",
+                color: "text-green-400"
+              }
+            ].map((feature, idx) => (
+              <div key={idx} className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800">
+                <feature.icon className={cn("w-8 h-8 mb-4", feature.color)} />
+                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                <p className="text-zinc-400">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Parent Testimonials */}
+          <div className="grid md:grid-cols-2 gap-6 mb-16">
+            {[
+              {
+                text: "Finally, I can see HOW my daughter drives, not just where. Her safety score improved from C to A+ in 2 months!",
+                name: "Jennifer M.",
+                role: "Parent of 16-year-old",
+                emoji: "👩"
+              },
+              {
+                text: "The practice hour tracker saved us so much hassle. No more paper logs. DMV accepted the export instantly.",
+                name: "Robert K.",
+                role: "Parent of 17-year-old", 
+                emoji: "👨"
+              }
+            ].map((testimonial, idx) => (
+              <div key={idx} className="p-6 rounded-2xl bg-purple-500/5 border border-purple-500/20">
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+                <p className="text-zinc-300 mb-6 text-lg">&ldquo;{testimonial.text}&rdquo;</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-xl">
+                    {testimonial.emoji}
+                  </div>
+                  <div>
+                    <div className="font-medium">{testimonial.name}</div>
+                    <div className="text-sm text-zinc-500">{testimonial.role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Teen Driving Contract CTA */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-900/50 to-pink-900/50 border border-purple-500/30 p-8 md:p-12">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl" />
+            <div className="relative grid md:grid-cols-2 gap-8 items-center">
+              <div>
+                <h3 className="text-2xl sm:text-3xl font-bold mb-4">
+                  Free Teen Driving Contract
+                </h3>
+                <p className="text-zinc-300 mb-6">
+                  Set clear expectations with your teen driver. Our contract covers phone use, 
+                  passengers, curfews, and consequences. Used by 10,000+ families.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button 
+                    onClick={onEnterApp}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    Download Free Contract
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={onEnterApp}
+                    className="border-purple-500/50 hover:bg-purple-500/10"
+                  >
+                    Try App Free
+                  </Button>
+                </div>
+              </div>
+              <div className="hidden md:block">
+                <div className="bg-zinc-900/80 rounded-xl p-6 border border-zinc-700 transform rotate-2">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                    <div className="w-3 h-3 rounded-full bg-green-500" />
+                  </div>
+                  <div className="text-sm font-mono text-zinc-400">
+                    <div className="mb-2">📋 TEEN DRIVING CONTRACT</div>
+                    <div className="text-zinc-500 text-xs space-y-1">
+                      <div>✓ No phone use while driving</div>
+                      <div>✓ Max 1 passenger for 6 months</div>
+                      <div>✓ Home by 10pm on school nights</div>
+                      <div>✓ Maintain B+ or higher safety grade</div>
+                      <div className="pt-2 border-t border-zinc-700 mt-2">
+                        Signed: _____________ Date: _____
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* For Instructors CTA */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="rounded-2xl bg-gradient-to-r from-cyan-900/30 to-blue-900/30 border border-cyan-500/30 p-8 md:p-12 text-center">
+            <GraduationCap className="w-12 h-12 text-cyan-400 mx-auto mb-4" />
+            <h3 className="text-2xl sm:text-3xl font-bold mb-4">
+              Are You a Driving Instructor?
+            </h3>
+            <p className="text-zinc-300 mb-6 max-w-xl mx-auto">
+              Track all your students in one dashboard. Free forever for instructors. 
+              See progress, safety scores, and practice hours across your entire roster.
+            </p>
+            <Button 
+              onClick={() => window.location.href = '/instructor'}
+              className="bg-cyan-600 hover:bg-cyan-700"
+            >
+              Open Instructor Portal
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing Section */}
       <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-zinc-900/30">
         <div className="max-w-7xl mx-auto">
