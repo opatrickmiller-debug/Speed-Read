@@ -1,0 +1,154 @@
+{
+  "summary": {
+    "total_tests": 24,
+    "passed_tests": 24,
+    "success_rate": 100.0,
+    "timestamp": "2026-01-01T19:07:38.896281"
+  },
+  "test_results": [
+    {
+      "test": "Trip Start",
+      "success": true,
+      "details": "Trip ID: 2c67cbad-1967-4966-9adb-889d7064ad51",
+      "timestamp": "2026-01-01T19:07:35.137027"
+    },
+    {
+      "test": "Location Update 1 (25 mph)",
+      "success": true,
+      "details": "Max speed: 25.0",
+      "timestamp": "2026-01-01T19:07:35.182750"
+    },
+    {
+      "test": "Location Update 2 (45 mph)",
+      "success": true,
+      "details": "Max speed: 45.0",
+      "timestamp": "2026-01-01T19:07:35.722315"
+    },
+    {
+      "test": "Location Update 3 (65 mph)",
+      "success": true,
+      "details": "Max speed: 65.0",
+      "timestamp": "2026-01-01T19:07:36.261290"
+    },
+    {
+      "test": "Location Update 4 (72 mph)",
+      "success": true,
+      "details": "Max speed: 72.0",
+      "timestamp": "2026-01-01T19:07:36.803149"
+    },
+    {
+      "test": "Speeding Incident Start",
+      "success": true,
+      "details": "ID: f797fa53-8531-4338-8783-40ca02bd3bd0, Severity: severe (expected: severe), Impact: -10",
+      "timestamp": "2026-01-01T19:07:37.345307"
+    },
+    {
+      "test": "Severity Calculation (17 mph over)",
+      "success": true,
+      "details": "Got: severe, Expected: severe",
+      "timestamp": "2026-01-01T19:07:37.345319"
+    },
+    {
+      "test": "Speeding Incident End",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-01T19:07:38.381311"
+    },
+    {
+      "test": "Hard Brake Event",
+      "success": true,
+      "details": "ID: b72ee6c7-3bcc-484d-a8bb-49a6ae7455c2, Severity: severe, Impact: -5",
+      "timestamp": "2026-01-01T19:07:38.416621"
+    },
+    {
+      "test": "Trip End",
+      "success": true,
+      "details": "Score: 85, Incidents: 1, Hard Brakes: 1, Distance: 0.26mi",
+      "timestamp": "2026-01-01T19:07:38.459545"
+    },
+    {
+      "test": "Trip Summary - Incident Count",
+      "success": true,
+      "details": "Expected \u22651, Got: 1",
+      "timestamp": "2026-01-01T19:07:38.459556"
+    },
+    {
+      "test": "Trip Summary - Hard Brake Count",
+      "success": true,
+      "details": "Expected \u22651, Got: 1",
+      "timestamp": "2026-01-01T19:07:38.459559"
+    },
+    {
+      "test": "Trip Summary - Safety Score Reduced",
+      "success": true,
+      "details": "Expected <100, Got: 85",
+      "timestamp": "2026-01-01T19:07:38.459563"
+    },
+    {
+      "test": "Scores Endpoint",
+      "success": true,
+      "details": "Daily: 85, Trips: 1, Miles: 0.3",
+      "timestamp": "2026-01-01T19:07:38.497892"
+    },
+    {
+      "test": "Scores - Trip Count Updated",
+      "success": true,
+      "details": "Expected \u22651, Got: 1",
+      "timestamp": "2026-01-01T19:07:38.497903"
+    },
+    {
+      "test": "Scores - Miles Updated",
+      "success": true,
+      "details": "Expected >0, Got: 0.3",
+      "timestamp": "2026-01-01T19:07:38.497908"
+    },
+    {
+      "test": "Severity - 4 mph over",
+      "success": true,
+      "details": "Expected: minor, Got: minor",
+      "timestamp": "2026-01-01T19:07:38.537742"
+    },
+    {
+      "test": "Severity - 10 mph over",
+      "success": true,
+      "details": "Expected: moderate, Got: moderate",
+      "timestamp": "2026-01-01T19:07:38.614781"
+    },
+    {
+      "test": "Severity - 20 mph over",
+      "success": true,
+      "details": "Expected: severe, Got: severe",
+      "timestamp": "2026-01-01T19:07:38.656784"
+    },
+    {
+      "test": "Severity - 30 mph over",
+      "success": true,
+      "details": "Expected: extreme, Got: extreme",
+      "timestamp": "2026-01-01T19:07:38.698875"
+    },
+    {
+      "test": "GET /fleet/trips",
+      "success": true,
+      "details": "Found 1 trips, Total: 1",
+      "timestamp": "2026-01-01T19:07:38.737683"
+    },
+    {
+      "test": "GET /fleet/scores",
+      "success": true,
+      "details": "Daily: 85, Weekly: 85, Monthly: 85",
+      "timestamp": "2026-01-01T19:07:38.816201"
+    },
+    {
+      "test": "GET /fleet/incidents",
+      "success": true,
+      "details": "Found 1 incidents",
+      "timestamp": "2026-01-01T19:07:38.895359"
+    },
+    {
+      "test": "All Endpoints Return 200/201",
+      "success": true,
+      "details": "23/0 endpoint tests passed",
+      "timestamp": "2026-01-01T19:07:38.896001"
+    }
+  ]
+}
