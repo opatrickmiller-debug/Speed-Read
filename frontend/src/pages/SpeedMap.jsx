@@ -25,6 +25,13 @@ import { DraggableCompass } from "@/components/Compass";
 import { FleetDashboard } from "@/components/FleetDashboard";
 import { FleetTripHistory } from "@/components/FleetTripHistory";
 import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import * as tripService from "@/services/tripService";
