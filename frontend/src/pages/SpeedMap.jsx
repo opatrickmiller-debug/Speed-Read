@@ -1412,10 +1412,10 @@ export default function SpeedMap() {
           <SheetHeader>
             <SheetTitle className="text-white font-bold uppercase tracking-wider flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-purple-400" />
-              Fleet Dashboard
+              Progress Dashboard
             </SheetTitle>
             <SheetDescription className="text-zinc-400 text-xs">
-              Safety scores, trips, and driving analytics
+              Driving grades, practice sessions, and skill analytics
             </SheetDescription>
           </SheetHeader>
           
