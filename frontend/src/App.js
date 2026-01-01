@@ -6,13 +6,16 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import SpeedMap from "@/pages/SpeedMap";
 import LandingPage from "@/pages/LandingPage";
+import SharedProgress from "@/pages/SharedProgress";
 
 function App() {
   // Check if user has visited the app before
   const [showLanding, setShowLanding] = useState(() => {
     const hasVisited = localStorage.getItem('hasVisitedApp');
     const directToApp = window.location.search.includes('app=1');
-    return !hasVisited && !directToApp;
+    // Also check if accessing shared progress page
+    const isSharedProgress = window.location.pathname.startsWith('/progress/');
+    return !hasVisited && !directToApp && !isSharedProgress;
   });
 
   const enterApp = () => {
@@ -20,8 +23,8 @@ function App() {
     setShowLanding(false);
   };
 
-  // If showing landing page, render it
-  if (showLanding) {
+  // If showing landing page, render it (but not for shared progress pages)
+  if (showLanding && !window.location.pathname.startsWith('/progress/')) {
     return (
       <div className="App">
         <LandingPage onEnterApp={enterApp} />
@@ -47,6 +50,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<SpeedMap />} />
+            <Route path="/progress/:shareCode" element={<SharedProgress />} />
           </Routes>
         </BrowserRouter>
         <Toaster 
