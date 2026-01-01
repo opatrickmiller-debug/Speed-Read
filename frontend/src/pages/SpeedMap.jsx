@@ -603,6 +603,37 @@ export default function SpeedMap() {
   // Only trigger alert after delay has passed
   const isSpeeding = isOverLimit && speedingDuration >= alertDelay;
 
+  // Fleet tracking: Log speeding incidents
+  useEffect(() => {
+    const trackSpeedingIncident = async () => {
+      if (!tripService.isTripping() || !currentPosition) return;
+      
+      if (isOverLimit && effectiveSpeedLimit) {
+        // Start incident if not already tracking one
+        if (!tripService.isSpeedingIncidentActive()) {
+          await tripService.startSpeedingIncident(
+            { lat: currentPosition.lat, lon: currentPosition.lng },
+            effectiveSpeedLimit,
+            currentThreshold,
+            displaySpeed,
+            roadName,
+            roadType
+          );
+        } else {
+          // Update max speed during incident
+          await tripService.updateSpeedingIncident(displaySpeed);
+        }
+      } else {
+        // End incident if we were tracking one
+        if (tripService.isSpeedingIncidentActive() && currentPosition) {
+          await tripService.endSpeedingIncident({ lat: currentPosition.lat, lon: currentPosition.lng });
+        }
+      }
+    };
+    
+    trackSpeedingIncident();
+  }, [isOverLimit, effectiveSpeedLimit, displaySpeed, currentPosition, currentThreshold, roadName, roadType]);
+
   // Get current language info for display
   const currentLangInfo = AVAILABLE_LANGUAGES.find(l => l.code === voiceLanguage) || AVAILABLE_LANGUAGES[0];
 
