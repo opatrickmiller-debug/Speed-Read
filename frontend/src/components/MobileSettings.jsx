@@ -264,8 +264,10 @@ function CacheInfo() {
       });
       
       await calculateCacheSize();
+      toast.success('Cache cleared successfully!');
     } catch (e) {
       console.error('Could not clear cache:', e);
+      toast.error('Failed to clear cache');
     }
     setIsClearing(false);
   };
