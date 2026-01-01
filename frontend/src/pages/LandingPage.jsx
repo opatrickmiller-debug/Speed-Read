@@ -236,8 +236,10 @@ export default function LandingPage({ onEnterApp }) {
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-zinc-400 hover:text-white transition-colors">Features</a>
+              <a href="#parents" className="text-purple-400 hover:text-purple-300 transition-colors font-medium">For Parents</a>
               <a href="#pricing" className="text-zinc-400 hover:text-white transition-colors">Pricing</a>
               <a href="#faq" className="text-zinc-400 hover:text-white transition-colors">FAQ</a>
+              <a href="/instructor" className="text-cyan-400 hover:text-cyan-300 transition-colors">Instructors</a>
               <Button 
                 onClick={onEnterApp}
                 className="bg-cyan-600 hover:bg-cyan-700"
@@ -261,8 +263,10 @@ export default function LandingPage({ onEnterApp }) {
           <div className="md:hidden bg-zinc-900 border-t border-zinc-800">
             <div className="px-4 py-4 space-y-4">
               <a href="#features" className="block text-zinc-400 hover:text-white">Features</a>
+              <a href="#parents" className="block text-purple-400 hover:text-purple-300 font-medium">For Parents</a>
               <a href="#pricing" className="block text-zinc-400 hover:text-white">Pricing</a>
               <a href="#faq" className="block text-zinc-400 hover:text-white">FAQ</a>
+              <a href="/instructor" className="block text-cyan-400 hover:text-cyan-300">Instructors</a>
               <Button 
                 onClick={onEnterApp}
                 className="w-full bg-cyan-600 hover:bg-cyan-700"
