@@ -245,17 +245,23 @@ function CacheInfo() {
   const clearCache = async () => {
     setIsClearing(true);
     try {
+      // Clear Service Worker caches
       if ('caches' in window) {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map(name => caches.delete(name)));
       }
-      // Clear speed limit cache from localStorage
+      // Clear speed limit cache from localStorage (correct key)
+      localStorage.removeItem('speedLimitCache');
+      localStorage.removeItem('speedLimitCacheLastCleanup');
+      
+      // Also clear any other app-related cache keys
       const keys = Object.keys(localStorage);
       keys.forEach(key => {
-        if (key.startsWith('speedLimit_')) {
+        if (key.startsWith('speedLimit') || key.startsWith('cache')) {
           localStorage.removeItem(key);
         }
       });
+      
       await calculateCacheSize();
     } catch (e) {
       console.error('Could not clear cache:', e);
