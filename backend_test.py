@@ -1656,11 +1656,11 @@ class SpeedAlertAPITester:
     def test_save_user_settings(self, device_id):
         """Test saving user settings (selected state)"""
         try:
-            data = {
+            params = {
+                "device_id": device_id,
                 "state": "TX"  # Texas
             }
-            params = {"device_id": device_id}
-            response = requests.post(f"{self.base_url}/api/practice/settings", json=data, params=params, timeout=10)
+            response = requests.post(f"{self.base_url}/api/practice/settings", params=params, timeout=10)
             
             success = response.status_code == 200
             details = f"Status: {response.status_code}"
