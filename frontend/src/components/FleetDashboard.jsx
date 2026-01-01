@@ -378,6 +378,30 @@ export const FleetDashboard = ({ speedUnit = 'mph' }) => {
       
       {/* Recent Incidents */}
       <RecentIncidents incidents={incidents} />
+      
+      {/* Export Button */}
+      <button
+        onClick={handleExportCSV}
+        disabled={exporting || (scores?.total_trips || 0) === 0}
+        className={cn(
+          "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-all",
+          "bg-cyan-500/20 border border-cyan-500/50 text-cyan-400",
+          "hover:bg-cyan-500/30 hover:border-cyan-500",
+          "disabled:opacity-50 disabled:cursor-not-allowed"
+        )}
+      >
+        {exporting ? (
+          <>
+            <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm font-medium">Exporting...</span>
+          </>
+        ) : (
+          <>
+            <Download className="w-4 h-4" />
+            <span className="text-sm font-medium">Export Report (CSV)</span>
+          </>
+        )}
+      </button>
     </div>
   );
 };
