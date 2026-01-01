@@ -157,7 +157,7 @@ class DriveCoachAPITester:
     def test_referral_stats_user_a(self):
         """Test getting referral statistics for user A (referrer)"""
         try:
-            params = {"device_id": "device_user_a_001"}
+            params = {"device_id": self.device_a}
             response = requests.get(f"{self.base_url}/api/referral/stats", params=params, timeout=10)
             
             success = response.status_code == 200
