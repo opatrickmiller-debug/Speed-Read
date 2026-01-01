@@ -1547,6 +1547,33 @@ export default function SpeedMap() {
         onClose={() => setShowFeaturesPanel(false)}
         currentPosition={currentPosition}
       />
+      
+      {/* Fleet Dashboard Sheet */}
+      <Sheet open={showFleetDashboard} onOpenChange={setShowFleetDashboard}>
+        <SheetContent 
+          side="right" 
+          className="bg-zinc-900 border-l border-zinc-700 w-[380px] sm:w-[420px] overflow-y-auto"
+        >
+          <SheetHeader>
+            <SheetTitle className="text-white font-bold uppercase tracking-wider flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-purple-400" />
+              Fleet Dashboard
+            </SheetTitle>
+            <SheetDescription className="text-zinc-400 text-xs">
+              Safety scores, trips, and driving analytics
+            </SheetDescription>
+          </SheetHeader>
+          
+          <div className="mt-6">
+            <FleetDashboard speedUnit={speedUnit} />
+          </div>
+          
+          <div className="mt-6 border-t border-zinc-700 pt-4">
+            <h3 className="text-sm font-medium text-zinc-300 mb-3">Recent Trips</h3>
+            <FleetTripHistory speedUnit={speedUnit} />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
