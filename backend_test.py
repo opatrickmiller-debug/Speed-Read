@@ -2064,6 +2064,12 @@ class SpeedAlertAPITester:
             self.test_fleet_complete_workflow()
             self.test_fleet_severity_calculations()
             
+            # Run Practice Hours & Share Access tests
+            print("\n🎓 Testing Practice Hours & Share Access API...")
+            self.test_practice_hours_workflow()
+            self.test_practice_edge_cases()
+            self.test_state_requirements()
+            
             # Print summary
             print("=" * 60)
             print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} passed")
