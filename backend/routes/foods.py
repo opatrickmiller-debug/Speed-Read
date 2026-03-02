@@ -17,10 +17,19 @@ async def search_foods(
     data_type: Optional[str] = Query(None),
     current_user: dict = Depends(get_current_user)
 ):
+    # Reliable data types that always have details available
+    RELIABLE_DATA_TYPES = {"SR Legacy", "Foundation", "Survey (FNDDS)"}
+    
     result = await fdc_client.search_foods(query, page_size, page, data_type)
     
     foods = []
     for food in result.get("foods", []):
+        food_data_type = food.get("dataType", "")
+        
+        # Only include foods from reliable data sources
+        if food_data_type not in RELIABLE_DATA_TYPES:
+            continue
+            
         protein = 0
         for nutrient in food.get("foodNutrients", []):
             if nutrient.get("nutrientId") == 1003:
@@ -31,13 +40,13 @@ async def search_foods(
             "fdc_id": str(food.get("fdcId", "")),
             "description": food.get("description", ""),
             "brand_owner": food.get("brandOwner"),
-            "data_type": food.get("dataType", ""),
+            "data_type": food_data_type,
             "protein_per_100g": round(protein, 2)
         })
     
     return {
         "foods": foods,
-        "total_hits": result.get("totalHits", 0),
+        "total_hits": len(foods),
         "current_page": page,
         "page_size": page_size
     }
