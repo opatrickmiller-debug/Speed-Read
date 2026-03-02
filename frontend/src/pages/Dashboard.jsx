@@ -1,0 +1,222 @@
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Layout } from '../components/Layout';
+import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
+import { ProteinProgress, MacroCard } from '../components/ProteinProgress';
+import { AminoAcidRadar, AminoAcidList } from '../components/AminoAcidRadar';
+import { statsApi, logsApi } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
+import { 
+  Flame, 
+  Beef, 
+  Wheat, 
+  Droplets,
+  Plus,
+  CheckCircle2,
+  AlertTriangle,
+  Loader2,
+  ArrowRight
+} from 'lucide-react';
+import { format } from 'date-fns';
+
+export const Dashboard = () => {
+  const { user } = useAuth();
+  const [stats, setStats] = useState(null);
+  const [recentLogs, setRecentLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      const [statsRes, logsRes] = await Promise.all([
+        statsApi.getDaily(),
+        logsApi.getAll(format(new Date(), 'yyyy-MM-dd'))
+      ]);
+      setStats(statsRes.data);
+      setRecentLogs(logsRes.data.slice(0, 5));
+    } catch (err) {
+      console.error('Failed to load dashboard data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Convert amino acid totals to array format for radar
+  const aminoAcidsArray = stats?.amino_acid_totals 
+    ? Object.entries(stats.amino_acid_totals).map(([name, value]) => ({
+        name,
+        value,
+        is_essential: ['Histidine', 'Isoleucine', 'Leucine', 'Lysine', 'Methionine', 
+                       'Phenylalanine', 'Threonine', 'Tryptophan', 'Valine'].includes(name)
+      }))
+    : [];
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="p-6 md:p-8 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-10">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 mb-2">
+            {format(new Date(), 'EEEE, MMMM d')}
+          </p>
+          <h1 className="font-heading text-3xl md:text-4xl font-bold text-white">
+            Welcome back, {user?.name?.split(' ')[0]}
+          </h1>
+        </div>
+
+        {/* Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
+          
+          {/* Protein Progress - Large */}
+          <GlassCard className="lg:col-span-7" data-testid="protein-progress-card">
+            <GlassCardContent className="p-8">
+              <ProteinProgress 
+                current={stats?.total_protein || 0} 
+                goal={stats?.protein_goal || user?.protein_goal || 150}
+                size="large"
+              />
+              
+              {/* Macros Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
+                <MacroCard 
+                  label="Calories" 
+                  value={stats?.total_calories || 0} 
+                  unit="kcal"
+                  color="orange"
+                  icon={<Flame className="w-4 h-4 text-orange-400" />}
+                />
+                <MacroCard 
+                  label="Fat" 
+                  value={stats?.total_fat || 0} 
+                  color="cyan"
+                  icon={<Droplets className="w-4 h-4 text-cyan-400" />}
+                />
+                <MacroCard 
+                  label="Carbs" 
+                  value={stats?.total_carbs || 0} 
+                  color="violet"
+                  icon={<Wheat className="w-4 h-4 text-violet-400" />}
+                />
+                <MacroCard 
+                  label="Fiber" 
+                  value={stats?.total_fiber || 0} 
+                  color="emerald"
+                  icon={<Beef className="w-4 h-4 text-emerald-400" />}
+                />
+              </div>
+            </GlassCardContent>
+          </GlassCard>
+
+          {/* Amino Acid Radar */}
+          <GlassCard className="lg:col-span-5" data-testid="amino-radar-card">
+            <GlassCardHeader>
+              <GlassCardTitle>Amino Acid Profile</GlassCardTitle>
+              <p className="text-xs text-zinc-500 mt-1">Essential amino acids from today's intake</p>
+            </GlassCardHeader>
+            <GlassCardContent className="pt-0">
+              {aminoAcidsArray.length > 0 ? (
+                <AminoAcidRadar aminoAcids={aminoAcidsArray} />
+              ) : (
+                <div className="h-[280px] flex flex-col items-center justify-center text-zinc-500">
+                  <AlertTriangle className="w-8 h-8 mb-3 text-zinc-600" />
+                  <p className="text-sm">No amino acid data yet</p>
+                  <p className="text-xs mt-1">Log some protein-rich foods</p>
+                </div>
+              )}
+            </GlassCardContent>
+          </GlassCard>
+
+          {/* Recent Logs */}
+          <GlassCard className="lg:col-span-7" data-testid="recent-logs-card">
+            <GlassCardHeader className="flex flex-row items-center justify-between pb-4">
+              <GlassCardTitle>Recent Foods</GlassCardTitle>
+              <Link 
+                to="/search"
+                data-testid="add-food-btn"
+                className="flex items-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-full text-sm font-medium transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                Add Food
+              </Link>
+            </GlassCardHeader>
+            <GlassCardContent className="pt-0">
+              {recentLogs.length > 0 ? (
+                <div className="space-y-3">
+                  {recentLogs.map((log, idx) => (
+                    <div 
+                      key={log.id}
+                      className="flex items-center justify-between p-4 rounded-xl bg-black/30 border border-white/5 hover:border-white/10 transition-all animate-fade-in"
+                      style={{ animationDelay: `${idx * 0.1}s` }}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-medium truncate">{log.description}</p>
+                        <p className="text-xs text-zinc-500 mt-1">
+                          {log.servings} × {log.serving_size}{log.serving_unit} · {log.meal_type}
+                        </p>
+                      </div>
+                      <div className="text-right ml-4">
+                        <p className="text-emerald-400 font-semibold">
+                          {(log.protein * log.servings).toFixed(1)}g
+                        </p>
+                        <p className="text-xs text-zinc-500">protein</p>
+                      </div>
+                    </div>
+                  ))}
+                  <Link 
+                    to="/log"
+                    className="flex items-center justify-center gap-2 text-zinc-400 hover:text-white py-3 transition-colors"
+                  >
+                    View all logs
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              ) : (
+                <div className="py-12 text-center">
+                  <p className="text-zinc-500">No foods logged today</p>
+                  <Link 
+                    to="/search"
+                    className="inline-flex items-center gap-2 mt-4 text-emerald-400 hover:text-emerald-300 font-medium"
+                  >
+                    Search for foods
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              )}
+            </GlassCardContent>
+          </GlassCard>
+
+          {/* Amino Acid List */}
+          <GlassCard className="lg:col-span-5" data-testid="amino-list-card">
+            <GlassCardHeader>
+              <GlassCardTitle>Essential Amino Acids</GlassCardTitle>
+              <p className="text-xs text-zinc-500 mt-1">Daily totals breakdown</p>
+            </GlassCardHeader>
+            <GlassCardContent className="pt-0">
+              {aminoAcidsArray.length > 0 ? (
+                <AminoAcidList aminoAcids={aminoAcidsArray} showAll={false} />
+              ) : (
+                <div className="py-8 text-center text-zinc-500 text-sm">
+                  <p>No amino acids tracked yet</p>
+                </div>
+              )}
+            </GlassCardContent>
+          </GlassCard>
+
+        </div>
+      </div>
+    </Layout>
+  );
+};
