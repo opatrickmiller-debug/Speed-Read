@@ -13,6 +13,7 @@ import {
   UtensilsCrossed,
   ScanBarcode,
   Sparkles,
+  ChefHat,
 } from 'lucide-react';
 
 const navItems = [
@@ -20,6 +21,7 @@ const navItems = [
   { to: '/search', icon: Search, label: 'Food Search' },
   { to: '/barcode', icon: ScanBarcode, label: 'Barcode Scan' },
   { to: '/log', icon: UtensilsCrossed, label: 'Food Log' },
+  { to: '/meal-builder', icon: ChefHat, label: 'Meal Builder' },
   { to: '/suggestions', icon: Sparkles, label: 'Suggestions' },
   { to: '/meal-plans', icon: CalendarDays, label: 'Meal Plans' },
   { to: '/favorites', icon: Heart, label: 'Favorites' },

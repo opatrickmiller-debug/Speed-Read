@@ -76,72 +76,200 @@ ALL_AMINO_ACIDS = {
     "Hydroxyproline": {"id": 1228, "essential": False}
 }
 
-# Foods high in specific amino acids (for suggestions)
+# Foods high in specific amino acids (for suggestions) - KETO FRIENDLY with carb data
 AMINO_ACID_RICH_FOODS = {
     "Tryptophan": [
-        {"name": "Turkey breast", "fdc_id": "171082", "per_100g": 0.31},
-        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 0.29},
-        {"name": "Salmon", "fdc_id": "175168", "per_100g": 0.25},
-        {"name": "Eggs", "fdc_id": "173424", "per_100g": 0.17},
-        {"name": "Cheese (cheddar)", "fdc_id": "173414", "per_100g": 0.32}
+        {"name": "Turkey breast", "fdc_id": "171082", "per_100g": 0.31, "carbs": 0, "protein": 29, "keto": "ultra_low"},
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 0.29, "carbs": 0, "protein": 31, "keto": "ultra_low"},
+        {"name": "Salmon", "fdc_id": "175168", "per_100g": 0.25, "carbs": 0, "protein": 25, "keto": "ultra_low"},
+        {"name": "Eggs", "fdc_id": "173424", "per_100g": 0.17, "carbs": 0.7, "protein": 13, "keto": "ultra_low"},
+        {"name": "Cheese (cheddar)", "fdc_id": "173414", "per_100g": 0.32, "carbs": 1.3, "protein": 25, "keto": "ultra_low"}
     ],
     "Threonine": [
-        {"name": "Beef", "fdc_id": "174032", "per_100g": 1.1},
-        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 1.0},
-        {"name": "Pork", "fdc_id": "167820", "per_100g": 0.9},
-        {"name": "Soybeans", "fdc_id": "174270", "per_100g": 1.8},
-        {"name": "Greek yogurt", "fdc_id": "170903", "per_100g": 0.4}
+        {"name": "Beef (grass-fed)", "fdc_id": "174032", "per_100g": 1.1, "carbs": 0, "protein": 26, "keto": "ultra_low"},
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 1.0, "carbs": 0, "protein": 31, "keto": "ultra_low"},
+        {"name": "Pork tenderloin", "fdc_id": "167820", "per_100g": 0.9, "carbs": 0, "protein": 26, "keto": "ultra_low"},
+        {"name": "Greek yogurt (full fat)", "fdc_id": "170903", "per_100g": 0.4, "carbs": 4, "protein": 10, "keto": "low"},
+        {"name": "Parmesan cheese", "fdc_id": "173420", "per_100g": 1.2, "carbs": 3.2, "protein": 38, "keto": "low"}
     ],
     "Isoleucine": [
-        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 1.4},
-        {"name": "Beef", "fdc_id": "174032", "per_100g": 1.2},
-        {"name": "Tuna", "fdc_id": "175159", "per_100g": 1.3},
-        {"name": "Eggs", "fdc_id": "173424", "per_100g": 0.7},
-        {"name": "Cottage cheese", "fdc_id": "173417", "per_100g": 0.6}
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 1.4, "carbs": 0, "protein": 31, "keto": "ultra_low"},
+        {"name": "Beef ribeye", "fdc_id": "174032", "per_100g": 1.2, "carbs": 0, "protein": 26, "keto": "ultra_low"},
+        {"name": "Tuna", "fdc_id": "175159", "per_100g": 1.3, "carbs": 0, "protein": 30, "keto": "ultra_low"},
+        {"name": "Eggs", "fdc_id": "173424", "per_100g": 0.7, "carbs": 0.7, "protein": 13, "keto": "ultra_low"},
+        {"name": "Cottage cheese", "fdc_id": "173417", "per_100g": 0.6, "carbs": 3.4, "protein": 11, "keto": "low"}
     ],
     "Leucine": [
-        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 2.1},
-        {"name": "Beef", "fdc_id": "174032", "per_100g": 2.0},
-        {"name": "Tuna", "fdc_id": "175159", "per_100g": 2.0},
-        {"name": "Salmon", "fdc_id": "175168", "per_100g": 1.8},
-        {"name": "Whey protein", "fdc_id": "173178", "per_100g": 3.5}
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 2.1, "carbs": 0, "protein": 31, "keto": "ultra_low"},
+        {"name": "Beef sirloin", "fdc_id": "174032", "per_100g": 2.0, "carbs": 0, "protein": 26, "keto": "ultra_low"},
+        {"name": "Tuna", "fdc_id": "175159", "per_100g": 2.0, "carbs": 0, "protein": 30, "keto": "ultra_low"},
+        {"name": "Salmon", "fdc_id": "175168", "per_100g": 1.8, "carbs": 0, "protein": 25, "keto": "ultra_low"},
+        {"name": "Pork chop", "fdc_id": "167820", "per_100g": 1.9, "carbs": 0, "protein": 26, "keto": "ultra_low"}
     ],
     "Lysine": [
-        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 2.4},
-        {"name": "Beef", "fdc_id": "174032", "per_100g": 2.1},
-        {"name": "Pork", "fdc_id": "167820", "per_100g": 2.0},
-        {"name": "Tuna", "fdc_id": "175159", "per_100g": 2.3},
-        {"name": "Tofu", "fdc_id": "174290", "per_100g": 0.7}
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 2.4, "carbs": 0, "protein": 31, "keto": "ultra_low"},
+        {"name": "Beef", "fdc_id": "174032", "per_100g": 2.1, "carbs": 0, "protein": 26, "keto": "ultra_low"},
+        {"name": "Pork", "fdc_id": "167820", "per_100g": 2.0, "carbs": 0, "protein": 26, "keto": "ultra_low"},
+        {"name": "Tuna", "fdc_id": "175159", "per_100g": 2.3, "carbs": 0, "protein": 30, "keto": "ultra_low"},
+        {"name": "Shrimp", "fdc_id": "175180", "per_100g": 2.0, "carbs": 0.2, "protein": 24, "keto": "ultra_low"}
     ],
     "Methionine": [
-        {"name": "Eggs", "fdc_id": "173424", "per_100g": 0.4},
-        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 0.7},
-        {"name": "Brazil nuts", "fdc_id": "170569", "per_100g": 1.1},
-        {"name": "Beef", "fdc_id": "174032", "per_100g": 0.6},
-        {"name": "Tuna", "fdc_id": "175159", "per_100g": 0.8}
+        {"name": "Eggs", "fdc_id": "173424", "per_100g": 0.4, "carbs": 0.7, "protein": 13, "keto": "ultra_low"},
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 0.7, "carbs": 0, "protein": 31, "keto": "ultra_low"},
+        {"name": "Brazil nuts", "fdc_id": "170569", "per_100g": 1.1, "carbs": 4, "protein": 14, "keto": "low"},
+        {"name": "Beef", "fdc_id": "174032", "per_100g": 0.6, "carbs": 0, "protein": 26, "keto": "ultra_low"},
+        {"name": "Tuna", "fdc_id": "175159", "per_100g": 0.8, "carbs": 0, "protein": 30, "keto": "ultra_low"}
     ],
     "Phenylalanine": [
-        {"name": "Beef", "fdc_id": "174032", "per_100g": 1.0},
-        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 1.0},
-        {"name": "Soybeans", "fdc_id": "174270", "per_100g": 2.1},
-        {"name": "Eggs", "fdc_id": "173424", "per_100g": 0.7},
-        {"name": "Cheese (parmesan)", "fdc_id": "173420", "per_100g": 1.9}
+        {"name": "Beef", "fdc_id": "174032", "per_100g": 1.0, "carbs": 0, "protein": 26, "keto": "ultra_low"},
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 1.0, "carbs": 0, "protein": 31, "keto": "ultra_low"},
+        {"name": "Parmesan cheese", "fdc_id": "173420", "per_100g": 1.9, "carbs": 3.2, "protein": 38, "keto": "low"},
+        {"name": "Eggs", "fdc_id": "173424", "per_100g": 0.7, "carbs": 0.7, "protein": 13, "keto": "ultra_low"},
+        {"name": "Pork", "fdc_id": "167820", "per_100g": 0.9, "carbs": 0, "protein": 26, "keto": "ultra_low"}
     ],
     "Valine": [
-        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 1.3},
-        {"name": "Beef", "fdc_id": "174032", "per_100g": 1.3},
-        {"name": "Cottage cheese", "fdc_id": "173417", "per_100g": 0.8},
-        {"name": "Eggs", "fdc_id": "173424", "per_100g": 0.9},
-        {"name": "Soybeans", "fdc_id": "174270", "per_100g": 2.0}
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 1.3, "carbs": 0, "protein": 31, "keto": "ultra_low"},
+        {"name": "Beef", "fdc_id": "174032", "per_100g": 1.3, "carbs": 0, "protein": 26, "keto": "ultra_low"},
+        {"name": "Cottage cheese", "fdc_id": "173417", "per_100g": 0.8, "carbs": 3.4, "protein": 11, "keto": "low"},
+        {"name": "Eggs", "fdc_id": "173424", "per_100g": 0.9, "carbs": 0.7, "protein": 13, "keto": "ultra_low"},
+        {"name": "Turkey", "fdc_id": "171082", "per_100g": 1.2, "carbs": 0, "protein": 29, "keto": "ultra_low"}
     ],
     "Histidine": [
-        {"name": "Beef", "fdc_id": "174032", "per_100g": 1.0},
-        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 0.9},
-        {"name": "Tuna", "fdc_id": "175159", "per_100g": 1.5},
-        {"name": "Pork", "fdc_id": "167820", "per_100g": 1.0},
-        {"name": "Soybeans", "fdc_id": "174270", "per_100g": 1.1}
+        {"name": "Beef", "fdc_id": "174032", "per_100g": 1.0, "carbs": 0, "protein": 26, "keto": "ultra_low"},
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 0.9, "carbs": 0, "protein": 31, "keto": "ultra_low"},
+        {"name": "Tuna", "fdc_id": "175159", "per_100g": 1.5, "carbs": 0, "protein": 30, "keto": "ultra_low"},
+        {"name": "Pork", "fdc_id": "167820", "per_100g": 1.0, "carbs": 0, "protein": 26, "keto": "ultra_low"},
+        {"name": "Salmon", "fdc_id": "175168", "per_100g": 0.9, "carbs": 0, "protein": 25, "keto": "ultra_low"}
     ]
 }
+
+# Keto-friendly complete protein foods with carb data
+KETO_COMPLETE_PROTEINS = [
+    {
+        "name": "Eggs, whole",
+        "fdc_id": "173424",
+        "protein_per_100g": 12.6,
+        "carbs_per_100g": 0.7,
+        "fat_per_100g": 9.5,
+        "keto_tier": "ultra_low",
+        "description": "Perfect keto food - all 9 essential amino acids, virtually zero carbs"
+    },
+    {
+        "name": "Chicken breast",
+        "fdc_id": "171534",
+        "protein_per_100g": 31.0,
+        "carbs_per_100g": 0,
+        "fat_per_100g": 3.6,
+        "keto_tier": "ultra_low",
+        "description": "Zero carb complete protein, lean and versatile"
+    },
+    {
+        "name": "Beef ribeye",
+        "fdc_id": "174032",
+        "protein_per_100g": 26.0,
+        "carbs_per_100g": 0,
+        "fat_per_100g": 18.0,
+        "keto_tier": "ultra_low",
+        "description": "Zero carb, high fat - ideal keto macro ratio"
+    },
+    {
+        "name": "Salmon, Atlantic",
+        "fdc_id": "175168",
+        "protein_per_100g": 25.4,
+        "carbs_per_100g": 0,
+        "fat_per_100g": 13.0,
+        "keto_tier": "ultra_low",
+        "description": "Zero carb with omega-3s, excellent for keto"
+    },
+    {
+        "name": "Pork belly",
+        "fdc_id": "167820",
+        "protein_per_100g": 9.3,
+        "carbs_per_100g": 0,
+        "fat_per_100g": 53.0,
+        "keto_tier": "ultra_low",
+        "description": "Ultra high fat, zero carb - keto staple"
+    },
+    {
+        "name": "Bacon",
+        "fdc_id": "168322",
+        "protein_per_100g": 37.0,
+        "carbs_per_100g": 1.4,
+        "fat_per_100g": 42.0,
+        "keto_tier": "ultra_low",
+        "description": "High protein, high fat, minimal carbs"
+    },
+    {
+        "name": "Cheddar cheese",
+        "fdc_id": "173414",
+        "protein_per_100g": 25.0,
+        "carbs_per_100g": 1.3,
+        "fat_per_100g": 33.0,
+        "keto_tier": "ultra_low",
+        "description": "Complete protein with excellent fat content"
+    },
+    {
+        "name": "Greek yogurt (full fat)",
+        "fdc_id": "170903",
+        "protein_per_100g": 10.0,
+        "carbs_per_100g": 4.0,
+        "fat_per_100g": 5.0,
+        "keto_tier": "low",
+        "description": "Low carb option - watch portions on strict keto"
+    }
+]
+
+# Keto meal combinations for complete amino acid profiles
+KETO_MEAL_COMBOS = [
+    {
+        "name": "Steak & Eggs",
+        "foods": ["Beef ribeye", "Eggs"],
+        "total_protein": 38.6,
+        "total_carbs": 0.7,
+        "description": "Classic keto combo - complete amino acids, near-zero carbs",
+        "amino_profile": "complete"
+    },
+    {
+        "name": "Salmon & Avocado",
+        "foods": ["Salmon", "Avocado"],
+        "total_protein": 27.4,
+        "total_carbs": 1.8,
+        "description": "Omega-3 rich with healthy fats, complete protein",
+        "amino_profile": "complete"
+    },
+    {
+        "name": "Bacon & Cheese Omelette",
+        "foods": ["Bacon", "Eggs", "Cheddar cheese"],
+        "total_protein": 40.0,
+        "total_carbs": 2.4,
+        "description": "High fat, high protein breakfast - all amino acids covered",
+        "amino_profile": "complete"
+    },
+    {
+        "name": "Chicken & Cheese Plate",
+        "foods": ["Chicken breast", "Parmesan"],
+        "total_protein": 56.0,
+        "total_carbs": 3.2,
+        "description": "Ultra high protein, low carb - muscle building combo",
+        "amino_profile": "complete"
+    },
+    {
+        "name": "Tuna Salad (no bread)",
+        "foods": ["Tuna", "Eggs", "Mayonnaise"],
+        "total_protein": 43.0,
+        "total_carbs": 0.8,
+        "description": "Quick keto lunch - complete protein, minimal carbs",
+        "amino_profile": "complete"
+    },
+    {
+        "name": "Pork Chops & Butter",
+        "foods": ["Pork chop", "Butter"],
+        "total_protein": 26.0,
+        "total_carbs": 0,
+        "description": "Zero carb meal with all essential amino acids",
+        "amino_profile": "complete"
+    }
+]
 
 # ============== Models ==============
 
@@ -794,62 +922,106 @@ async def get_suggestions(
     return suggestions
 
 @api_router.get("/suggestions/complete-protein")
-async def get_complete_protein_foods(current_user: dict = Depends(get_current_user)):
-    """Get a list of complete protein foods (contain all essential amino acids)"""
-    complete_protein_foods = [
-        {
-            "name": "Eggs, whole, raw",
-            "fdc_id": "173424",
-            "protein_per_100g": 12.6,
-            "description": "Contains all 9 essential amino acids in optimal ratios"
-        },
-        {
-            "name": "Chicken breast, cooked",
-            "fdc_id": "171534",
-            "protein_per_100g": 31.0,
-            "description": "High quality complete protein, lean meat"
-        },
-        {
-            "name": "Salmon, Atlantic, cooked",
-            "fdc_id": "175168",
-            "protein_per_100g": 25.4,
-            "description": "Complete protein with omega-3 fatty acids"
-        },
-        {
-            "name": "Beef, ground, 90% lean",
-            "fdc_id": "174032",
-            "protein_per_100g": 26.0,
-            "description": "Complete protein rich in B12 and iron"
-        },
-        {
-            "name": "Greek yogurt, plain",
-            "fdc_id": "170903",
-            "protein_per_100g": 10.0,
-            "description": "Complete protein with probiotics"
-        },
-        {
-            "name": "Quinoa, cooked",
-            "fdc_id": "168917",
-            "protein_per_100g": 4.4,
-            "description": "Plant-based complete protein (rare for plants)"
-        },
-        {
-            "name": "Soybeans, mature, cooked",
-            "fdc_id": "174270",
-            "protein_per_100g": 18.2,
-            "description": "Plant-based complete protein"
-        },
-        {
-            "name": "Whey protein isolate",
-            "fdc_id": "173178",
-            "protein_per_100g": 90.0,
-            "description": "Highly concentrated complete protein supplement"
-        }
-    ]
+async def get_complete_protein_foods(
+    keto_only: bool = Query(True, description="Show only keto-friendly options"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get a list of keto-friendly complete protein foods"""
+    return {
+        "complete_protein_foods": KETO_COMPLETE_PROTEINS,
+        "tip": "All foods shown are keto-friendly with less than 5g carbs per 100g. Ultra-low means under 2g carbs."
+    }
+
+@api_router.get("/suggestions/keto-meals")
+async def get_keto_meal_combos(current_user: dict = Depends(get_current_user)):
+    """Get pre-built keto meal combinations with complete amino acid profiles"""
+    return {
+        "meal_combos": KETO_MEAL_COMBOS,
+        "tip": "These meal combinations provide all 9 essential amino acids while staying under 5g net carbs per meal."
+    }
+
+@api_router.post("/meal-builder/analyze")
+async def analyze_meal_combo(
+    food_ids: List[str] = Query(..., description="List of FDC IDs to combine"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Analyze a combination of foods for combined amino acid profile and keto-friendliness"""
+    combined_amino_acids = {}
+    total_protein = 0
+    total_carbs = 0
+    total_fat = 0
+    total_calories = 0
+    foods_data = []
+    
+    for fdc_id in food_ids[:10]:  # Limit to 10 foods
+        food_data = await fdc_client.get_food_details(fdc_id)
+        if not food_data:
+            continue
+        
+        food_detail = fdc_client.parse_food_detail(food_data)
+        foods_data.append({
+            "fdc_id": fdc_id,
+            "name": food_detail.description,
+            "protein": food_detail.protein,
+            "carbs": food_detail.carbs,
+            "fat": food_detail.fat,
+            "calories": food_detail.calories
+        })
+        
+        total_protein += food_detail.protein
+        total_carbs += food_detail.carbs
+        total_fat += food_detail.fat
+        total_calories += food_detail.calories
+        
+        for aa in food_detail.amino_acids:
+            combined_amino_acids[aa.name] = combined_amino_acids.get(aa.name, 0) + aa.value
+    
+    # Check for complete protein
+    essential_present = []
+    essential_missing = []
+    for aa_name in ESSENTIAL_AMINO_ACIDS.keys():
+        if combined_amino_acids.get(aa_name, 0) > 0:
+            essential_present.append(aa_name)
+        else:
+            essential_missing.append(aa_name)
+    
+    is_complete = len(essential_missing) == 0
+    
+    # Determine keto tier
+    if total_carbs <= 2:
+        keto_tier = "ultra_low"
+        keto_label = "Ultra Low Carb (≤2g)"
+    elif total_carbs <= 5:
+        keto_tier = "low"
+        keto_label = "Low Carb (≤5g)"
+    elif total_carbs <= 10:
+        keto_tier = "moderate"
+        keto_label = "Moderate Carb (≤10g)"
+    else:
+        keto_tier = "high"
+        keto_label = "Higher Carb (>10g) - May not fit strict keto"
     
     return {
-        "complete_protein_foods": complete_protein_foods,
-        "tip": "Complete proteins contain all 9 essential amino acids. Eating a variety ensures optimal amino acid balance."
+        "foods": foods_data,
+        "combined_macros": {
+            "protein": round(total_protein, 1),
+            "carbs": round(total_carbs, 1),
+            "fat": round(total_fat, 1),
+            "calories": round(total_calories, 1)
+        },
+        "combined_amino_acids": {k: round(v, 3) for k, v in sorted(combined_amino_acids.items())},
+        "amino_acid_analysis": {
+            "is_complete_protein": is_complete,
+            "essential_present": essential_present,
+            "essential_missing": essential_missing,
+            "completeness_score": round((len(essential_present) / 9) * 100, 1)
+        },
+        "keto_analysis": {
+            "tier": keto_tier,
+            "label": keto_label,
+            "net_carbs": round(total_carbs, 1),
+            "is_keto_friendly": total_carbs <= 10
+        }
     }
 
 # ============== Food Log Routes ==============

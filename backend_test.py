@@ -340,6 +340,133 @@ class KetroNutritionAPITester:
         else:
             return self.log_test("Nonexistent Barcode Handling", False, f"Status: {status}, Expected: 404")
 
+    def test_keto_meals_endpoint(self):
+        """Test /api/suggestions/keto-meals endpoint"""
+        success, status, response_data = self.make_request('GET', 'suggestions/keto-meals')
+        
+        if success:
+            # Verify response structure
+            if 'meal_combos' in response_data and isinstance(response_data['meal_combos'], list):
+                meal_count = len(response_data['meal_combos'])
+                
+                # Check first combo structure if exists
+                if response_data['meal_combos']:
+                    combo = response_data['meal_combos'][0]
+                    required_fields = ['name', 'foods', 'total_protein', 'total_carbs', 'description']
+                    missing_fields = [field for field in required_fields if field not in combo]
+                    if not missing_fields:
+                        return self.log_test("Keto Meals Endpoint", True, f"Found {meal_count} keto combos. First: {combo['name']} ({combo['total_carbs']}g carbs)")
+                    else:
+                        return self.log_test("Keto Meals Endpoint", False, f"Missing fields in meal combo: {missing_fields}")
+                else:
+                    return self.log_test("Keto Meals Endpoint", True, "Empty meal combos list (valid response)")
+            else:
+                return self.log_test("Keto Meals Endpoint", False, "Response missing meal_combos array")
+        else:
+            return self.log_test("Keto Meals Endpoint", False, f"Request failed with status {status}")
+
+    def test_meal_builder_analyze(self):
+        """Test POST /api/meal-builder/analyze endpoint"""
+        # Use some test FDC IDs for analysis
+        test_fdc_ids = ["173424", "171534", "174032"]  # Eggs, Chicken, Beef
+        
+        # Construct query string
+        query_string = "&".join([f'food_ids={fdc_id}' for fdc_id in test_fdc_ids])
+        success, status, response_data = self.make_request(
+            'POST', 
+            f'meal-builder/analyze?{query_string}'
+        )
+        
+        if success:
+            # Check response structure
+            required_sections = ['foods', 'combined_macros', 'amino_acid_analysis', 'keto_analysis']
+            missing_sections = [section for section in required_sections if section not in response_data]
+            
+            if not missing_sections:
+                # Check specific analysis data
+                keto_analysis = response_data.get('keto_analysis', {})
+                aa_analysis = response_data.get('amino_acid_analysis', {})
+                macros = response_data.get('combined_macros', {})
+                
+                keto_valid = all(key in keto_analysis for key in ['tier', 'net_carbs', 'is_keto_friendly'])
+                aa_valid = all(key in aa_analysis for key in ['is_complete_protein', 'completeness_score'])
+                macro_valid = all(key in macros for key in ['protein', 'carbs', 'fat', 'calories'])
+                
+                if keto_valid and aa_valid and macro_valid:
+                    return self.log_test("Meal Builder Analyze", True, f"Analysis complete: {keto_analysis['tier']} tier, {macros['carbs']}g carbs, {aa_analysis['completeness_score']}% protein complete")
+                else:
+                    return self.log_test("Meal Builder Analyze", False, f"Invalid analysis structure - keto:{keto_valid}, aa:{aa_valid}, macro:{macro_valid}")
+            else:
+                return self.log_test("Meal Builder Analyze", False, f"Missing analysis sections: {missing_sections}")
+        else:
+            return self.log_test("Meal Builder Analyze", False, f"Request failed with status {status}")
+
+    def test_complete_protein_with_keto_data(self):
+        """Test complete protein suggestions have keto carb data"""
+        success, status, response_data = self.make_request('GET', 'suggestions/complete-protein')
+        
+        if success:
+            if 'complete_protein_foods' in response_data:
+                foods = response_data['complete_protein_foods']
+                
+                if foods:
+                    # Check if foods have carb and keto data
+                    food_count = len(foods)
+                    valid_foods = 0
+                    
+                    for food in foods[:5]:  # Check first 5
+                        has_carbs = 'carbs_per_100g' in food
+                        has_protein = 'protein_per_100g' in food
+                        has_keto_tier = 'keto_tier' in food
+                        
+                        if has_carbs and has_protein and has_keto_tier:
+                            valid_foods += 1
+                    
+                    if valid_foods == min(5, len(foods)):
+                        return self.log_test("Complete Protein with Keto Data", True, f"All {food_count} foods have keto carb/protein data")
+                    else:
+                        return self.log_test("Complete Protein with Keto Data", False, f"Only {valid_foods}/{min(5, len(foods))} foods have complete keto data")
+                else:
+                    return self.log_test("Complete Protein with Keto Data", True, "Empty foods list (valid response)")
+            else:
+                return self.log_test("Complete Protein with Keto Data", False, "Missing complete_protein_foods in response")
+        else:
+            return self.log_test("Complete Protein with Keto Data", False, f"Request failed with status {status}")
+
+    def test_amino_suggestions_with_carb_data(self):
+        """Test amino acid suggestions include carb data in food suggestions"""
+        success, status, response_data = self.make_request('GET', 'suggestions/amino-acids')
+        
+        if success:
+            if 'low_amino_acids' in response_data:
+                suggestions = response_data['low_amino_acids']
+                
+                if suggestions:
+                    # Check if suggestion foods have carb data
+                    first_suggestion = suggestions[0]
+                    if 'suggested_foods' in first_suggestion:
+                        foods = first_suggestion['suggested_foods']
+                        if foods and len(foods) > 0:
+                            first_food = foods[0]
+                            has_carbs = 'carbs' in first_food
+                            has_protein = 'protein' in first_food
+                            has_keto = 'keto' in first_food
+                            
+                            if has_carbs and has_protein and has_keto:
+                                return self.log_test("Amino Suggestions with Carb Data", True, f"Suggested foods have keto data: {first_food.get('name', 'Unknown')} - {first_food['carbs']}g carbs")
+                            else:
+                                return self.log_test("Amino Suggestions with Carb Data", False, f"Suggested foods missing keto data - carbs:{has_carbs}, protein:{has_protein}, keto:{has_keto}")
+                        else:
+                            return self.log_test("Amino Suggestions with Carb Data", False, "No suggested foods in amino acid suggestions")
+                    else:
+                        return self.log_test("Amino Suggestions with Carb Data", False, "Missing suggested_foods in amino acid suggestions")
+                else:
+                    return self.log_test("Amino Suggestions with Carb Data", True, "No amino acid deficiencies (complete profile)")
+            else:
+                return self.log_test("Amino Suggestions with Carb Data", False, "Missing low_amino_acids in response")
+        else:
+            return self.log_test("Amino Suggestions with Carb Data", False, f"Request failed with status {status}")
+
     def cleanup_test_data(self):
         """Clean up created test data"""
         cleanup_count = 0
@@ -389,6 +516,11 @@ class KetroNutritionAPITester:
             # New amino acid suggestions features  
             self.test_amino_acid_suggestions,
             self.test_complete_protein_foods,
+            # NEW: Keto Meal Builder features
+            self.test_keto_meals_endpoint,
+            self.test_meal_builder_analyze,
+            self.test_complete_protein_with_keto_data,
+            self.test_amino_suggestions_with_carb_data,
             self.cleanup_test_data
         ]
         

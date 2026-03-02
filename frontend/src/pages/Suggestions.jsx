@@ -11,9 +11,12 @@ import {
   Beaker,
   Target,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Leaf,
+  ChefHat
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '../lib/utils';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -181,9 +184,9 @@ export const Suggestions = () => {
                   </button>
                   
                   {expandedAA === item.amino_acid && (
-                    <div className="px-5 pb-5 border-t border-white/5 pt-4">
+                      <div className="px-5 pb-5 border-t border-white/5 pt-4">
                       <h5 className="text-sm font-semibold text-zinc-400 mb-3">
-                        Suggested Foods High in {item.amino_acid}
+                        Keto-Friendly Foods High in {item.amino_acid}
                       </h5>
                       <div className="space-y-2">
                         {item.suggested_foods.map((food, fidx) => (
@@ -192,13 +195,22 @@ export const Suggestions = () => {
                             onClick={() => navigate(`/search?q=${encodeURIComponent(food.name)}`)}
                             className="w-full flex items-center justify-between p-3 rounded-xl bg-black/30 border border-white/5 hover:border-emerald-500/30 transition-all group"
                           >
-                            <div>
-                              <p className="text-white font-medium group-hover:text-emerald-400 transition-colors">
-                                {food.name}
-                              </p>
-                              <p className="text-xs text-zinc-500">
-                                {food.per_100g}g {item.amino_acid} per 100g
-                              </p>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="text-white font-medium group-hover:text-emerald-400 transition-colors">
+                                  {food.name}
+                                </p>
+                                {food.keto === 'ultra_low' && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
+                                    0 carb
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex gap-3 mt-1 text-xs">
+                                <span className="text-emerald-400">{food.protein}g protein</span>
+                                <span className="text-zinc-500">{food.carbs}g carbs</span>
+                                <span className="text-cyan-400">{food.per_100g}g {item.amino_acid}</span>
+                              </div>
                             </div>
                             <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-emerald-400 transition-colors" />
                           </button>
@@ -217,12 +229,12 @@ export const Suggestions = () => {
           <GlassCardHeader>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-emerald-400" />
+                <Leaf className="w-5 h-5 text-emerald-400" />
               </div>
               <div>
-                <GlassCardTitle>Complete Protein Foods</GlassCardTitle>
+                <GlassCardTitle>Keto Complete Proteins</GlassCardTitle>
                 <p className="text-xs text-zinc-500 mt-0.5">
-                  Foods containing all 9 essential amino acids
+                  Low carb foods with all 9 essential amino acids
                 </p>
               </div>
             </div>
@@ -239,13 +251,24 @@ export const Suggestions = () => {
                     <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white font-medium group-hover:text-emerald-400 transition-colors truncate">
-                      {food.name}
-                    </p>
-                    <p className="text-xs text-zinc-500 mt-0.5">
-                      {food.protein_per_100g}g protein per 100g
-                    </p>
-                    <p className="text-xs text-zinc-600 mt-1 line-clamp-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-white font-medium group-hover:text-emerald-400 transition-colors truncate">
+                        {food.name}
+                      </p>
+                      <span className={cn(
+                        'text-[10px] px-1.5 py-0.5 rounded-full whitespace-nowrap',
+                        food.keto_tier === 'ultra_low' 
+                          ? 'bg-emerald-500/20 text-emerald-400' 
+                          : 'bg-cyan-500/20 text-cyan-400'
+                      )}>
+                        {food.carbs_per_100g}g carbs
+                      </span>
+                    </div>
+                    <div className="flex gap-3 text-xs mb-1">
+                      <span className="text-emerald-400">{food.protein_per_100g}g protein</span>
+                      <span className="text-cyan-400">{food.fat_per_100g}g fat</span>
+                    </div>
+                    <p className="text-xs text-zinc-600 line-clamp-2">
                       {food.description}
                     </p>
                   </div>
@@ -256,11 +279,21 @@ export const Suggestions = () => {
             {completeProteins?.tip && (
               <div className="mt-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                 <p className="text-sm text-emerald-400">
-                  <Sparkles className="w-4 h-4 inline mr-2" />
+                  <Leaf className="w-4 h-4 inline mr-2" />
                   {completeProteins.tip}
                 </p>
               </div>
             )}
+
+            {/* Meal Builder CTA */}
+            <button
+              onClick={() => navigate('/meal-builder')}
+              className="w-full mt-4 flex items-center justify-center gap-3 p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 hover:bg-orange-500/20 transition-all"
+            >
+              <ChefHat className="w-5 h-5" />
+              <span className="font-medium">Build Custom Keto Meal</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </GlassCardContent>
         </GlassCard>
       </div>
