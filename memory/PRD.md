@@ -54,16 +54,19 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 ## What's Been Implemented (March 2, 2026)
 
 ### Backend
-- Complete FastAPI server with 20+ endpoints
+- Complete FastAPI server with 25+ endpoints
 - JWT authentication with secure password hashing
 - USDA FDC API integration with amino acid extraction
 - Correct nutrient IDs for all 18 amino acids (1210-1228)
 - Food logging with amino acid tracking
 - Daily/Weekly stats aggregation
 - Meal plans and favorites CRUD
-- **NEW: Open Food Facts barcode lookup integration**
-- **NEW: Amino acid suggestions based on daily intake deficits**
-- **NEW: Complete protein foods recommendations**
+- Open Food Facts barcode lookup integration
+- Amino acid suggestions based on daily intake deficits
+- **NEW: Keto Meal Builder with combined amino acid analysis**
+- **NEW: Keto tier classification (ultra_low, low, moderate, high)**
+- **NEW: Pre-built keto meal combos (Steak & Eggs, etc.)**
+- **NEW: All food suggestions include carb data for keto-friendliness**
 
 ### Frontend
 - "Isotope" bioluminescent dark theme design
@@ -76,9 +79,12 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - Food log with date picker
 - Trends page with weekly chart
 - Settings with protein goal
-- **NEW: Barcode Scanner page with camera support**
-- **NEW: Amino Acid Suggestions page**
-- **NEW: Quick action buttons on dashboard**
+- Barcode Scanner page with camera support
+- Amino Acid Suggestions page
+- Quick action buttons on dashboard
+- **NEW: Keto Meal Builder page**
+- **NEW: Keto tier badges on all foods (0g carbs, 1.3g carbs, etc.)**
+- **NEW: Quick Keto Combos with macro breakdowns**
 
 ## Prioritized Backlog
 
