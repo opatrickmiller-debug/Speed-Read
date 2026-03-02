@@ -49,30 +49,31 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Essential Amino Acids data
+# Essential Amino Acids data (USDA FDC nutrient IDs)
 ESSENTIAL_AMINO_ACIDS = {
-    "Histidine": {"id": 512, "rda_mg_per_kg": 14},
-    "Isoleucine": {"id": 503, "rda_mg_per_kg": 19},
-    "Leucine": {"id": 504, "rda_mg_per_kg": 42},
-    "Lysine": {"id": 505, "rda_mg_per_kg": 38},
-    "Methionine": {"id": 506, "rda_mg_per_kg": 19},
-    "Phenylalanine": {"id": 508, "rda_mg_per_kg": 33},
-    "Threonine": {"id": 502, "rda_mg_per_kg": 20},
-    "Tryptophan": {"id": 501, "rda_mg_per_kg": 5},
-    "Valine": {"id": 510, "rda_mg_per_kg": 24}
+    "Tryptophan": {"id": 1210, "rda_mg_per_kg": 5},
+    "Threonine": {"id": 1211, "rda_mg_per_kg": 20},
+    "Isoleucine": {"id": 1212, "rda_mg_per_kg": 19},
+    "Leucine": {"id": 1213, "rda_mg_per_kg": 42},
+    "Lysine": {"id": 1214, "rda_mg_per_kg": 38},
+    "Methionine": {"id": 1215, "rda_mg_per_kg": 19},
+    "Phenylalanine": {"id": 1217, "rda_mg_per_kg": 33},
+    "Valine": {"id": 1219, "rda_mg_per_kg": 24},
+    "Histidine": {"id": 1221, "rda_mg_per_kg": 14}
 }
 
 ALL_AMINO_ACIDS = {
     **ESSENTIAL_AMINO_ACIDS,
-    "Alanine": {"id": 513, "essential": False},
-    "Arginine": {"id": 511, "essential": False},
-    "Aspartic acid": {"id": 514, "essential": False},
-    "Cystine": {"id": 507, "essential": False},
-    "Glutamic acid": {"id": 515, "essential": False},
-    "Glycine": {"id": 516, "essential": False},
-    "Proline": {"id": 517, "essential": False},
-    "Serine": {"id": 518, "essential": False},
-    "Tyrosine": {"id": 509, "essential": False}
+    "Cystine": {"id": 1216, "essential": False},
+    "Tyrosine": {"id": 1218, "essential": False},
+    "Arginine": {"id": 1220, "essential": False},
+    "Alanine": {"id": 1222, "essential": False},
+    "Aspartic acid": {"id": 1223, "essential": False},
+    "Glutamic acid": {"id": 1224, "essential": False},
+    "Glycine": {"id": 1225, "essential": False},
+    "Proline": {"id": 1226, "essential": False},
+    "Serine": {"id": 1227, "essential": False},
+    "Hydroxyproline": {"id": 1228, "essential": False}
 }
 
 # ============== Models ==============
