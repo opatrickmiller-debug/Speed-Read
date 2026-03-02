@@ -467,6 +467,197 @@ class KetroNutritionAPITester:
         else:
             return self.log_test("Amino Suggestions with Carb Data", False, f"Request failed with status {status}")
 
+    def test_update_user_settings(self):
+        """Test PUT /api/auth/settings - body composition and carb limits"""
+        settings_data = {
+            "body_weight_kg": 75.0,
+            "body_fat_percentage": 18.5,
+            "protein_per_kg_lbm": 2.2,
+            "daily_carb_limit": 25.0,
+            "protein_goal": 160.0
+        }
+        
+        success, status, response_data = self.make_request('PUT', 'auth/settings', settings_data)
+        
+        if success:
+            # Check if all settings were updated
+            required_fields = ['body_weight_kg', 'body_fat_percentage', 'protein_per_kg_lbm', 'daily_carb_limit', 'protein_goal']
+            updated_correctly = all(
+                response_data.get(field) == settings_data[field] 
+                for field in required_fields
+            )
+            
+            if updated_correctly:
+                return self.log_test("Update User Settings", True, f"All settings updated: weight={response_data['body_weight_kg']}kg, bf={response_data['body_fat_percentage']}%, carb_limit={response_data['daily_carb_limit']}g")
+            else:
+                return self.log_test("Update User Settings", False, "Settings not updated correctly in response")
+        else:
+            return self.log_test("Update User Settings", False, f"Request failed with status {status}")
+
+    def test_calculate_protein_goal(self):
+        """Test GET /api/auth/calculate-protein-goal - protein calculation from lean body mass"""
+        success, status, response_data = self.make_request('GET', 'auth/calculate-protein-goal')
+        
+        if success:
+            required_fields = ['body_weight_kg', 'body_fat_percentage', 'lean_body_mass_kg', 'protein_per_kg_lbm', 'recommended_protein_goal', 'formula']
+            missing_fields = [field for field in required_fields if field not in response_data]
+            
+            if not missing_fields:
+                # Verify calculation makes sense
+                body_weight = response_data.get('body_weight_kg', 0)
+                bf_pct = response_data.get('body_fat_percentage', 0)
+                lbm = response_data.get('lean_body_mass_kg', 0)
+                multiplier = response_data.get('protein_per_kg_lbm', 0)
+                protein_goal = response_data.get('recommended_protein_goal', 0)
+                
+                expected_lbm = body_weight * (1 - bf_pct / 100)
+                expected_protein = expected_lbm * multiplier
+                
+                if abs(lbm - expected_lbm) < 0.1 and abs(protein_goal - expected_protein) < 1:
+                    return self.log_test("Calculate Protein Goal", True, f"LBM: {lbm}kg, Protein: {protein_goal}g (formula: {response_data.get('formula', 'N/A')})")
+                else:
+                    return self.log_test("Calculate Protein Goal", False, f"Calculation mismatch - expected LBM: {expected_lbm}, got: {lbm}")
+            else:
+                return self.log_test("Calculate Protein Goal", False, f"Missing fields: {missing_fields}")
+        else:
+            return self.log_test("Calculate Protein Goal", False, f"Request failed with status {status}")
+
+    def test_keto_score_endpoint(self):
+        """Test GET /api/keto-score - daily keto score calculation"""
+        success, status, response_data = self.make_request('GET', 'keto-score')
+        
+        if success:
+            required_fields = ['date', 'net_carbs', 'carb_limit', 'carbs_remaining', 'score', 'status', 'color', 'message']
+            missing_fields = [field for field in required_fields if field not in response_data]
+            
+            if not missing_fields:
+                score = response_data.get('score', 0)
+                status_val = response_data.get('status', '')
+                net_carbs = response_data.get('net_carbs', 0)
+                carb_limit = response_data.get('carb_limit', 0)
+                color = response_data.get('color', '')
+                
+                # Validate status logic
+                valid_status = status_val in ['ketosis', 'borderline', 'over_limit']
+                valid_color = color in ['emerald', 'amber', 'red']
+                valid_score = 0 <= score <= 100
+                
+                if valid_status and valid_color and valid_score:
+                    return self.log_test("Keto Score Endpoint", True, f"Score: {score}/100, Status: {status_val}, Net carbs: {net_carbs}g/{carb_limit}g")
+                else:
+                    return self.log_test("Keto Score Endpoint", False, f"Invalid values - status:{valid_status}, color:{valid_color}, score:{valid_score}")
+            else:
+                return self.log_test("Keto Score Endpoint", False, f"Missing fields: {missing_fields}")
+        else:
+            return self.log_test("Keto Score Endpoint", False, f"Request failed with status {status}")
+
+    def test_custom_meals_create(self):
+        """Test POST /api/custom-meals - create custom meal"""
+        meal_data = {
+            "name": "Test Keto Breakfast",
+            "description": "High protein, low carb breakfast",
+            "foods": [
+                {
+                    "fdc_id": "173424",
+                    "description": "Eggs, whole, raw, fresh",
+                    "protein": 12.6,
+                    "carbs": 0.7,
+                    "fat": 9.5,
+                    "calories": 155,
+                    "servings": 2,
+                    "serving_size": 100,
+                    "serving_unit": "g",
+                    "amino_acids": []
+                },
+                {
+                    "fdc_id": "168322",
+                    "description": "Pork, cured, bacon, raw",
+                    "protein": 37.0,
+                    "carbs": 1.4,
+                    "fat": 42.0,
+                    "calories": 541,
+                    "servings": 0.5,
+                    "serving_size": 100,
+                    "serving_unit": "g",
+                    "amino_acids": []
+                }
+            ]
+        }
+        
+        success, status, response_data = self.make_request('POST', 'custom-meals', meal_data)
+        
+        if success:
+            required_fields = ['id', 'name', 'description', 'foods', 'total_protein', 'total_carbs', 'total_fat', 'total_calories', 'is_complete_protein', 'keto_tier']
+            missing_fields = [field for field in required_fields if field not in response_data]
+            
+            if not missing_fields:
+                self.created_custom_meal_id = response_data['id']
+                meal_name = response_data.get('name')
+                total_protein = response_data.get('total_protein', 0)
+                total_carbs = response_data.get('total_carbs', 0)
+                keto_tier = response_data.get('keto_tier', '')
+                
+                return self.log_test("Custom Meals Create", True, f"Created '{meal_name}' (ID: {self.created_custom_meal_id[:8]}...) - {total_protein}g protein, {total_carbs}g carbs, tier: {keto_tier}")
+            else:
+                return self.log_test("Custom Meals Create", False, f"Missing fields: {missing_fields}")
+        else:
+            return self.log_test("Custom Meals Create", False, f"Request failed with status {status}")
+
+    def test_custom_meals_get_all(self):
+        """Test GET /api/custom-meals - list user's custom meals"""
+        success, status, response_data = self.make_request('GET', 'custom-meals')
+        
+        if success and isinstance(response_data, list):
+            meal_count = len(response_data)
+            
+            if hasattr(self, 'created_custom_meal_id') and meal_count > 0:
+                # Check if our created meal is in the list
+                created_meal = next((meal for meal in response_data if meal.get('id') == self.created_custom_meal_id), None)
+                if created_meal:
+                    return self.log_test("Custom Meals Get All", True, f"Found {meal_count} custom meals, including our created meal")
+                else:
+                    return self.log_test("Custom Meals Get All", False, f"Created meal not found in list of {meal_count} meals")
+            else:
+                return self.log_test("Custom Meals Get All", True, f"Retrieved {meal_count} custom meals")
+        else:
+            return self.log_test("Custom Meals Get All", False, f"Request failed with status {status} or invalid response format")
+
+    def test_custom_meals_log(self):
+        """Test POST /api/custom-meals/{id}/log - log custom meal to daily food log"""
+        if not hasattr(self, 'created_custom_meal_id'):
+            return self.log_test("Custom Meals Log", False, "No custom meal ID available")
+        
+        meal_id = self.created_custom_meal_id
+        success, status, response_data = self.make_request('POST', f'custom-meals/{meal_id}/log?meal_type=breakfast')
+        
+        if success:
+            if 'log_ids' in response_data and 'message' in response_data:
+                log_ids = response_data.get('log_ids', [])
+                message = response_data.get('message', '')
+                self.custom_meal_log_ids = log_ids  # Store for cleanup
+                
+                return self.log_test("Custom Meals Log", True, f"Logged custom meal: {message} (created {len(log_ids)} log entries)")
+            else:
+                return self.log_test("Custom Meals Log", False, "Response missing expected fields")
+        else:
+            return self.log_test("Custom Meals Log", False, f"Request failed with status {status}")
+
+    def test_custom_meals_delete(self):
+        """Test DELETE /api/custom-meals/{id} - delete custom meal"""
+        if not hasattr(self, 'created_custom_meal_id'):
+            return self.log_test("Custom Meals Delete", False, "No custom meal ID available")
+        
+        meal_id = self.created_custom_meal_id
+        success, status, response_data = self.make_request('DELETE', f'custom-meals/{meal_id}')
+        
+        if success:
+            if 'message' in response_data:
+                return self.log_test("Custom Meals Delete", True, f"Deleted custom meal: {response_data['message']}")
+            else:
+                return self.log_test("Custom Meals Delete", True, "Custom meal deleted (no message)")
+        else:
+            return self.log_test("Custom Meals Delete", False, f"Request failed with status {status}")
+
     def cleanup_test_data(self):
         """Clean up created test data"""
         cleanup_count = 0
@@ -482,6 +673,13 @@ class KetroNutritionAPITester:
             success, _, _ = self.make_request('DELETE', f'favorites/{self.created_favorite_id}', expected_status=200)
             if success:
                 cleanup_count += 1
+
+        # Delete logs created from custom meal
+        if hasattr(self, 'custom_meal_log_ids') and self.custom_meal_log_ids:
+            for log_id in self.custom_meal_log_ids:
+                success, _, _ = self.make_request('DELETE', f'logs/{log_id}', expected_status=200)
+                if success:
+                    cleanup_count += 1
                 
         if cleanup_count > 0:
             self.log_test("Cleanup Test Data", True, f"- Cleaned {cleanup_count} items")
@@ -498,6 +696,11 @@ class KetroNutritionAPITester:
             self.test_health_check,
             self.test_user_login,  # Use existing test user
             self.test_get_user_profile,
+            # NEW: Settings and body composition tests
+            self.test_update_user_settings,
+            self.test_calculate_protein_goal,
+            # NEW: Keto Score tests
+            self.test_keto_score_endpoint,
             self.test_food_search,
             self.test_food_details,
             self.test_create_food_log,
@@ -516,11 +719,16 @@ class KetroNutritionAPITester:
             # New amino acid suggestions features  
             self.test_amino_acid_suggestions,
             self.test_complete_protein_foods,
-            # NEW: Keto Meal Builder features
+            # Keto Meal Builder features
             self.test_keto_meals_endpoint,
             self.test_meal_builder_analyze,
             self.test_complete_protein_with_keto_data,
             self.test_amino_suggestions_with_carb_data,
+            # NEW: Custom Meals CRUD tests
+            self.test_custom_meals_create,
+            self.test_custom_meals_get_all,
+            self.test_custom_meals_log,
+            self.test_custom_meals_delete,
             self.cleanup_test_data
         ]
         

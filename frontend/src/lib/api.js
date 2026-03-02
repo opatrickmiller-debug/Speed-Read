@@ -38,6 +38,8 @@ export const authApi = {
   login: (data) => api.post('/auth/login', data),
   getMe: () => api.get('/auth/me'),
   updateProteinGoal: (protein_goal) => api.put('/auth/protein-goal', { protein_goal }),
+  updateSettings: (data) => api.put('/auth/settings', data),
+  calculateProteinGoal: () => api.get('/auth/calculate-protein-goal'),
 };
 
 // Foods
@@ -45,6 +47,20 @@ export const foodsApi = {
   search: (query, page = 1, pageSize = 25) => 
     api.get('/foods/search', { params: { query, page, page_size: pageSize } }),
   getDetails: (fdcId) => api.get(`/foods/${fdcId}`),
+};
+
+// Keto Score
+export const ketoApi = {
+  getScore: (date) => api.get('/keto-score', { params: date ? { date } : {} }),
+};
+
+// Custom Meals
+export const customMealsApi = {
+  create: (data) => api.post('/custom-meals', data),
+  getAll: () => api.get('/custom-meals'),
+  delete: (mealId) => api.delete(`/custom-meals/${mealId}`),
+  log: (mealId, mealType = 'snack') => 
+    api.post(`/custom-meals/${mealId}/log`, null, { params: { meal_type: mealType } }),
 };
 
 // Food Logs

@@ -287,12 +287,23 @@ class UserResponse(BaseModel):
     email: str
     name: str
     protein_goal: float = 150.0
+    daily_carb_limit: float = 20.0
+    body_weight_kg: float = 70.0
+    body_fat_percentage: float = 20.0
+    protein_per_kg_lbm: float = 2.0
     created_at: datetime
 
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+class UserSettingsUpdate(BaseModel):
+    protein_goal: Optional[float] = Field(None, gt=0)
+    daily_carb_limit: Optional[float] = Field(None, ge=0)
+    body_weight_kg: Optional[float] = Field(None, gt=0)
+    body_fat_percentage: Optional[float] = Field(None, ge=0, le=100)
+    protein_per_kg_lbm: Optional[float] = Field(None, gt=0)
 
 class ProteinGoalUpdate(BaseModel):
     protein_goal: float = Field(gt=0)
@@ -425,6 +436,35 @@ class AminoAcidSuggestionsResponse(BaseModel):
     missing_amino_acids: List[str]
     low_amino_acids: List[AminoAcidSuggestion]
     complete_profile: bool
+
+class KetoScore(BaseModel):
+    date: str
+    net_carbs: float
+    carb_limit: float
+    carbs_remaining: float
+    score: int  # 0-100
+    status: str  # "ketosis", "borderline", "over_limit"
+    color: str  # "emerald", "amber", "red"
+    message: str
+
+class CustomMealCreate(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    foods: List[Dict[str, Any]]
+
+class CustomMealResponse(BaseModel):
+    id: str
+    user_id: str
+    name: str
+    description: str
+    foods: List[Dict[str, Any]]
+    total_protein: float
+    total_carbs: float
+    total_fat: float
+    total_calories: float
+    is_complete_protein: bool
+    keto_tier: str
+    created_at: datetime
 
 # ============== Auth Helpers ==============
 
@@ -718,6 +758,10 @@ async def register(user_data: UserCreate):
         "name": user_data.name,
         "password": hash_password(user_data.password),
         "protein_goal": 150.0,
+        "daily_carb_limit": 20.0,
+        "body_weight_kg": 70.0,
+        "body_fat_percentage": 20.0,
+        "protein_per_kg_lbm": 2.0,
         "created_at": now.isoformat()
     }
     
@@ -732,6 +776,10 @@ async def register(user_data: UserCreate):
             email=user_data.email,
             name=user_data.name,
             protein_goal=150.0,
+            daily_carb_limit=20.0,
+            body_weight_kg=70.0,
+            body_fat_percentage=20.0,
+            protein_per_kg_lbm=2.0,
             created_at=now
         )
     )
@@ -757,6 +805,10 @@ async def login(credentials: UserLogin):
             email=user["email"],
             name=user["name"],
             protein_goal=user.get("protein_goal", 150.0),
+            daily_carb_limit=user.get("daily_carb_limit", 20.0),
+            body_weight_kg=user.get("body_weight_kg", 70.0),
+            body_fat_percentage=user.get("body_fat_percentage", 20.0),
+            protein_per_kg_lbm=user.get("protein_per_kg_lbm", 2.0),
             created_at=created_at
         )
     )
@@ -774,8 +826,74 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         email=current_user["email"],
         name=current_user["name"],
         protein_goal=current_user.get("protein_goal", 150.0),
+        daily_carb_limit=current_user.get("daily_carb_limit", 20.0),
+        body_weight_kg=current_user.get("body_weight_kg", 70.0),
+        body_fat_percentage=current_user.get("body_fat_percentage", 20.0),
+        protein_per_kg_lbm=current_user.get("protein_per_kg_lbm", 2.0),
         created_at=created_at
     )
+
+@api_router.put("/auth/settings", response_model=UserResponse)
+async def update_user_settings(data: UserSettingsUpdate, current_user: dict = Depends(get_current_user)):
+    """Update user settings including body composition and keto targets"""
+    update_fields = {}
+    
+    if data.protein_goal is not None:
+        update_fields["protein_goal"] = data.protein_goal
+    if data.daily_carb_limit is not None:
+        update_fields["daily_carb_limit"] = data.daily_carb_limit
+    if data.body_weight_kg is not None:
+        update_fields["body_weight_kg"] = data.body_weight_kg
+    if data.body_fat_percentage is not None:
+        update_fields["body_fat_percentage"] = data.body_fat_percentage
+    if data.protein_per_kg_lbm is not None:
+        update_fields["protein_per_kg_lbm"] = data.protein_per_kg_lbm
+    
+    if update_fields:
+        await db.users.update_one(
+            {"id": current_user["id"]},
+            {"$set": update_fields}
+        )
+    
+    # Fetch updated user
+    updated_user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
+    
+    created_at = updated_user.get("created_at")
+    if isinstance(created_at, str):
+        created_at = datetime.fromisoformat(created_at)
+    else:
+        created_at = datetime.now(timezone.utc)
+    
+    return UserResponse(
+        id=updated_user["id"],
+        email=updated_user["email"],
+        name=updated_user["name"],
+        protein_goal=updated_user.get("protein_goal", 150.0),
+        daily_carb_limit=updated_user.get("daily_carb_limit", 20.0),
+        body_weight_kg=updated_user.get("body_weight_kg", 70.0),
+        body_fat_percentage=updated_user.get("body_fat_percentage", 20.0),
+        protein_per_kg_lbm=updated_user.get("protein_per_kg_lbm", 2.0),
+        created_at=created_at
+    )
+
+@api_router.get("/auth/calculate-protein-goal")
+async def calculate_protein_goal(current_user: dict = Depends(get_current_user)):
+    """Calculate recommended protein goal based on lean body mass"""
+    body_weight = current_user.get("body_weight_kg", 70.0)
+    body_fat_pct = current_user.get("body_fat_percentage", 20.0)
+    protein_multiplier = current_user.get("protein_per_kg_lbm", 2.0)
+    
+    lean_body_mass = body_weight * (1 - body_fat_pct / 100)
+    recommended_protein = lean_body_mass * protein_multiplier
+    
+    return {
+        "body_weight_kg": body_weight,
+        "body_fat_percentage": body_fat_pct,
+        "lean_body_mass_kg": round(lean_body_mass, 1),
+        "protein_per_kg_lbm": protein_multiplier,
+        "recommended_protein_goal": round(recommended_protein, 0),
+        "formula": f"{lean_body_mass:.1f}kg LBM × {protein_multiplier}g/kg = {recommended_protein:.0f}g protein"
+    }
 
 @api_router.put("/auth/protein-goal", response_model=UserResponse)
 async def update_protein_goal(data: ProteinGoalUpdate, current_user: dict = Depends(get_current_user)):
@@ -795,6 +913,10 @@ async def update_protein_goal(data: ProteinGoalUpdate, current_user: dict = Depe
         email=current_user["email"],
         name=current_user["name"],
         protein_goal=data.protein_goal,
+        daily_carb_limit=current_user.get("daily_carb_limit", 20.0),
+        body_weight_kg=current_user.get("body_weight_kg", 70.0),
+        body_fat_percentage=current_user.get("body_fat_percentage", 20.0),
+        protein_per_kg_lbm=current_user.get("protein_per_kg_lbm", 2.0),
         created_at=created_at
     )
 
@@ -1022,6 +1144,204 @@ async def analyze_meal_combo(
             "net_carbs": round(total_carbs, 1),
             "is_keto_friendly": total_carbs <= 10
         }
+    }
+
+# ============== Keto Score Routes ==============
+
+@api_router.get("/keto-score", response_model=KetoScore)
+async def get_keto_score(
+    date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Calculate the Keto Score for the day based on carb intake vs limit"""
+    if not date:
+        date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    start = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    end = start + timedelta(days=1)
+    
+    # Get daily logs
+    logs = await db.food_logs.find({
+        "user_id": current_user["id"],
+        "logged_at": {"$gte": start.isoformat(), "$lt": end.isoformat()}
+    }, {"_id": 0}).to_list(500)
+    
+    # Calculate net carbs
+    total_carbs = sum(log.get("carbs", 0) * log.get("servings", 1) for log in logs)
+    total_fiber = sum(log.get("fiber", 0) * log.get("servings", 1) for log in logs)
+    net_carbs = max(0, total_carbs - total_fiber)
+    
+    carb_limit = current_user.get("daily_carb_limit", 20.0)
+    carbs_remaining = max(0, carb_limit - net_carbs)
+    
+    # Calculate score (100 = perfect keto, 0 = way over limit)
+    if net_carbs <= carb_limit:
+        score = 100
+        status = "ketosis"
+        color = "emerald"
+        message = f"Perfect! You're within your {carb_limit}g carb limit."
+    elif net_carbs <= carb_limit * 1.5:
+        score = max(50, int(100 - ((net_carbs - carb_limit) / carb_limit) * 100))
+        status = "borderline"
+        color = "amber"
+        message = f"Borderline - {net_carbs - carb_limit:.1f}g over your limit. You might still be in ketosis."
+    else:
+        score = max(0, int(50 - ((net_carbs - carb_limit * 1.5) / carb_limit) * 50))
+        status = "over_limit"
+        color = "red"
+        message = f"Over limit by {net_carbs - carb_limit:.1f}g. Consider reducing carbs tomorrow."
+    
+    return KetoScore(
+        date=date,
+        net_carbs=round(net_carbs, 1),
+        carb_limit=carb_limit,
+        carbs_remaining=round(carbs_remaining, 1),
+        score=score,
+        status=status,
+        color=color,
+        message=message
+    )
+
+# ============== Custom Meals Routes ==============
+
+@api_router.post("/custom-meals", response_model=CustomMealResponse)
+async def create_custom_meal(meal_data: CustomMealCreate, current_user: dict = Depends(get_current_user)):
+    """Save a custom meal combination"""
+    meal_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    
+    # Calculate totals
+    total_protein = sum(f.get("protein", 0) * f.get("servings", 1) for f in meal_data.foods)
+    total_carbs = sum(f.get("carbs", 0) * f.get("servings", 1) for f in meal_data.foods)
+    total_fat = sum(f.get("fat", 0) * f.get("servings", 1) for f in meal_data.foods)
+    total_calories = sum(f.get("calories", 0) * f.get("servings", 1) for f in meal_data.foods)
+    
+    # Determine keto tier
+    if total_carbs <= 2:
+        keto_tier = "ultra_low"
+    elif total_carbs <= 5:
+        keto_tier = "low"
+    elif total_carbs <= 10:
+        keto_tier = "moderate"
+    else:
+        keto_tier = "high"
+    
+    # Check for complete protein (simplified - based on stored data)
+    amino_acids_present = set()
+    for food in meal_data.foods:
+        for aa in food.get("amino_acids", []):
+            if aa.get("is_essential") and aa.get("value", 0) > 0:
+                amino_acids_present.add(aa.get("name"))
+    is_complete = len(amino_acids_present) >= 9
+    
+    meal_doc = {
+        "id": meal_id,
+        "user_id": current_user["id"],
+        "name": meal_data.name,
+        "description": meal_data.description or "",
+        "foods": meal_data.foods,
+        "total_protein": round(total_protein, 1),
+        "total_carbs": round(total_carbs, 1),
+        "total_fat": round(total_fat, 1),
+        "total_calories": round(total_calories, 1),
+        "is_complete_protein": is_complete,
+        "keto_tier": keto_tier,
+        "created_at": now.isoformat()
+    }
+    
+    await db.custom_meals.insert_one(meal_doc)
+    
+    return CustomMealResponse(
+        id=meal_id,
+        user_id=current_user["id"],
+        name=meal_data.name,
+        description=meal_data.description or "",
+        foods=meal_data.foods,
+        total_protein=round(total_protein, 1),
+        total_carbs=round(total_carbs, 1),
+        total_fat=round(total_fat, 1),
+        total_calories=round(total_calories, 1),
+        is_complete_protein=is_complete,
+        keto_tier=keto_tier,
+        created_at=now
+    )
+
+@api_router.get("/custom-meals", response_model=List[CustomMealResponse])
+async def get_custom_meals(current_user: dict = Depends(get_current_user)):
+    """Get all saved custom meals"""
+    meals = await db.custom_meals.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(100)
+    
+    result = []
+    for meal in meals:
+        created_at = meal.get("created_at")
+        if isinstance(created_at, str):
+            created_at = datetime.fromisoformat(created_at)
+        
+        result.append(CustomMealResponse(
+            id=meal["id"],
+            user_id=meal["user_id"],
+            name=meal["name"],
+            description=meal.get("description", ""),
+            foods=meal.get("foods", []),
+            total_protein=meal.get("total_protein", 0),
+            total_carbs=meal.get("total_carbs", 0),
+            total_fat=meal.get("total_fat", 0),
+            total_calories=meal.get("total_calories", 0),
+            is_complete_protein=meal.get("is_complete_protein", False),
+            keto_tier=meal.get("keto_tier", "unknown"),
+            created_at=created_at
+        ))
+    
+    return result
+
+@api_router.delete("/custom-meals/{meal_id}")
+async def delete_custom_meal(meal_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.custom_meals.delete_one({"id": meal_id, "user_id": current_user["id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Custom meal not found")
+    return {"message": "Custom meal deleted"}
+
+@api_router.post("/custom-meals/{meal_id}/log")
+async def log_custom_meal(
+    meal_id: str,
+    meal_type: str = Query("snack"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Add all foods from a custom meal to today's food log"""
+    meal = await db.custom_meals.find_one({"id": meal_id, "user_id": current_user["id"]}, {"_id": 0})
+    if not meal:
+        raise HTTPException(status_code=404, detail="Custom meal not found")
+    
+    now = datetime.now(timezone.utc)
+    logged_ids = []
+    
+    for food in meal.get("foods", []):
+        log_id = str(uuid.uuid4())
+        log_doc = {
+            "id": log_id,
+            "user_id": current_user["id"],
+            "fdc_id": food.get("fdc_id", "custom"),
+            "description": food.get("description", food.get("name", "Unknown")),
+            "serving_size": food.get("serving_size", 100),
+            "serving_unit": food.get("serving_unit", "g"),
+            "servings": food.get("servings", 1),
+            "calories": food.get("calories", 0),
+            "protein": food.get("protein", 0),
+            "fat": food.get("fat", 0),
+            "carbs": food.get("carbs", 0),
+            "fiber": food.get("fiber", 0),
+            "amino_acids": food.get("amino_acids", []),
+            "meal_type": meal_type,
+            "logged_at": now.isoformat(),
+            "created_at": now.isoformat(),
+            "from_custom_meal": meal["name"]
+        }
+        await db.food_logs.insert_one(log_doc)
+        logged_ids.append(log_id)
+    
+    return {
+        "message": f"Logged {len(logged_ids)} foods from '{meal['name']}'",
+        "log_ids": logged_ids
     }
 
 # ============== Food Log Routes ==============

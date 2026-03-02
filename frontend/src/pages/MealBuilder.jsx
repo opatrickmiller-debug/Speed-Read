@@ -4,6 +4,8 @@ import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { AminoAcidRadar } from '../components/AminoAcidRadar';
 import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { 
   ChefHat, 
   Loader2, 
@@ -16,10 +18,13 @@ import {
   Flame,
   Beef,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Save,
+  BookmarkPlus
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
+import { customMealsApi } from '../lib/api';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -32,12 +37,18 @@ export const MealBuilder = () => {
   const [analysis, setAnalysis] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [ketoMeals, setKetoMeals] = useState([]);
+  const [customMeals, setCustomMeals] = useState([]);
   const [loadingMeals, setLoadingMeals] = useState(true);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [mealName, setMealName] = useState('');
+  const [mealDescription, setMealDescription] = useState('');
+  const [savingMeal, setSavingMeal] = useState(false);
 
   const getToken = () => localStorage.getItem('token');
 
   useEffect(() => {
     loadKetoMeals();
+    loadCustomMeals();
   }, []);
 
   useEffect(() => {
@@ -47,6 +58,15 @@ export const MealBuilder = () => {
       setAnalysis(null);
     }
   }, [selectedFoods]);
+
+  const loadCustomMeals = async () => {
+    try {
+      const res = await customMealsApi.getAll();
+      setCustomMeals(res.data || []);
+    } catch (err) {
+      console.error('Failed to load custom meals:', err);
+    }
+  };
 
   const loadKetoMeals = async () => {
     try {
@@ -135,6 +155,65 @@ export const MealBuilder = () => {
       case 'low': return 'text-cyan-400 bg-cyan-500/20 border-cyan-500/30';
       case 'moderate': return 'text-amber-400 bg-amber-500/20 border-amber-500/30';
       default: return 'text-red-400 bg-red-500/20 border-red-500/30';
+    }
+  };
+
+  const handleSaveCustomMeal = async () => {
+    if (!mealName.trim() || selectedFoods.length === 0) {
+      toast.error('Please add a name and at least one food');
+      return;
+    }
+
+    setSavingMeal(true);
+    try {
+      // Prepare foods data with analysis info
+      const foodsData = analysis?.foods || selectedFoods.map(f => ({
+        fdc_id: f.fdc_id,
+        description: f.description,
+        protein: f.protein_per_100g || 0,
+        carbs: 0,
+        fat: 0,
+        calories: 0,
+        servings: 1,
+        serving_size: 100,
+        serving_unit: 'g',
+        amino_acids: []
+      }));
+
+      await customMealsApi.create({
+        name: mealName,
+        description: mealDescription,
+        foods: foodsData
+      });
+
+      toast.success('Custom meal saved!');
+      setSaveDialogOpen(false);
+      setMealName('');
+      setMealDescription('');
+      loadCustomMeals();
+    } catch (err) {
+      toast.error('Failed to save meal');
+    } finally {
+      setSavingMeal(false);
+    }
+  };
+
+  const handleLogCustomMeal = async (mealId) => {
+    try {
+      await customMealsApi.log(mealId, 'snack');
+      toast.success('Meal added to today\'s log!');
+    } catch (err) {
+      toast.error('Failed to log meal');
+    }
+  };
+
+  const handleDeleteCustomMeal = async (mealId) => {
+    try {
+      await customMealsApi.delete(mealId);
+      toast.success('Custom meal deleted');
+      loadCustomMeals();
+    } catch (err) {
+      toast.error('Failed to delete meal');
     }
   };
 
@@ -415,6 +494,16 @@ export const MealBuilder = () => {
                         <ArrowRight className="w-4 h-4" />
                       </button>
                     )}
+
+                    {/* Save Custom Meal Button */}
+                    <button
+                      onClick={() => setSaveDialogOpen(true)}
+                      data-testid="save-custom-meal-btn"
+                      className="w-full flex items-center justify-center gap-2 p-4 rounded-xl bg-orange-500 hover:bg-orange-400 text-black font-bold transition-all"
+                    >
+                      <BookmarkPlus className="w-5 h-5" />
+                      Save as Custom Meal
+                    </button>
                   </div>
                 ) : (
                   <div className="py-20 text-center">
@@ -427,9 +516,138 @@ export const MealBuilder = () => {
                 )}
               </GlassCardContent>
             </GlassCard>
+
+            {/* Custom Meals */}
+            {customMeals.length > 0 && (
+              <GlassCard className="mt-6" data-testid="custom-meals-card">
+                <GlassCardHeader>
+                  <div className="flex items-center gap-2">
+                    <BookmarkPlus className="w-4 h-4 text-orange-400" />
+                    <GlassCardTitle>Your Custom Meals</GlassCardTitle>
+                  </div>
+                </GlassCardHeader>
+                <GlassCardContent className="pt-0">
+                  <div className="space-y-3">
+                    {customMeals.map((meal) => (
+                      <div
+                        key={meal.id}
+                        className="p-4 rounded-xl bg-black/30 border border-white/5"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="text-white font-medium">{meal.name}</p>
+                            {meal.description && (
+                              <p className="text-xs text-zinc-500 mt-0.5">{meal.description}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={cn(
+                              'text-xs px-2 py-0.5 rounded-full',
+                              meal.keto_tier === 'ultra_low' && 'bg-emerald-500/20 text-emerald-400',
+                              meal.keto_tier === 'low' && 'bg-cyan-500/20 text-cyan-400',
+                              meal.keto_tier === 'moderate' && 'bg-amber-500/20 text-amber-400',
+                              meal.keto_tier === 'high' && 'bg-red-500/20 text-red-400'
+                            )}>
+                              {meal.total_carbs}g carbs
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm mb-3">
+                          <span className="text-emerald-400">{meal.total_protein}g protein</span>
+                          <span className="text-cyan-400">{meal.total_fat}g fat</span>
+                          <span className="text-orange-400">{meal.total_calories} cal</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleLogCustomMeal(meal.id)}
+                            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-all text-sm"
+                          >
+                            <Plus className="w-4 h-4" />
+                            Log Meal
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCustomMeal(meal.id)}
+                            className="px-3 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all text-sm"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </GlassCardContent>
+              </GlassCard>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Save Custom Meal Dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="bg-zinc-900 border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Save Custom Meal</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 pt-4">
+            {analysis && (
+              <div className="p-3 rounded-xl bg-black/30 border border-white/5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-zinc-400 text-sm">{selectedFoods.length} foods</span>
+                  <span className={cn(
+                    'text-xs px-2 py-0.5 rounded-full',
+                    getKetoTierColor(analysis.keto_analysis?.tier)
+                  )}>
+                    {analysis.combined_macros?.carbs}g carbs
+                  </span>
+                </div>
+                <div className="flex gap-4 text-sm">
+                  <span className="text-emerald-400">{analysis.combined_macros?.protein}g protein</span>
+                  <span className="text-cyan-400">{analysis.combined_macros?.fat}g fat</span>
+                  <span className="text-orange-400">{analysis.combined_macros?.calories} cal</span>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label className="text-zinc-400">Meal Name</Label>
+              <Input
+                value={mealName}
+                onChange={(e) => setMealName(e.target.value)}
+                placeholder="e.g., Morning Protein Bomb"
+                data-testid="custom-meal-name-input"
+                className="bg-black/50 border-white/10 text-white h-12"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-zinc-400">Description (optional)</Label>
+              <Input
+                value={mealDescription}
+                onChange={(e) => setMealDescription(e.target.value)}
+                placeholder="Brief description"
+                data-testid="custom-meal-desc-input"
+                className="bg-black/50 border-white/10 text-white h-12"
+              />
+            </div>
+
+            <button
+              onClick={handleSaveCustomMeal}
+              disabled={savingMeal || !mealName.trim()}
+              data-testid="confirm-save-meal-btn"
+              className="w-full bg-orange-500 hover:bg-orange-400 text-black font-bold px-8 py-3.5 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {savingMeal ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  Save Meal
+                </>
+              )}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };

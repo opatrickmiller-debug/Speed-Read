@@ -4,7 +4,7 @@ import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { ProteinProgress, MacroCard } from '../components/ProteinProgress';
 import { AminoAcidRadar, AminoAcidList } from '../components/AminoAcidRadar';
-import { statsApi, logsApi } from '../lib/api';
+import { statsApi, logsApi, ketoApi } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { 
   Flame, 
@@ -17,13 +17,17 @@ import {
   Loader2,
   ArrowRight,
   Sparkles,
-  ScanBarcode
+  ScanBarcode,
+  Leaf,
+  ChefHat
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '../lib/utils';
 
 export const Dashboard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
+  const [ketoScore, setKetoScore] = useState(null);
   const [recentLogs, setRecentLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,12 +37,14 @@ export const Dashboard = () => {
 
   const loadDashboardData = async () => {
     try {
-      const [statsRes, logsRes] = await Promise.all([
+      const [statsRes, logsRes, ketoRes] = await Promise.all([
         statsApi.getDaily(),
-        logsApi.getAll(format(new Date(), 'yyyy-MM-dd'))
+        logsApi.getAll(format(new Date(), 'yyyy-MM-dd')),
+        ketoApi.getScore()
       ]);
       setStats(statsRes.data);
       setRecentLogs(logsRes.data.slice(0, 5));
+      setKetoScore(ketoRes.data);
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
     } finally {
@@ -122,8 +128,86 @@ export const Dashboard = () => {
             </GlassCardContent>
           </GlassCard>
 
+          {/* Keto Score */}
+          <GlassCard className="lg:col-span-5" data-testid="keto-score-card">
+            <GlassCardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Leaf className="w-5 h-5 text-emerald-400" />
+                  <GlassCardTitle>Keto Score</GlassCardTitle>
+                </div>
+                <div className={cn(
+                  'text-4xl font-bold',
+                  ketoScore?.color === 'emerald' && 'text-emerald-400',
+                  ketoScore?.color === 'amber' && 'text-amber-400',
+                  ketoScore?.color === 'red' && 'text-red-400'
+                )}>
+                  {ketoScore?.score || 0}
+                </div>
+              </div>
+            </GlassCardHeader>
+            <GlassCardContent className="pt-0">
+              {ketoScore ? (
+                <div className="space-y-4">
+                  {/* Progress bar */}
+                  <div className="relative h-4 bg-zinc-800 rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        'h-full rounded-full transition-all duration-500',
+                        ketoScore.color === 'emerald' && 'bg-gradient-to-r from-emerald-600 to-emerald-400',
+                        ketoScore.color === 'amber' && 'bg-gradient-to-r from-amber-600 to-amber-400',
+                        ketoScore.color === 'red' && 'bg-gradient-to-r from-red-600 to-red-400'
+                      )}
+                      style={{ width: `${Math.min(100, (ketoScore.net_carbs / ketoScore.carb_limit) * 100)}%` }}
+                    />
+                    {/* Goal marker */}
+                    <div className="absolute top-0 bottom-0 w-0.5 bg-white/50" style={{ left: '100%' }} />
+                  </div>
+                  
+                  {/* Stats */}
+                  <div className="flex justify-between text-sm">
+                    <div>
+                      <p className={cn(
+                        'text-2xl font-semibold',
+                        ketoScore.color === 'emerald' && 'text-emerald-400',
+                        ketoScore.color === 'amber' && 'text-amber-400',
+                        ketoScore.color === 'red' && 'text-red-400'
+                      )}>
+                        {ketoScore.net_carbs}g
+                      </p>
+                      <p className="text-zinc-500">Net Carbs</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-semibold text-zinc-300">
+                        {ketoScore.carbs_remaining}g
+                      </p>
+                      <p className="text-zinc-500">Remaining</p>
+                    </div>
+                  </div>
+                  
+                  {/* Message */}
+                  <div className={cn(
+                    'p-3 rounded-xl text-sm',
+                    ketoScore.color === 'emerald' && 'bg-emerald-500/10 text-emerald-400',
+                    ketoScore.color === 'amber' && 'bg-amber-500/10 text-amber-400',
+                    ketoScore.color === 'red' && 'bg-red-500/10 text-red-400'
+                  )}>
+                    {ketoScore.status === 'ketosis' && <CheckCircle2 className="w-4 h-4 inline mr-2" />}
+                    {ketoScore.status === 'borderline' && <AlertTriangle className="w-4 h-4 inline mr-2" />}
+                    {ketoScore.status === 'over_limit' && <AlertTriangle className="w-4 h-4 inline mr-2" />}
+                    {ketoScore.message}
+                  </div>
+                </div>
+              ) : (
+                <div className="py-8 text-center text-zinc-500">
+                  <p>Log foods to see your Keto Score</p>
+                </div>
+              )}
+            </GlassCardContent>
+          </GlassCard>
+
           {/* Amino Acid Radar */}
-          <GlassCard className="lg:col-span-5" data-testid="amino-radar-card">
+          <GlassCard className="lg:col-span-7" data-testid="amino-radar-card">
             <GlassCardHeader>
               <GlassCardTitle>Amino Acid Profile</GlassCardTitle>
               <p className="text-xs text-zinc-500 mt-1">Essential amino acids from today's intake</p>

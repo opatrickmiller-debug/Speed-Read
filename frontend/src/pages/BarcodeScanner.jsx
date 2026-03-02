@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { Input } from '../components/ui/input';
@@ -13,7 +13,8 @@ import {
   Plus,
   AlertTriangle,
   CheckCircle2,
-  X
+  X,
+  CameraOff
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -28,10 +29,20 @@ export const BarcodeScanner = () => {
   const [servingSize, setServingSize] = useState(100);
   const [mealType, setMealType] = useState('snack');
   const [cameraActive, setCameraActive] = useState(false);
+  const [cameraSupported, setCameraSupported] = useState(true);
+  const [scanning, setScanning] = useState(false);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const scanIntervalRef = useRef(null);
 
   const getToken = () => localStorage.getItem('token');
+
+  // Check if BarcodeDetector is supported
+  useEffect(() => {
+    if (!('BarcodeDetector' in window)) {
+      setCameraSupported(false);
+    }
+  }, []);
 
   const lookupBarcode = async (code) => {
     if (!code || code.length < 8) {
@@ -61,6 +72,11 @@ export const BarcodeScanner = () => {
       const data = await res.json();
       setProduct(data);
       toast.success('Product found!');
+      
+      // Stop camera after successful scan
+      if (cameraActive) {
+        stopCamera();
+      }
     } catch (err) {
       toast.error('Failed to look up barcode');
     } finally {
@@ -99,10 +115,34 @@ export const BarcodeScanner = () => {
     }
   };
 
+  const scanBarcode = useCallback(async () => {
+    if (!videoRef.current || !('BarcodeDetector' in window) || scanning) return;
+    
+    setScanning(true);
+    try {
+      const barcodeDetector = new window.BarcodeDetector({
+        formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39']
+      });
+      
+      const barcodes = await barcodeDetector.detect(videoRef.current);
+      
+      if (barcodes.length > 0) {
+        const detectedCode = barcodes[0].rawValue;
+        setBarcode(detectedCode);
+        toast.success(`Barcode detected: ${detectedCode}`);
+        lookupBarcode(detectedCode);
+      }
+    } catch (err) {
+      // Silently fail - normal when no barcode in view
+    } finally {
+      setScanning(false);
+    }
+  }, [scanning]);
+
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
+        video: { facingMode: 'environment', width: 1280, height: 720 }
       });
       streamRef.current = stream;
       if (videoRef.current) {
@@ -110,8 +150,12 @@ export const BarcodeScanner = () => {
       }
       setCameraActive(true);
       toast.info('Camera active. Position barcode in view.');
+      
+      // Start scanning interval
+      scanIntervalRef.current = setInterval(scanBarcode, 500);
     } catch (err) {
       toast.error('Could not access camera');
+      setCameraSupported(false);
     }
   };
 
@@ -120,6 +164,10 @@ export const BarcodeScanner = () => {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
     setCameraActive(false);
   };
 
@@ -127,6 +175,9 @@ export const BarcodeScanner = () => {
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (scanIntervalRef.current) {
+        clearInterval(scanIntervalRef.current);
       }
     };
   }, []);
@@ -196,15 +247,27 @@ export const BarcodeScanner = () => {
 
               <button
                 onClick={cameraActive ? stopCamera : startCamera}
+                disabled={!cameraSupported}
                 data-testid="camera-btn"
                 className={`w-full px-6 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 font-medium ${
-                  cameraActive 
+                  !cameraSupported
+                    ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                    : cameraActive 
                     ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
                     : 'bg-white/5 text-white border border-white/10 hover:bg-white/10'
                 }`}
               >
-                <Camera className="w-5 h-5" />
-                {cameraActive ? 'Stop Camera' : 'Use Camera'}
+                {!cameraSupported ? (
+                  <>
+                    <CameraOff className="w-5 h-5" />
+                    Camera Not Supported
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-5 h-5" />
+                    {cameraActive ? 'Stop Camera' : 'Scan with Camera'}
+                  </>
+                )}
               </button>
 
               {cameraActive && (
