@@ -162,14 +162,21 @@ export const BarcodeScanner = () => {
     if (useQuagga) {
       // Use Quagga2 for scanning
       try {
+        // First request camera permission
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
+        });
+        // Stop the test stream
+        stream.getTracks().forEach(track => track.stop());
+        
         await Quagga.init({
           inputStream: {
             name: 'Live',
             type: 'LiveStream',
             target: scannerRef.current,
             constraints: {
-              width: { min: 640, ideal: 1280, max: 1920 },
-              height: { min: 480, ideal: 720, max: 1080 },
+              width: { min: 320, ideal: 640, max: 1280 },
+              height: { min: 240, ideal: 480, max: 720 },
               facingMode: 'environment'
             }
           },
@@ -204,7 +211,8 @@ export const BarcodeScanner = () => {
         setCameraActive(true);
         toast.info('Camera active. Position barcode in view.');
       } catch (err) {
-        toast.error('Could not access camera');
+        console.error('Camera error:', err);
+        toast.error('Could not access camera. Please check permissions.');
         setCameraSupported(false);
       }
     } else {
@@ -360,24 +368,27 @@ export const BarcodeScanner = () => {
                   {useQuagga ? (
                     <div 
                       ref={scannerRef} 
-                      className="w-full h-full"
-                      style={{ position: 'relative' }}
-                    >
-                      {/* Quagga renders the video here */}
-                    </div>
+                      id="scanner-container"
+                      className="w-full h-full absolute inset-0"
+                      style={{ 
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
+                    />
                   ) : (
                     <video
                       ref={videoRef}
                       autoPlay
                       playsInline
+                      muted
                       className="w-full h-full object-cover"
                     />
                   )}
-                  <div className="absolute inset-0 border-2 border-cyan-400/50 m-8 rounded-lg pointer-events-none" />
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-64 h-24 border-2 border-emerald-400/70 rounded-lg" />
+                  <div className="absolute inset-0 border-2 border-cyan-400/50 m-4 rounded-lg pointer-events-none z-10" />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                    <div className="w-48 h-20 border-2 border-emerald-400/70 rounded-lg bg-emerald-400/5" />
                   </div>
-                  <p className="absolute bottom-4 left-0 right-0 text-center text-cyan-400 text-sm">
+                  <p className="absolute bottom-2 left-0 right-0 text-center text-cyan-400 text-sm z-10 bg-black/50 py-1">
                     {scanning ? 'Scanning...' : 'Position barcode in the frame'}
                   </p>
                 </div>

@@ -219,6 +219,21 @@ code {
     font-size: 11px !important;
 }
 
+/* Quagga barcode scanner styles */
+#scanner-container video,
+#scanner-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+}
+
+#scanner-container canvas.drawingBuffer {
+    display: none !important;
+}
+
 /* Mobile responsive utilities */
 @media (max-width: 768px) {
     .hide-mobile {
