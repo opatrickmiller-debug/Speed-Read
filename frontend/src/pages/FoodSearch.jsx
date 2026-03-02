@@ -298,7 +298,9 @@ export const FoodSearch = () => {
                       <h3 className="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-4">
                         Amino Acid Profile
                       </h3>
-                      <AminoAcidRadar aminoAcids={foodDetails.amino_acids} />
+                      <div className="h-[300px]">
+                        <AminoAcidRadar aminoAcids={foodDetails.amino_acids} />
+                      </div>
                     </div>
                   )}
 
