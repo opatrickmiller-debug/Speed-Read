@@ -14,46 +14,62 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 ### Tech Stack
 - **Frontend**: React 19 + Tailwind CSS + Recharts + Framer Motion
 - **Backend**: FastAPI + MongoDB (Motor async driver)
-- **External API**: USDA FoodData Central API
+- **External API**: USDA FoodData Central API, Open Food Facts API
 - **Authentication**: JWT tokens with bcrypt password hashing
 
 ### Data Flow
-1. User searches food → Backend queries USDA FDC API → Returns amino acid data
-2. User logs food → Backend stores in MongoDB with amino acid breakdown
-3. Dashboard aggregates daily totals → Shows protein progress + amino acid profile
+1. User searches food -> Backend queries USDA FDC API -> Returns amino acid data
+2. User logs food -> Backend stores in MongoDB with amino acid breakdown
+3. Dashboard aggregates daily totals -> Shows protein progress + amino acid profile
+
+### Backend Modular Structure (Refactored March 2, 2026)
+```
+/app/backend/
+├── server.py           # Main FastAPI app with router includes
+├── core/
+│   ├── config.py       # Settings and configuration
+│   ├── constants.py    # Amino acid data, keto foods
+│   ├── database.py     # MongoDB connection
+│   └── security.py     # Auth helpers (JWT, password)
+├── models/
+│   ├── food.py         # Food-related Pydantic models
+│   ├── meal.py         # Meal plan models
+│   ├── stats.py        # Statistics models
+│   └── user.py         # User models
+├── routes/
+│   ├── auth.py         # Authentication routes
+│   ├── barcode.py      # Barcode lookup routes
+│   ├── foods.py        # Food search routes
+│   ├── keto_score.py   # Keto score routes
+│   ├── logs.py         # Food log routes
+│   ├── meals.py        # Meal plans, custom meals, favorites
+│   ├── stats.py        # Daily/weekly statistics
+│   └── suggestions.py  # Amino acid suggestions
+└── services/
+    ├── fdc_client.py   # USDA FoodData Central API client
+    ├── off_client.py   # Open Food Facts API client
+    └── suggestions.py  # Amino acid suggestion logic
+```
 
 ### Database Collections
-- `users`: User accounts, protein goals
+- `users`: User accounts, protein goals, body composition settings
 - `food_logs`: Daily food entries with amino acids
 - `meal_plans`: Saved meal combinations
+- `custom_meals`: User-created custom meals with keto tiers
 - `favorites`: User favorite foods
 
-## Core Requirements (Static)
+## What's Been Implemented
 
-### Must Have
-- [x] User authentication (register/login)
-- [x] Food search with USDA database
-- [x] Amino acid extraction for all foods
-- [x] Complete/Incomplete protein indicator
-- [x] Missing amino acids display
-- [x] Daily food logging
-- [x] Protein progress tracking
-- [x] Amino acid radar chart visualization
+### March 2, 2026 - Bug Fix & Refactoring
+- **Fixed**: Trends page weekly stats now correctly include today's data
+  - Changed date range calculation from `today - 7 days` to `today - 6 days` 
+  - Now shows 7 days: (today - 6) through (today)
+- **Refactored**: Backend from monolithic 1700+ line server.py to modular structure
+  - Split into core/, models/, routes/, services/ directories
+  - Improved maintainability and code organization
+  - All endpoints preserved with same functionality
 
-### Should Have
-- [x] Meal planning feature
-- [x] Favorites management
-- [x] Weekly trends chart
-- [x] Protein goal settings
-
-### Nice to Have
-- [ ] Food barcode scanning
-- [ ] Meal recommendations
-- [ ] Export data to CSV
-
-## What's Been Implemented (March 2, 2026)
-
-### Backend
+### Previous Implementation
 - Complete FastAPI server with 25+ endpoints
 - JWT authentication with secure password hashing
 - USDA FDC API integration with amino acid extraction
@@ -63,12 +79,13 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - Meal plans and favorites CRUD
 - Open Food Facts barcode lookup integration
 - Amino acid suggestions based on daily intake deficits
-- **NEW: Keto Meal Builder with combined amino acid analysis**
-- **NEW: Keto tier classification (ultra_low, low, moderate, high)**
-- **NEW: Pre-built keto meal combos (Steak & Eggs, etc.)**
-- **NEW: All food suggestions include carb data for keto-friendliness**
+- Keto Meal Builder with combined amino acid analysis
+- Keto tier classification (ultra_low, low, moderate, high)
+- User settings for protein goals based on LBM
+- Daily carb limits
+- Keto Score calculation
 
-### Frontend
+### Frontend Features
 - "Isotope" bioluminescent dark theme design
 - Syne + Manrope typography
 - Glass-morphism card components
@@ -81,10 +98,8 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - Settings with protein goal
 - Barcode Scanner page with camera support
 - Amino Acid Suggestions page
-- Quick action buttons on dashboard
-- **NEW: Keto Meal Builder page**
-- **NEW: Keto tier badges on all foods (0g carbs, 1.3g carbs, etc.)**
-- **NEW: Quick Keto Combos with macro breakdowns**
+- Keto Meal Builder page
+- Keto tier badges on all foods
 
 ## Prioritized Backlog
 
@@ -92,8 +107,8 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - All P0 features completed
 
 ### P1 - High Priority
+- [x] Fix weekly stats to include current day (DONE - March 2, 2026)
 - [ ] Camera-based barcode scanning (currently manual input)
-- [ ] Fix weekly stats to include current day
 - [ ] Add loading skeleton states
 - [ ] Mobile responsive refinements
 
@@ -109,8 +124,15 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - [ ] Recipe builder with combined amino acids
 - [ ] Push notifications for protein goal reminders
 
-## Next Tasks
-1. Implement camera barcode detection (BarcodeDetector API)
-2. Fix weekly trends to show today's data
-3. Add food portion presets
-4. Add body weight setting for personalized RDAs
+## Key API Endpoints
+- `/api/auth/*` - Authentication (register, login, settings)
+- `/api/foods/*` - Food search and details
+- `/api/logs/*` - Food log CRUD
+- `/api/stats/*` - Daily and weekly statistics
+- `/api/barcode/*` - Barcode lookup
+- `/api/suggestions/*` - Amino acid suggestions
+- `/api/meal-builder/*` - Meal analysis
+- `/api/custom-meals/*` - Custom meals CRUD
+- `/api/meal-plans/*` - Meal plans CRUD
+- `/api/favorites/*` - Favorites CRUD
+- `/api/keto-score` - Keto score calculation
