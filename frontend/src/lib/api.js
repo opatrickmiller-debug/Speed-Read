@@ -54,6 +54,11 @@ export const ketoApi = {
   getScore: (date) => api.get('/keto-score', { params: date ? { date } : {} }),
 };
 
+// Nutrition Score
+export const nutritionApi = {
+  getScore: (date) => api.get('/nutrition-score', { params: date ? { date } : {} }),
+};
+
 // Custom Meals
 export const customMealsApi = {
   create: (data) => api.post('/custom-meals', data),

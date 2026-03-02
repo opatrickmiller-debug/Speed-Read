@@ -60,7 +60,7 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 
 ## What's Been Implemented
 
-### March 2, 2026 - Essential Fatty Acids Feature + Bug Fix + Refactoring
+### March 2, 2026 - Essential Fatty Acids Feature + Nutrition Score + Bug Fix + Refactoring
 - **NEW**: Essential Fatty Acids tracking (Omega-3 and Omega-6)
   - Extracts fatty acids from USDA FDC data using nutrient IDs (LA:1269, ALA:1270, DHA:1272, EPA:1278)
   - Food details show fatty acid profile, omega totals, and omega ratio
@@ -69,6 +69,12 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
   - OmegaSummary component shows omega-3 vs omega-6 balance
   - FattyAcidChart (bar chart) and FattyAcidList components
   - Food logs include fatty acid data
+- **NEW**: Combined Nutrition Score
+  - Single metric combining amino acid completeness (40%), omega balance (30%), and protein goal (30%)
+  - Grade system (A+ to F) with color coding
+  - Expandable breakdown with progress bars for each factor
+  - Personalized tips to improve score
+  - Displayed on Dashboard with collapsible details
 - **Fixed**: Trends page weekly stats now correctly include today's data
   - Changed date range from `today - 7 days` to `today - 6 days` 
 - **Refactored**: Backend from monolithic 1700+ line server.py to modular structure
@@ -139,8 +145,9 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - `/api/stats/*` - Daily and weekly statistics
 - `/api/barcode/*` - Barcode lookup
 - `/api/suggestions/amino-acids` - Amino acid suggestions
-- `/api/suggestions/fatty-acids` - Fatty acid suggestions (NEW)
-- `/api/suggestions/omega-rich-foods` - Omega-3/6 rich foods (NEW)
+- `/api/suggestions/fatty-acids` - Fatty acid suggestions
+- `/api/suggestions/omega-rich-foods` - Omega-3/6 rich foods
+- `/api/nutrition-score` - Combined nutrition score (NEW)
 - `/api/meal-builder/*` - Meal analysis
 - `/api/custom-meals/*` - Custom meals CRUD
 - `/api/meal-plans/*` - Meal plans CRUD

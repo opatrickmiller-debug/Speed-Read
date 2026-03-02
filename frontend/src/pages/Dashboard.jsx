@@ -4,6 +4,7 @@ import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { ProteinProgress, MacroCard } from '../components/ProteinProgress';
 import { AminoAcidRadar, AminoAcidList } from '../components/AminoAcidRadar';
+import { NutritionScoreCard } from '../components/NutritionScore';
 import { statsApi, logsApi, ketoApi } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -205,6 +206,11 @@ export const Dashboard = () => {
               )}
             </GlassCardContent>
           </GlassCard>
+
+          {/* Nutrition Score */}
+          <div className="lg:col-span-5" data-testid="nutrition-score-card">
+            <NutritionScoreCard />
+          </div>
 
           {/* Amino Acid Radar */}
           <GlassCard className="lg:col-span-7" data-testid="amino-radar-card">
