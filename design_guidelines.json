@@ -1,0 +1,159 @@
+{
+  "design_system": {
+    "name": "Isotope",
+    "description": "A bioluminescent, data-first design system that merges clinical precision with organic vitality. It uses deep dark backgrounds to make data 'glow' like biological markers under a microscope.",
+    "theme_strategy": "dark_mode_only",
+    "typography": {
+      "font_family_heading": "Syne, sans-serif",
+      "font_family_body": "Manrope, sans-serif",
+      "font_family_code": "JetBrains Mono, monospace",
+      "scaling": {
+        "h1": "text-4xl md:text-6xl font-bold tracking-tight",
+        "h2": "text-3xl md:text-4xl font-semibold tracking-tight",
+        "h3": "text-2xl md:text-3xl font-medium",
+        "body": "text-base leading-relaxed text-zinc-400",
+        "label": "text-xs font-bold uppercase tracking-[0.2em] text-zinc-500",
+        "data_large": "text-5xl font-light tracking-tighter text-white"
+      },
+      "import_url": "https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap"
+    },
+    "colors": {
+      "palette": {
+        "background": {
+          "default": "#050505",
+          "surface": "#0F0F11",
+          "surface_hover": "#18181B"
+        },
+        "primary": {
+          "DEFAULT": "#10B981",
+          "glow": "0 0 20px rgba(16, 185, 129, 0.5)",
+          "dim": "#064E3B"
+        },
+        "amino_acids": {
+          "essential": "#22D3EE", 
+          "bcaa": "#F97316",     
+          "conditional": "#A78BFA" 
+        },
+        "status": {
+          "success": "#34D399",
+          "warning": "#FBBF24",
+          "error": "#FB7185",
+          "info": "#38BDF8"
+        },
+        "border": {
+          "subtle": "rgba(255, 255, 255, 0.08)",
+          "active": "rgba(255, 255, 255, 0.2)"
+        }
+      },
+      "gradients": {
+        "hero_glow": "radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.15) 0%, transparent 60%)",
+        "card_shimmer": "linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%)"
+      }
+    },
+    "layout": {
+      "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+      "grid_dashboard": "grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-6",
+      "spacing_scale": {
+        "section": "py-24",
+        "component": "p-6 md:p-8"
+      },
+      "border_radius": {
+        "card": "rounded-2xl",
+        "button": "rounded-full",
+        "input": "rounded-xl"
+      }
+    },
+    "components": {
+      "cards": {
+        "style": "glass_panel",
+        "classes": "bg-zinc-900/40 backdrop-blur-xl border border-white/5 shadow-2xl hover:border-white/10 transition-all duration-300 group"
+      },
+      "buttons": {
+        "primary": "bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-8 py-3 rounded-full transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)]",
+        "secondary": "bg-white/5 hover:bg-white/10 text-white border border-white/10 px-6 py-3 rounded-full backdrop-blur-md transition-all",
+        "ghost": "text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-2 rounded-lg transition-colors"
+      },
+      "inputs": {
+        "style": "minimal_tech",
+        "classes": "bg-black/50 border border-white/10 text-white placeholder:text-zinc-600 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 rounded-xl h-12 px-4 transition-all"
+      }
+    },
+    "visual_enhancers": {
+      "glassmorphism": "backdrop-blur-xl bg-black/40 border border-white/5",
+      "neon_glow": "drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]",
+      "grid_lines": "bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]",
+      "noise": "opacity-20 mix-blend-overlay pointer-events-none fixed inset-0 z-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"
+    }
+  },
+  "asset_urls": {
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1761315600943-d8a5bb0c499f?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "category": "food_meal",
+        "description": "Grilled chicken salad, high contrast dark",
+        "usage": "Dashboard recent meals or food log example"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1693996045346-d0a9b9470909?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "category": "supplement",
+        "description": "Protein powder jar, dark aesthetic",
+        "usage": "Supplements section or 'Quick Add' placeholder"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1670053463326-a791a8a0d473?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "category": "food_generic",
+        "description": "Healthy food plate, top down",
+        "usage": "Meal planning hero"
+      }
+    ],
+    "icons": {
+      "library": "lucide-react",
+      "style": "stroke-1.5"
+    }
+  },
+  "charts": {
+    "library": "recharts",
+    "theme": {
+      "background": "transparent",
+      "text_color": "#A1A1AA",
+      "grid_color": "#27272A",
+      "tooltip_bg": "#18181B",
+      "tooltip_border": "#27272A"
+    },
+    "amino_acid_radar": {
+      "description": "Use a Radar Chart to show protein completeness. The 9 essential amino acids form the axes. A full web = complete protein.",
+      "colors": ["#10B981", "#22D3EE"]
+    }
+  },
+  "page_strategies": {
+    "dashboard": {
+      "layout": "bento_grid",
+      "hero_widget": "ProteinSynthesisStatus",
+      "secondary_widget": "AminoAcidRadar",
+      "list_widget": "RecentLogs"
+    },
+    "food_search": {
+      "layout": "split_view",
+      "left_panel": "Search & Filters",
+      "right_panel": "Detail Visualization (3D/Radar)"
+    }
+  },
+  "instructions_to_main_agent": [
+    "INSTALL_DEPENDENCIES: yarn add recharts framer-motion lucide-react clsx tailwind-merge @radix-ui/react-slot @radix-ui/react-progress",
+    "THEME_SETUP: Enforce 'dark' class on the html/body tag permanently. This is a dark-mode only app.",
+    "FONT_SETUP: Add the Google Fonts import for 'Syne' and 'Manrope' to the index.css file immediately.",
+    "CHART_RULE: Customize Recharts components. Remove all default grids/axes unless necessary. Use thin lines and distinct colors.",
+    "COMPONENT_OVERRIDE: Do not use default Shadcn cards. Create a custom 'GlassCard' component using the classes defined in design_system.components.cards.",
+    "RADAR_CHART: Implement a 'AminoAcidProfile' component using Recharts RadarChart. This is the core unique feature. It must look like a biological web.",
+    "PROTEIN_COMPLETE_INDICATOR: When a food is 'Incomplete' protein, show a warning icon with a 'Missing: [Amino Acid Name]' tooltip.",
+    "TESTING: Add data-testid to all interactive elements (buttons, inputs, cards)."
+  ],
+  "universal_guidelines": [
+    "Don't make generic centered layouts.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters.",
+    "NEVER use AI assistant Emoji characters.",
+    "Every interaction needs micro-animations.",
+    "Use 2-3x more spacing than feels comfortable."
+  ]
+}
