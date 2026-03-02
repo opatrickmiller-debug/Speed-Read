@@ -60,7 +60,7 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 
 ## What's Been Implemented
 
-### March 2, 2026 - Essential Fatty Acids Feature + Nutrition Score + Bug Fix + Refactoring
+### March 2, 2026 - Essential Fatty Acids + Nutrition Score + P1 Features + Bug Fix + Refactoring
 - **NEW**: Essential Fatty Acids tracking (Omega-3 and Omega-6)
   - Extracts fatty acids from USDA FDC data using nutrient IDs (LA:1269, ALA:1270, DHA:1272, EPA:1278)
   - Food details show fatty acid profile, omega totals, and omega ratio
@@ -75,6 +75,23 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
   - Expandable breakdown with progress bars for each factor
   - Personalized tips to improve score
   - Displayed on Dashboard with collapsible details
+- **NEW**: Loading Skeleton States
+  - DashboardSkeleton - Full page skeleton for dashboard
+  - SearchResultsSkeleton - For food search results
+  - FoodDetailSkeleton - For food detail panel
+  - SuggestionsSkeleton - For suggestions page
+  - Animated pulse effect with bioluminescent theme styling
+- **NEW**: Mobile Responsive Refinements
+  - Bottom navigation bar with 4 main items + "More" menu
+  - "More" menu slides up with remaining nav items and logout
+  - Safe area insets for iOS devices
+  - Better touch targets (min 44px height)
+  - 16px font size on inputs to prevent iOS zoom
+- **NEW**: Camera-based Barcode Scanning
+  - Uses native BarcodeDetector API when available
+  - Quagga2 library fallback for older browsers
+  - Supports EAN-13, EAN-8, UPC-A, UPC-E, Code-128
+  - Visual scanning guide overlay on camera view
 - **Fixed**: Trends page weekly stats now correctly include today's data
   - Changed date range from `today - 7 days` to `today - 6 days` 
 - **Refactored**: Backend from monolithic 1700+ line server.py to modular structure
@@ -122,9 +139,10 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 ### P1 - High Priority
 - [x] Fix weekly stats to include current day (DONE - March 2, 2026)
 - [x] Essential Fatty Acids tracking (DONE - March 2, 2026)
-- [ ] Camera-based barcode scanning (currently manual input)
-- [ ] Add loading skeleton states
-- [ ] Mobile responsive refinements
+- [x] Combined Nutrition Score (DONE - March 2, 2026)
+- [x] Camera-based barcode scanning with Quagga2 fallback (DONE - March 2, 2026)
+- [x] Loading skeleton states for Dashboard, FoodSearch, Suggestions (DONE - March 2, 2026)
+- [x] Mobile responsive refinements with bottom nav "More" menu (DONE - March 2, 2026)
 
 ### P2 - Medium Priority
 - [ ] Food portion size presets (1 oz, 1 cup, etc.)
