@@ -8,6 +8,13 @@ class AminoAcid(BaseModel):
     unit: str = "g"
     is_essential: bool
 
+class FattyAcid(BaseModel):
+    name: str
+    value: float
+    unit: str = "g"
+    is_essential: bool
+    omega_type: Optional[int] = None  # 3 or 6 for omega classification
+
 class FoodSearchResult(BaseModel):
     fdc_id: str
     description: str
@@ -27,9 +34,13 @@ class FoodDetail(BaseModel):
     carbs: float = 0
     fiber: float = 0
     amino_acids: List[AminoAcid] = []
+    fatty_acids: List[FattyAcid] = []
     is_complete_protein: bool = False
     missing_amino_acids: List[str] = []
     protein_quality_score: float = 0
+    omega3_total: float = 0
+    omega6_total: float = 0
+    omega_ratio: Optional[str] = None  # e.g., "1:4" (omega3:omega6)
 
 class FoodLogCreate(BaseModel):
     fdc_id: str
@@ -43,6 +54,7 @@ class FoodLogCreate(BaseModel):
     carbs: float = 0
     fiber: float = 0
     amino_acids: List[Dict[str, Any]] = []
+    fatty_acids: List[Dict[str, Any]] = []
     meal_type: str = "snack"
     logged_at: Optional[datetime] = None
 
@@ -60,6 +72,7 @@ class FoodLogResponse(BaseModel):
     carbs: float
     fiber: float
     amino_acids: List[Dict[str, Any]]
+    fatty_acids: List[Dict[str, Any]] = []
     meal_type: str
     logged_at: datetime
     created_at: datetime

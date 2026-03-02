@@ -76,6 +76,15 @@ export const statsApi = {
   getWeekly: () => api.get('/stats/weekly'),
 };
 
+// Suggestions
+export const suggestionsApi = {
+  getAminoAcids: (date) => api.get('/suggestions/amino-acids', { params: date ? { date } : {} }),
+  getFattyAcids: (date) => api.get('/suggestions/fatty-acids', { params: date ? { date } : {} }),
+  getOmegaRichFoods: (omegaType = 3) => api.get('/suggestions/omega-rich-foods', { params: { omega_type: omegaType } }),
+  getCompleteProteins: () => api.get('/suggestions/complete-protein'),
+  getKetoMeals: () => api.get('/suggestions/keto-meals'),
+};
+
 // Meal Plans
 export const mealPlansApi = {
   create: (data) => api.post('/meal-plans', data),

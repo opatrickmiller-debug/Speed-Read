@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { AminoAcidRadar, AminoAcidList } from '../components/AminoAcidRadar';
+import { FattyAcidChart, FattyAcidList, OmegaSummary } from '../components/FattyAcidChart';
 import { Input } from '../components/ui/input';
 import { foodsApi, logsApi, favoritesApi } from '../lib/api';
 import { 
@@ -13,7 +14,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   X,
-  ChevronRight
+  ChevronRight,
+  Droplets
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
@@ -87,6 +89,12 @@ export const FoodSearch = () => {
           name: aa.name,
           value: aa.value,
           is_essential: aa.is_essential
+        })),
+        fatty_acids: (foodDetails.fatty_acids || []).map(fa => ({
+          name: fa.name,
+          value: fa.value,
+          is_essential: fa.is_essential,
+          omega_type: fa.omega_type
         })),
         meal_type: mealType
       });
@@ -311,6 +319,35 @@ export const FoodSearch = () => {
                         Amino Acid Breakdown
                       </h3>
                       <AminoAcidList aminoAcids={foodDetails.amino_acids} showAll />
+                    </div>
+                  )}
+
+                  {/* Fatty Acid Summary */}
+                  <OmegaSummary 
+                    omega3Total={foodDetails.omega3_total || 0}
+                    omega6Total={foodDetails.omega6_total || 0}
+                    omegaRatio={foodDetails.omega_ratio}
+                  />
+
+                  {/* Fatty Acid Chart */}
+                  {foodDetails.fatty_acids?.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-4">
+                        Fatty Acid Profile
+                      </h3>
+                      <div className="h-[200px]">
+                        <FattyAcidChart fattyAcids={foodDetails.fatty_acids} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fatty Acid List */}
+                  {foodDetails.fatty_acids?.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-4">
+                        Fatty Acid Breakdown
+                      </h3>
+                      <FattyAcidList fattyAcids={foodDetails.fatty_acids} showAll />
                     </div>
                   )}
                 </GlassCardContent>

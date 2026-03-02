@@ -1,3 +1,49 @@
+# Essential Fatty Acids data (USDA FDC nutrient IDs)
+# Omega-3 and Omega-6 are the two essential fatty acid families
+ESSENTIAL_FATTY_ACIDS = {
+    "Linoleic acid (LA)": {"id": 1269, "omega": 6, "rda_g": 11, "description": "Primary omega-6, found in vegetable oils"},
+    "Alpha-linolenic acid (ALA)": {"id": 1270, "omega": 3, "rda_g": 1.6, "description": "Plant-based omega-3, found in flax, chia, walnuts"},
+    "EPA": {"id": 1278, "omega": 3, "rda_g": 0.25, "description": "Marine omega-3, anti-inflammatory"},
+    "DHA": {"id": 1272, "omega": 3, "rda_g": 0.25, "description": "Marine omega-3, brain & eye health"},
+}
+
+# Additional fatty acids for comprehensive tracking
+ALL_FATTY_ACIDS = {
+    **ESSENTIAL_FATTY_ACIDS,
+    "Arachidonic acid (AA)": {"id": 1271, "omega": 6, "essential": False},
+    "Saturated fat": {"id": 1258, "essential": False},
+    "Monounsaturated fat": {"id": 1292, "essential": False},
+    "Polyunsaturated fat": {"id": 1293, "essential": False},
+}
+
+# Foods high in essential fatty acids - KETO FRIENDLY
+FATTY_ACID_RICH_FOODS = {
+    "Alpha-linolenic acid (ALA)": [
+        {"name": "Chia seeds", "fdc_id": "170554", "per_100g": 17.8, "carbs": 7.7, "protein": 17, "keto": "low"},
+        {"name": "Flax seeds", "fdc_id": "169414", "per_100g": 22.8, "carbs": 1.6, "protein": 18, "keto": "ultra_low"},
+        {"name": "Walnuts", "fdc_id": "170187", "per_100g": 9.1, "carbs": 7, "protein": 15, "keto": "low"},
+        {"name": "Hemp seeds", "fdc_id": "170148", "per_100g": 8.7, "carbs": 2.6, "protein": 32, "keto": "ultra_low"},
+    ],
+    "EPA": [
+        {"name": "Salmon (Atlantic)", "fdc_id": "175168", "per_100g": 0.86, "carbs": 0, "protein": 25, "keto": "ultra_low"},
+        {"name": "Mackerel", "fdc_id": "175119", "per_100g": 0.9, "carbs": 0, "protein": 19, "keto": "ultra_low"},
+        {"name": "Sardines", "fdc_id": "175139", "per_100g": 0.47, "carbs": 0, "protein": 25, "keto": "ultra_low"},
+        {"name": "Anchovies", "fdc_id": "175129", "per_100g": 0.76, "carbs": 0, "protein": 29, "keto": "ultra_low"},
+    ],
+    "DHA": [
+        {"name": "Salmon (Atlantic)", "fdc_id": "175168", "per_100g": 1.1, "carbs": 0, "protein": 25, "keto": "ultra_low"},
+        {"name": "Mackerel", "fdc_id": "175119", "per_100g": 1.4, "carbs": 0, "protein": 19, "keto": "ultra_low"},
+        {"name": "Sardines", "fdc_id": "175139", "per_100g": 0.51, "carbs": 0, "protein": 25, "keto": "ultra_low"},
+        {"name": "Tuna", "fdc_id": "175159", "per_100g": 0.68, "carbs": 0, "protein": 30, "keto": "ultra_low"},
+    ],
+    "Linoleic acid (LA)": [
+        {"name": "Sunflower seeds", "fdc_id": "170562", "per_100g": 23.0, "carbs": 11, "protein": 21, "keto": "moderate"},
+        {"name": "Pine nuts", "fdc_id": "170591", "per_100g": 33.2, "carbs": 4, "protein": 14, "keto": "low"},
+        {"name": "Pecans", "fdc_id": "170182", "per_100g": 20.6, "carbs": 4, "protein": 9, "keto": "low"},
+        {"name": "Brazil nuts", "fdc_id": "170569", "per_100g": 23.9, "carbs": 4, "protein": 14, "keto": "low"},
+    ],
+}
+
 # Essential Amino Acids data (USDA FDC nutrient IDs)
 ESSENTIAL_AMINO_ACIDS = {
     "Tryptophan": {"id": 1210, "rda_mg_per_kg": 5},

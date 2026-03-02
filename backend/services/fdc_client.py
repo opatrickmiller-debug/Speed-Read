@@ -3,8 +3,8 @@ import asyncio
 import logging
 from typing import Dict, List, Optional
 from core.config import settings
-from core.constants import ALL_AMINO_ACIDS, ESSENTIAL_AMINO_ACIDS
-from models.food import AminoAcid, FoodDetail
+from core.constants import ALL_AMINO_ACIDS, ESSENTIAL_AMINO_ACIDS, ALL_FATTY_ACIDS, ESSENTIAL_FATTY_ACIDS
+from models.food import AminoAcid, FattyAcid, FoodDetail
 
 logger = logging.getLogger(__name__)
 
@@ -95,9 +95,58 @@ class FDCClient:
         
         return is_complete, missing, round(quality_score, 1)
     
+    def extract_fatty_acids(self, food_data: Dict) -> List[FattyAcid]:
+        """Extract fatty acids from food data."""
+        fatty_acids = []
+        nutrients = food_data.get("foodNutrients", [])
+        
+        for fa_name, fa_info in ALL_FATTY_ACIDS.items():
+            fa_id = fa_info.get("id")
+            is_essential = fa_name in ESSENTIAL_FATTY_ACIDS
+            omega_type = fa_info.get("omega")
+            
+            for nutrient in nutrients:
+                n_info = nutrient.get("nutrient", {})
+                if n_info.get("id") == fa_id:
+                    value = nutrient.get("amount", 0) or 0
+                    if value > 0:
+                        fatty_acids.append(FattyAcid(
+                            name=fa_name,
+                            value=round(value, 3),
+                            unit="g",
+                            is_essential=is_essential,
+                            omega_type=omega_type
+                        ))
+                    break
+        
+        return fatty_acids
+    
+    def calculate_omega_totals(self, fatty_acids: List[FattyAcid]) -> tuple:
+        """Calculate omega-3 and omega-6 totals and ratio."""
+        omega3_total = sum(fa.value for fa in fatty_acids if fa.omega_type == 3)
+        omega6_total = sum(fa.value for fa in fatty_acids if fa.omega_type == 6)
+        
+        if omega3_total > 0 and omega6_total > 0:
+            # Calculate simplified ratio
+            if omega3_total >= omega6_total:
+                ratio = f"1:{omega6_total/omega3_total:.1f}"
+            else:
+                ratio = f"{omega3_total/omega6_total:.1f}:1"
+        elif omega3_total > 0:
+            ratio = "All Omega-3"
+        elif omega6_total > 0:
+            ratio = "All Omega-6"
+        else:
+            ratio = None
+        
+        return round(omega3_total, 3), round(omega6_total, 3), ratio
+    
     def parse_food_detail(self, food_data: Dict) -> FoodDetail:
         amino_acids = self.extract_amino_acids(food_data)
         is_complete, missing, quality_score = self.analyze_protein_completeness(amino_acids)
+        
+        fatty_acids = self.extract_fatty_acids(food_data)
+        omega3_total, omega6_total, omega_ratio = self.calculate_omega_totals(fatty_acids)
         
         return FoodDetail(
             fdc_id=str(food_data.get("fdcId", "")),
@@ -111,9 +160,13 @@ class FDCClient:
             carbs=self.extract_nutrient(food_data, 1005),
             fiber=self.extract_nutrient(food_data, 1079),
             amino_acids=amino_acids,
+            fatty_acids=fatty_acids,
             is_complete_protein=is_complete,
             missing_amino_acids=missing,
-            protein_quality_score=quality_score
+            protein_quality_score=quality_score,
+            omega3_total=omega3_total,
+            omega6_total=omega6_total,
+            omega_ratio=omega_ratio
         )
 
 fdc_client = FDCClient()

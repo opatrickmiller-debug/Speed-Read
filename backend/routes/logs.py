@@ -28,6 +28,7 @@ async def create_food_log(log_data: FoodLogCreate, current_user: dict = Depends(
         "carbs": log_data.carbs,
         "fiber": log_data.fiber,
         "amino_acids": log_data.amino_acids,
+        "fatty_acids": log_data.fatty_acids,
         "meal_type": log_data.meal_type,
         "logged_at": logged_at.isoformat() if isinstance(logged_at, datetime) else logged_at,
         "created_at": now.isoformat()
@@ -49,6 +50,7 @@ async def create_food_log(log_data: FoodLogCreate, current_user: dict = Depends(
         carbs=log_data.carbs,
         fiber=log_data.fiber,
         amino_acids=log_data.amino_acids,
+        fatty_acids=log_data.fatty_acids,
         meal_type=log_data.meal_type,
         logged_at=logged_at if isinstance(logged_at, datetime) else datetime.fromisoformat(logged_at),
         created_at=now
@@ -95,6 +97,7 @@ async def get_food_logs(
             carbs=log.get("carbs", 0),
             fiber=log.get("fiber", 0),
             amino_acids=log.get("amino_acids", []),
+            fatty_acids=log.get("fatty_acids", []),
             meal_type=log.get("meal_type", "snack"),
             logged_at=logged_at,
             created_at=created_at

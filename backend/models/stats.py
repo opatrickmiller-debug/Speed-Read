@@ -21,10 +21,27 @@ class AminoAcidSuggestion(BaseModel):
     deficit: float
     suggested_foods: List[Dict[str, Any]]
 
+class FattyAcidSuggestion(BaseModel):
+    fatty_acid: str
+    omega_type: int
+    current_intake: float
+    recommended_intake: float
+    deficit: float
+    suggested_foods: List[Dict[str, Any]]
+
 class AminoAcidSuggestionsResponse(BaseModel):
     date: str
     missing_amino_acids: List[str]
     low_amino_acids: List[AminoAcidSuggestion]
+    complete_profile: bool
+
+class FattyAcidSuggestionsResponse(BaseModel):
+    date: str
+    omega3_total: float
+    omega6_total: float
+    omega_ratio: str
+    ideal_ratio: str
+    low_fatty_acids: List[FattyAcidSuggestion]
     complete_profile: bool
 
 class KetoScore(BaseModel):
