@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import Quagga from '@ericblade/quagga2';
 import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { Input } from '../components/ui/input';
@@ -14,7 +15,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   X,
-  CameraOff
+  CameraOff,
+  Flashlight
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -31,17 +33,31 @@ export const BarcodeScanner = () => {
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraSupported, setCameraSupported] = useState(true);
   const [scanning, setScanning] = useState(false);
+  const [useQuagga, setUseQuagga] = useState(false);
   const videoRef = useRef(null);
+  const scannerRef = useRef(null);
   const streamRef = useRef(null);
   const scanIntervalRef = useRef(null);
 
   const getToken = () => localStorage.getItem('token');
 
-  // Check if BarcodeDetector is supported
+  // Check camera support on mount
   useEffect(() => {
-    if (!('BarcodeDetector' in window)) {
-      setCameraSupported(false);
-    }
+    const checkCameraSupport = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const hasCamera = devices.some(device => device.kind === 'videoinput');
+        setCameraSupported(hasCamera);
+        
+        // Check if BarcodeDetector is available
+        if (!('BarcodeDetector' in window)) {
+          setUseQuagga(true);
+        }
+      } catch (err) {
+        setCameraSupported(false);
+      }
+    };
+    checkCameraSupport();
   }, []);
 
   const lookupBarcode = async (code) => {
@@ -116,50 +132,112 @@ export const BarcodeScanner = () => {
   };
 
   const scanBarcode = useCallback(async () => {
-    if (!videoRef.current || !('BarcodeDetector' in window) || scanning) return;
+    if (!videoRef.current || scanning) return;
     
-    setScanning(true);
-    try {
-      const barcodeDetector = new window.BarcodeDetector({
-        formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39']
-      });
-      
-      const barcodes = await barcodeDetector.detect(videoRef.current);
-      
-      if (barcodes.length > 0) {
-        const detectedCode = barcodes[0].rawValue;
-        setBarcode(detectedCode);
-        toast.success(`Barcode detected: ${detectedCode}`);
-        lookupBarcode(detectedCode);
+    // Only use native BarcodeDetector if available
+    if (!useQuagga && 'BarcodeDetector' in window) {
+      setScanning(true);
+      try {
+        const barcodeDetector = new window.BarcodeDetector({
+          formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39']
+        });
+        
+        const barcodes = await barcodeDetector.detect(videoRef.current);
+        
+        if (barcodes.length > 0) {
+          const detectedCode = barcodes[0].rawValue;
+          setBarcode(detectedCode);
+          toast.success(`Barcode detected: ${detectedCode}`);
+          lookupBarcode(detectedCode);
+        }
+      } catch (err) {
+        // Silently fail - normal when no barcode in view
+      } finally {
+        setScanning(false);
       }
-    } catch (err) {
-      // Silently fail - normal when no barcode in view
-    } finally {
-      setScanning(false);
     }
-  }, [scanning]);
+  }, [scanning, useQuagga]);
 
   const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: 1280, height: 720 }
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+    if (useQuagga) {
+      // Use Quagga2 for scanning
+      try {
+        await Quagga.init({
+          inputStream: {
+            name: 'Live',
+            type: 'LiveStream',
+            target: scannerRef.current,
+            constraints: {
+              width: { min: 640, ideal: 1280, max: 1920 },
+              height: { min: 480, ideal: 720, max: 1080 },
+              facingMode: 'environment'
+            }
+          },
+          decoder: {
+            readers: [
+              'ean_reader',
+              'ean_8_reader',
+              'upc_reader',
+              'upc_e_reader',
+              'code_128_reader'
+            ]
+          },
+          locate: true,
+          locator: {
+            patchSize: 'medium',
+            halfSample: true
+          }
+        });
+
+        Quagga.onDetected((result) => {
+          const code = result.codeResult.code;
+          if (code && code.length >= 8) {
+            Quagga.stop();
+            setCameraActive(false);
+            setBarcode(code);
+            toast.success(`Barcode detected: ${code}`);
+            lookupBarcode(code);
+          }
+        });
+
+        Quagga.start();
+        setCameraActive(true);
+        toast.info('Camera active. Position barcode in view.');
+      } catch (err) {
+        toast.error('Could not access camera');
+        setCameraSupported(false);
       }
-      setCameraActive(true);
-      toast.info('Camera active. Position barcode in view.');
-      
-      // Start scanning interval
-      scanIntervalRef.current = setInterval(scanBarcode, 500);
-    } catch (err) {
-      toast.error('Could not access camera');
-      setCameraSupported(false);
+    } else {
+      // Use native BarcodeDetector
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: 1280, height: 720 }
+        });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+        setCameraActive(true);
+        toast.info('Camera active. Position barcode in view.');
+        
+        // Start scanning interval
+        scanIntervalRef.current = setInterval(scanBarcode, 500);
+      } catch (err) {
+        toast.error('Could not access camera');
+        setCameraSupported(false);
+      }
     }
   };
 
   const stopCamera = () => {
+    if (useQuagga) {
+      try {
+        Quagga.stop();
+      } catch (err) {
+        // Ignore errors when stopping
+      }
+    }
+    
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
@@ -173,6 +251,13 @@ export const BarcodeScanner = () => {
 
   useEffect(() => {
     return () => {
+      if (useQuagga) {
+        try {
+          Quagga.stop();
+        } catch (err) {
+          // Ignore
+        }
+      }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
@@ -180,7 +265,7 @@ export const BarcodeScanner = () => {
         clearInterval(scanIntervalRef.current);
       }
     };
-  }, []);
+  }, [useQuagga]);
 
   return (
     <Layout>
@@ -272,15 +357,28 @@ export const BarcodeScanner = () => {
 
               {cameraActive && (
                 <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 border-2 border-cyan-400/50 m-8 rounded-lg" />
+                  {useQuagga ? (
+                    <div 
+                      ref={scannerRef} 
+                      className="w-full h-full"
+                      style={{ position: 'relative' }}
+                    >
+                      {/* Quagga renders the video here */}
+                    </div>
+                  ) : (
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                  <div className="absolute inset-0 border-2 border-cyan-400/50 m-8 rounded-lg pointer-events-none" />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-64 h-24 border-2 border-emerald-400/70 rounded-lg" />
+                  </div>
                   <p className="absolute bottom-4 left-0 right-0 text-center text-cyan-400 text-sm">
-                    Position barcode in the frame
+                    {scanning ? 'Scanning...' : 'Position barcode in the frame'}
                   </p>
                 </div>
               )}

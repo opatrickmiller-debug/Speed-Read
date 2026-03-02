@@ -3,6 +3,7 @@ import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { AminoAcidRadar, AminoAcidList } from '../components/AminoAcidRadar';
 import { FattyAcidChart, FattyAcidList, OmegaSummary } from '../components/FattyAcidChart';
+import { SearchResultsSkeleton, FoodDetailSkeleton } from '../components/Skeletons';
 import { Input } from '../components/ui/input';
 import { foodsApi, logsApi, favoritesApi } from '../lib/api';
 import { 
@@ -172,7 +173,9 @@ export const FoodSearch = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Search Results */}
           <div className="lg:col-span-5 space-y-3">
-            {results.length > 0 ? (
+            {loading ? (
+              <SearchResultsSkeleton />
+            ) : results.length > 0 ? (
               results.map((food, idx) => (
                 <button
                   key={food.fdc_id}
@@ -204,7 +207,7 @@ export const FoodSearch = () => {
                   </div>
                 </button>
               ))
-            ) : !loading && (
+            ) : (
               <div className="py-20 text-center">
                 <SearchIcon className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
                 <p className="text-zinc-500">
@@ -217,8 +220,8 @@ export const FoodSearch = () => {
           {/* Food Details */}
           <div className="lg:col-span-7">
             {detailsLoading ? (
-              <GlassCard className="h-full flex items-center justify-center min-h-[400px]">
-                <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+              <GlassCard className="h-full min-h-[400px]">
+                <FoodDetailSkeleton />
               </GlassCard>
             ) : foodDetails ? (
               <GlassCard data-testid="food-detail-card">

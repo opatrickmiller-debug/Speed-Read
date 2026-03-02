@@ -218,3 +218,82 @@ code {
     fill: #A1A1AA !important;
     font-size: 11px !important;
 }
+
+/* Mobile responsive utilities */
+@media (max-width: 768px) {
+    .hide-mobile {
+        display: none !important;
+    }
+}
+
+@media (min-width: 769px) {
+    .hide-desktop {
+        display: none !important;
+    }
+}
+
+/* Safe area insets for iOS */
+.safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-area-inset-top {
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Better touch targets on mobile */
+@media (max-width: 768px) {
+    button, 
+    a,
+    [role="button"] {
+        min-height: 44px;
+    }
+    
+    input,
+    select,
+    textarea {
+        font-size: 16px !important; /* Prevent iOS zoom on focus */
+    }
+}
+
+/* Slide in animation for mobile menu */
+@keyframes slideInFromBottom {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-in.slide-in-from-bottom-4 {
+    animation: slideInFromBottom 0.2s ease-out forwards;
+}
+
+/* Mobile-friendly card spacing */
+@media (max-width: 768px) {
+    .p-6 {
+        padding: 1rem;
+    }
+    
+    .p-8 {
+        padding: 1.25rem;
+    }
+    
+    .gap-6 {
+        gap: 1rem;
+    }
+}
+
+/* Ensure proper overflow handling */
+.overflow-x-hidden {
+    overflow-x: hidden;
+}
+
+html, body {
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+}

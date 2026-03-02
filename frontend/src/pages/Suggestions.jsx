@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { OmegaSummary } from '../components/FattyAcidChart';
+import { SuggestionsSkeleton } from '../components/Skeletons';
 import { 
   Sparkles, 
   Loader2, 
@@ -80,9 +81,7 @@ export const Suggestions = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
-        </div>
+        <SuggestionsSkeleton />
       </Layout>
     );
   }

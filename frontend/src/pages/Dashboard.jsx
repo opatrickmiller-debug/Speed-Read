@@ -5,6 +5,7 @@ import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '..
 import { ProteinProgress, MacroCard } from '../components/ProteinProgress';
 import { AminoAcidRadar, AminoAcidList } from '../components/AminoAcidRadar';
 import { NutritionScoreCard } from '../components/NutritionScore';
+import { DashboardSkeleton } from '../components/Skeletons';
 import { statsApi, logsApi, ketoApi } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -66,9 +67,7 @@ export const Dashboard = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
-        </div>
+        <DashboardSkeleton />
       </Layout>
     );
   }

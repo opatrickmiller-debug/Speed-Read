@@ -1,3 +1,4 @@
+import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
@@ -14,6 +15,7 @@ import {
   ScanBarcode,
   Sparkles,
   ChefHat,
+  MoreHorizontal,
 } from 'lucide-react';
 
 const navItems = [
@@ -104,28 +106,101 @@ export const Sidebar = () => {
 };
 
 export const MobileNav = () => {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const [showMore, setShowMore] = React.useState(false);
+
+  const mainNavItems = navItems.slice(0, 4);
+  const moreNavItems = navItems.slice(4);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-zinc-950/95 backdrop-blur-xl border-t border-white/5 px-2 py-2 z-50 md:hidden">
-      <div className="flex items-center justify-around">
-        {navItems.slice(0, 5).map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            className={({ isActive }) =>
-              cn(
-                'flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all',
-                isActive ? 'text-emerald-400' : 'text-zinc-500'
-              )
-            }
+    <>
+      {/* More Menu Overlay */}
+      {showMore && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 md:hidden"
+          onClick={() => setShowMore(false)}
+        />
+      )}
+      
+      {/* More Menu */}
+      {showMore && (
+        <div className="fixed bottom-20 left-4 right-4 bg-zinc-900 border border-white/10 rounded-2xl p-4 z-50 md:hidden animate-in slide-in-from-bottom-4">
+          <div className="grid grid-cols-3 gap-2">
+            {moreNavItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={() => setShowMore(false)}
+                className={({ isActive }) =>
+                  cn(
+                    'flex flex-col items-center gap-2 p-3 rounded-xl transition-all',
+                    isActive 
+                      ? 'bg-emerald-500/10 text-emerald-400' 
+                      : 'text-zinc-400 hover:bg-white/5'
+                  )
+                }
+              >
+                <item.icon className="w-5 h-5" strokeWidth={1.5} />
+                <span className="text-[10px] text-center">{item.label}</span>
+              </NavLink>
+            ))}
+          </div>
+          
+          {/* User & Logout */}
+          <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-black font-bold text-xs">
+                {user?.name?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <span className="text-sm text-zinc-400 truncate max-w-[120px]">{user?.name}</span>
+            </div>
+            <button
+              onClick={() => {
+                logout();
+                navigate('/login');
+              }}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-zinc-950/95 backdrop-blur-xl border-t border-white/5 px-2 py-2 z-50 md:hidden safe-area-inset-bottom">
+        <div className="flex items-center justify-around">
+          {mainNavItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                cn(
+                  'flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[60px]',
+                  isActive ? 'text-emerald-400' : 'text-zinc-500'
+                )
+              }
+            >
+              <item.icon className="w-5 h-5" strokeWidth={1.5} />
+              <span className="text-[10px]">{item.label.split(' ')[0]}</span>
+            </NavLink>
+          ))}
+          
+          {/* More Button */}
+          <button
+            onClick={() => setShowMore(!showMore)}
+            className={cn(
+              'flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[60px]',
+              showMore ? 'text-emerald-400' : 'text-zinc-500'
+            )}
           >
-            <item.icon className="w-5 h-5" strokeWidth={1.5} />
-            <span className="text-[10px]">{item.label.split(' ')[0]}</span>
-          </NavLink>
-        ))}
-      </div>
-    </nav>
+            <MoreHorizontal className="w-5 h-5" strokeWidth={1.5} />
+            <span className="text-[10px]">More</span>
+          </button>
+        </div>
+      </nav>
+    </>
   );
 };
