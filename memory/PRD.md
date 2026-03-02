@@ -54,13 +54,16 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 ## What's Been Implemented (March 2, 2026)
 
 ### Backend
-- Complete FastAPI server with 15+ endpoints
+- Complete FastAPI server with 20+ endpoints
 - JWT authentication with secure password hashing
 - USDA FDC API integration with amino acid extraction
 - Correct nutrient IDs for all 18 amino acids (1210-1228)
 - Food logging with amino acid tracking
 - Daily/Weekly stats aggregation
 - Meal plans and favorites CRUD
+- **NEW: Open Food Facts barcode lookup integration**
+- **NEW: Amino acid suggestions based on daily intake deficits**
+- **NEW: Complete protein foods recommendations**
 
 ### Frontend
 - "Isotope" bioluminescent dark theme design
@@ -73,6 +76,9 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - Food log with date picker
 - Trends page with weekly chart
 - Settings with protein goal
+- **NEW: Barcode Scanner page with camera support**
+- **NEW: Amino Acid Suggestions page**
+- **NEW: Quick action buttons on dashboard**
 
 ## Prioritized Backlog
 
@@ -80,6 +86,7 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - All P0 features completed
 
 ### P1 - High Priority
+- [ ] Camera-based barcode scanning (currently manual input)
 - [ ] Fix weekly stats to include current day
 - [ ] Add loading skeleton states
 - [ ] Mobile responsive refinements
@@ -88,14 +95,16 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - [ ] Food portion size presets (1 oz, 1 cup, etc.)
 - [ ] Duplicate meal from history
 - [ ] Share meal plans
+- [ ] Amino acid RDA customization based on body weight
 
 ### P3 - Low Priority
 - [ ] Dark/Light theme toggle
 - [ ] Data export feature
 - [ ] Recipe builder with combined amino acids
+- [ ] Push notifications for protein goal reminders
 
 ## Next Tasks
-1. Fix weekly trends to show today's data
-2. Add food portion presets
-3. Implement meal plan quick-add to daily log
-4. Add PWA support for mobile
+1. Implement camera barcode detection (BarcodeDetector API)
+2. Fix weekly trends to show today's data
+3. Add food portion presets
+4. Add body weight setting for personalized RDAs
