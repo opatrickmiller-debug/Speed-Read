@@ -44,7 +44,15 @@ export const FoodSearch = () => {
     
     try {
       const res = await foodsApi.search(query);
-      setResults(res.data.foods || []);
+      // Sort results to prioritize SR Legacy and Foundation foods (more reliable)
+      const foods = res.data.foods || [];
+      const sortedFoods = foods.sort((a, b) => {
+        const priority = { 'SR Legacy': 0, 'Foundation': 1, 'Survey (FNDDS)': 2 };
+        const aPriority = priority[a.data_type] ?? 3;
+        const bPriority = priority[b.data_type] ?? 3;
+        return aPriority - bPriority;
+      });
+      setResults(sortedFoods);
     } catch (err) {
       toast.error('Search failed. Please try again.');
     } finally {
@@ -55,6 +63,7 @@ export const FoodSearch = () => {
   const handleSelectFood = async (food) => {
     setSelectedFood(food);
     setDetailsLoading(true);
+    setFoodDetails(null); // Clear previous details
     
     try {
       const [detailsRes, favRes] = await Promise.all([
@@ -65,7 +74,13 @@ export const FoodSearch = () => {
       setIsFavorite(favRes.data.is_favorite);
       setFavoriteId(favRes.data.favorite_id);
     } catch (err) {
-      toast.error('Failed to load food details');
+      // Show more helpful error message
+      if (err.response?.status === 404) {
+        toast.error('This food item is no longer available in the USDA database. Try a different item.');
+      } else {
+        toast.error('Failed to load food details. Please try again.');
+      }
+      setSelectedFood(null);
     } finally {
       setDetailsLoading(false);
     }
@@ -191,9 +206,18 @@ export const FoodSearch = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-medium truncate">{food.description}</p>
-                      <p className="text-xs text-zinc-500 mt-1">
-                        {food.brand_owner || food.data_type}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                          food.data_type === 'SR Legacy' ? 'bg-emerald-500/20 text-emerald-400' :
+                          food.data_type === 'Foundation' ? 'bg-cyan-500/20 text-cyan-400' :
+                          'bg-zinc-700/50 text-zinc-400'
+                        }`}>
+                          {food.data_type || 'Branded'}
+                        </span>
+                        {food.brand_owner && (
+                          <span className="text-xs text-zinc-500 truncate">{food.brand_owner}</span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-3 ml-3">
                       <div className="text-right">
