@@ -13,6 +13,8 @@ import { MealPlans } from "./pages/MealPlans";
 import { Favorites } from "./pages/Favorites";
 import { Trends } from "./pages/Trends";
 import { Settings } from "./pages/Settings";
+import { BarcodeScanner } from "./pages/BarcodeScanner";
+import { Suggestions } from "./pages/Suggestions";
 import { Loader2 } from "lucide-react";
 
 // Protected Route Wrapper
@@ -67,6 +69,8 @@ function AppRoutes() {
       <Route path="/meal-plans" element={<ProtectedRoute><MealPlans /></ProtectedRoute>} />
       <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
       <Route path="/trends" element={<ProtectedRoute><Trends /></ProtectedRoute>} />
+      <Route path="/barcode" element={<ProtectedRoute><BarcodeScanner /></ProtectedRoute>} />
+      <Route path="/suggestions" element={<ProtectedRoute><Suggestions /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       
       {/* Default redirect */}

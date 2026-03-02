@@ -76,6 +76,73 @@ ALL_AMINO_ACIDS = {
     "Hydroxyproline": {"id": 1228, "essential": False}
 }
 
+# Foods high in specific amino acids (for suggestions)
+AMINO_ACID_RICH_FOODS = {
+    "Tryptophan": [
+        {"name": "Turkey breast", "fdc_id": "171082", "per_100g": 0.31},
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 0.29},
+        {"name": "Salmon", "fdc_id": "175168", "per_100g": 0.25},
+        {"name": "Eggs", "fdc_id": "173424", "per_100g": 0.17},
+        {"name": "Cheese (cheddar)", "fdc_id": "173414", "per_100g": 0.32}
+    ],
+    "Threonine": [
+        {"name": "Beef", "fdc_id": "174032", "per_100g": 1.1},
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 1.0},
+        {"name": "Pork", "fdc_id": "167820", "per_100g": 0.9},
+        {"name": "Soybeans", "fdc_id": "174270", "per_100g": 1.8},
+        {"name": "Greek yogurt", "fdc_id": "170903", "per_100g": 0.4}
+    ],
+    "Isoleucine": [
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 1.4},
+        {"name": "Beef", "fdc_id": "174032", "per_100g": 1.2},
+        {"name": "Tuna", "fdc_id": "175159", "per_100g": 1.3},
+        {"name": "Eggs", "fdc_id": "173424", "per_100g": 0.7},
+        {"name": "Cottage cheese", "fdc_id": "173417", "per_100g": 0.6}
+    ],
+    "Leucine": [
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 2.1},
+        {"name": "Beef", "fdc_id": "174032", "per_100g": 2.0},
+        {"name": "Tuna", "fdc_id": "175159", "per_100g": 2.0},
+        {"name": "Salmon", "fdc_id": "175168", "per_100g": 1.8},
+        {"name": "Whey protein", "fdc_id": "173178", "per_100g": 3.5}
+    ],
+    "Lysine": [
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 2.4},
+        {"name": "Beef", "fdc_id": "174032", "per_100g": 2.1},
+        {"name": "Pork", "fdc_id": "167820", "per_100g": 2.0},
+        {"name": "Tuna", "fdc_id": "175159", "per_100g": 2.3},
+        {"name": "Tofu", "fdc_id": "174290", "per_100g": 0.7}
+    ],
+    "Methionine": [
+        {"name": "Eggs", "fdc_id": "173424", "per_100g": 0.4},
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 0.7},
+        {"name": "Brazil nuts", "fdc_id": "170569", "per_100g": 1.1},
+        {"name": "Beef", "fdc_id": "174032", "per_100g": 0.6},
+        {"name": "Tuna", "fdc_id": "175159", "per_100g": 0.8}
+    ],
+    "Phenylalanine": [
+        {"name": "Beef", "fdc_id": "174032", "per_100g": 1.0},
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 1.0},
+        {"name": "Soybeans", "fdc_id": "174270", "per_100g": 2.1},
+        {"name": "Eggs", "fdc_id": "173424", "per_100g": 0.7},
+        {"name": "Cheese (parmesan)", "fdc_id": "173420", "per_100g": 1.9}
+    ],
+    "Valine": [
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 1.3},
+        {"name": "Beef", "fdc_id": "174032", "per_100g": 1.3},
+        {"name": "Cottage cheese", "fdc_id": "173417", "per_100g": 0.8},
+        {"name": "Eggs", "fdc_id": "173424", "per_100g": 0.9},
+        {"name": "Soybeans", "fdc_id": "174270", "per_100g": 2.0}
+    ],
+    "Histidine": [
+        {"name": "Beef", "fdc_id": "174032", "per_100g": 1.0},
+        {"name": "Chicken breast", "fdc_id": "171534", "per_100g": 0.9},
+        {"name": "Tuna", "fdc_id": "175159", "per_100g": 1.5},
+        {"name": "Pork", "fdc_id": "167820", "per_100g": 1.0},
+        {"name": "Soybeans", "fdc_id": "174270", "per_100g": 1.1}
+    ]
+}
+
 # ============== Models ==============
 
 class UserCreate(BaseModel):
@@ -205,6 +272,31 @@ class DailyStats(BaseModel):
     protein_goal: float
     protein_goal_percentage: float
     logs_count: int
+
+class BarcodeProduct(BaseModel):
+    barcode: str
+    product_name: Optional[str] = None
+    brand: Optional[str] = None
+    protein_per_100g: float = 0
+    calories_per_100g: float = 0
+    fat_per_100g: float = 0
+    carbs_per_100g: float = 0
+    fiber_per_100g: float = 0
+    image_url: Optional[str] = None
+    source: str = "open_food_facts"
+
+class AminoAcidSuggestion(BaseModel):
+    amino_acid: str
+    current_intake: float
+    recommended_intake: float
+    deficit: float
+    suggested_foods: List[Dict[str, Any]]
+
+class AminoAcidSuggestionsResponse(BaseModel):
+    date: str
+    missing_amino_acids: List[str]
+    low_amino_acids: List[AminoAcidSuggestion]
+    complete_profile: bool
 
 # ============== Auth Helpers ==============
 
@@ -352,6 +444,134 @@ class FDCClient:
 
 fdc_client = FDCClient()
 
+# ============== Open Food Facts Client (Barcode Lookup) ==============
+
+class OpenFoodFactsClient:
+    """Client for Open Food Facts barcode lookup API"""
+    
+    def __init__(self):
+        self.base_url = "https://world.openfoodfacts.org/api/v2"
+        self.user_agent = "IsotopeNutritionTracker/1.0 (contact@isotope.app)"
+        self.semaphore = asyncio.Semaphore(3)
+    
+    async def lookup_barcode(self, barcode: str) -> Optional[BarcodeProduct]:
+        """Look up a product by barcode/UPC"""
+        async with self.semaphore:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                try:
+                    url = f"{self.base_url}/product/{barcode}"
+                    params = {
+                        "fields": "code,product_name,brands,nutriments,image_url"
+                    }
+                    headers = {
+                        "User-Agent": self.user_agent,
+                        "Accept": "application/json"
+                    }
+                    
+                    response = await client.get(url, params=params, headers=headers)
+                    
+                    if response.status_code == 404:
+                        return None
+                    
+                    response.raise_for_status()
+                    data = response.json()
+                    
+                    if data.get("status") != 1:
+                        return None
+                    
+                    product = data.get("product", {})
+                    nutriments = product.get("nutriments", {})
+                    
+                    return BarcodeProduct(
+                        barcode=barcode,
+                        product_name=product.get("product_name"),
+                        brand=product.get("brands"),
+                        protein_per_100g=nutriments.get("proteins_100g", 0) or 0,
+                        calories_per_100g=nutriments.get("energy-kcal_100g", 0) or 0,
+                        fat_per_100g=nutriments.get("fat_100g", 0) or 0,
+                        carbs_per_100g=nutriments.get("carbohydrates_100g", 0) or 0,
+                        fiber_per_100g=nutriments.get("fiber_100g", 0) or 0,
+                        image_url=product.get("image_url"),
+                        source="open_food_facts"
+                    )
+                    
+                except httpx.HTTPError as e:
+                    logger.error(f"Open Food Facts lookup error: {e}")
+                    return None
+                except Exception as e:
+                    logger.error(f"Unexpected error in barcode lookup: {e}")
+                    return None
+
+off_client = OpenFoodFactsClient()
+
+# ============== Amino Acid Suggestions Helper ==============
+
+async def get_amino_acid_suggestions(user_id: str, date: str) -> AminoAcidSuggestionsResponse:
+    """Analyze daily amino acid intake and suggest foods to complete the profile"""
+    
+    start = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    end = start + timedelta(days=1)
+    
+    # Get user's body weight estimate (default 70kg for RDA calculations)
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    body_weight_kg = user.get("body_weight", 70) if user else 70
+    
+    # Get today's food logs
+    logs = await db.food_logs.find({
+        "user_id": user_id,
+        "logged_at": {"$gte": start.isoformat(), "$lt": end.isoformat()}
+    }, {"_id": 0}).to_list(500)
+    
+    # Calculate amino acid totals
+    amino_totals = {}
+    for log in logs:
+        servings = log.get("servings", 1)
+        for aa in log.get("amino_acids", []):
+            name = aa.get("name", "")
+            value = aa.get("value", 0) * servings
+            amino_totals[name] = amino_totals.get(name, 0) + value
+    
+    # Calculate RDAs and identify deficiencies
+    missing_amino_acids = []
+    low_amino_acids = []
+    
+    for aa_name, aa_info in ESSENTIAL_AMINO_ACIDS.items():
+        current_intake = amino_totals.get(aa_name, 0)
+        # RDA in grams (convert from mg/kg * kg)
+        rda_grams = (aa_info["rda_mg_per_kg"] * body_weight_kg) / 1000
+        
+        if current_intake == 0:
+            missing_amino_acids.append(aa_name)
+            # Get suggested foods for this amino acid
+            suggestions = AMINO_ACID_RICH_FOODS.get(aa_name, [])[:3]
+            low_amino_acids.append(AminoAcidSuggestion(
+                amino_acid=aa_name,
+                current_intake=0,
+                recommended_intake=round(rda_grams, 2),
+                deficit=round(rda_grams, 2),
+                suggested_foods=suggestions
+            ))
+        elif current_intake < rda_grams * 0.8:  # Less than 80% of RDA
+            deficit = rda_grams - current_intake
+            suggestions = AMINO_ACID_RICH_FOODS.get(aa_name, [])[:3]
+            low_amino_acids.append(AminoAcidSuggestion(
+                amino_acid=aa_name,
+                current_intake=round(current_intake, 3),
+                recommended_intake=round(rda_grams, 2),
+                deficit=round(deficit, 3),
+                suggested_foods=suggestions
+            ))
+    
+    # Sort by deficit (largest first)
+    low_amino_acids.sort(key=lambda x: x.deficit, reverse=True)
+    
+    return AminoAcidSuggestionsResponse(
+        date=date,
+        missing_amino_acids=missing_amino_acids,
+        low_amino_acids=low_amino_acids,
+        complete_profile=len(low_amino_acids) == 0
+    )
+
 # ============== Auth Routes ==============
 
 @api_router.post("/auth/register", response_model=TokenResponse)
@@ -493,6 +713,144 @@ async def get_food_details(fdc_id: str, current_user: dict = Depends(get_current
     
     food_detail = fdc_client.parse_food_detail(food_data)
     return food_detail
+
+# ============== Barcode Lookup Routes ==============
+
+@api_router.get("/barcode/{barcode}")
+async def lookup_barcode(barcode: str, current_user: dict = Depends(get_current_user)):
+    """Look up a product by barcode/UPC using Open Food Facts"""
+    # Validate barcode format
+    if not barcode.isdigit() or not (8 <= len(barcode) <= 14):
+        raise HTTPException(status_code=400, detail="Invalid barcode format. Must be 8-14 digits.")
+    
+    product = await off_client.lookup_barcode(barcode)
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found in Open Food Facts database")
+    
+    return product
+
+@api_router.post("/barcode/log")
+async def log_barcode_product(
+    barcode: str = Query(...),
+    servings: float = Query(1.0),
+    serving_size: float = Query(100.0),
+    meal_type: str = Query("snack"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Look up a barcode and add it directly to the food log"""
+    product = await off_client.lookup_barcode(barcode)
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    log_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    
+    # Scale nutrition based on serving size
+    scale = serving_size / 100.0
+    
+    log_doc = {
+        "id": log_id,
+        "user_id": current_user["id"],
+        "fdc_id": f"barcode:{barcode}",
+        "description": f"{product.product_name or 'Unknown Product'} ({product.brand or 'Unknown Brand'})",
+        "serving_size": serving_size,
+        "serving_unit": "g",
+        "servings": servings,
+        "calories": product.calories_per_100g * scale,
+        "protein": product.protein_per_100g * scale,
+        "fat": product.fat_per_100g * scale,
+        "carbs": product.carbs_per_100g * scale,
+        "fiber": product.fiber_per_100g * scale,
+        "amino_acids": [],  # Open Food Facts doesn't have amino acid data
+        "meal_type": meal_type,
+        "logged_at": now.isoformat(),
+        "created_at": now.isoformat(),
+        "barcode": barcode,
+        "image_url": product.image_url
+    }
+    
+    await db.food_logs.insert_one(log_doc)
+    
+    return {
+        "message": "Product added to log",
+        "log_id": log_id,
+        "product": product
+    }
+
+# ============== Amino Acid Suggestions Routes ==============
+
+@api_router.get("/suggestions/amino-acids", response_model=AminoAcidSuggestionsResponse)
+async def get_suggestions(
+    date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get amino acid intake analysis and food suggestions to complete the profile"""
+    if not date:
+        date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    suggestions = await get_amino_acid_suggestions(current_user["id"], date)
+    return suggestions
+
+@api_router.get("/suggestions/complete-protein")
+async def get_complete_protein_foods(current_user: dict = Depends(get_current_user)):
+    """Get a list of complete protein foods (contain all essential amino acids)"""
+    complete_protein_foods = [
+        {
+            "name": "Eggs, whole, raw",
+            "fdc_id": "173424",
+            "protein_per_100g": 12.6,
+            "description": "Contains all 9 essential amino acids in optimal ratios"
+        },
+        {
+            "name": "Chicken breast, cooked",
+            "fdc_id": "171534",
+            "protein_per_100g": 31.0,
+            "description": "High quality complete protein, lean meat"
+        },
+        {
+            "name": "Salmon, Atlantic, cooked",
+            "fdc_id": "175168",
+            "protein_per_100g": 25.4,
+            "description": "Complete protein with omega-3 fatty acids"
+        },
+        {
+            "name": "Beef, ground, 90% lean",
+            "fdc_id": "174032",
+            "protein_per_100g": 26.0,
+            "description": "Complete protein rich in B12 and iron"
+        },
+        {
+            "name": "Greek yogurt, plain",
+            "fdc_id": "170903",
+            "protein_per_100g": 10.0,
+            "description": "Complete protein with probiotics"
+        },
+        {
+            "name": "Quinoa, cooked",
+            "fdc_id": "168917",
+            "protein_per_100g": 4.4,
+            "description": "Plant-based complete protein (rare for plants)"
+        },
+        {
+            "name": "Soybeans, mature, cooked",
+            "fdc_id": "174270",
+            "protein_per_100g": 18.2,
+            "description": "Plant-based complete protein"
+        },
+        {
+            "name": "Whey protein isolate",
+            "fdc_id": "173178",
+            "protein_per_100g": 90.0,
+            "description": "Highly concentrated complete protein supplement"
+        }
+    ]
+    
+    return {
+        "complete_protein_foods": complete_protein_foods,
+        "tip": "Complete proteins contain all 9 essential amino acids. Eating a variety ensures optimal amino acid balance."
+    }
 
 # ============== Food Log Routes ==============
 

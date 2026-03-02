@@ -263,6 +263,83 @@ class KetroNutritionAPITester:
         else:
             return self.log_test("Check Favorite Status", False, f"Status: {status}")
 
+    def test_barcode_lookup(self):
+        """Test barcode lookup with Mars bar"""
+        test_barcode = "5000159407236"  # Mars bar barcode from test requirements
+        success, status, data = self.make_request('GET', f'barcode/{test_barcode}', expected_status=200)
+        
+        if success and data.get('barcode') == test_barcode:
+            product_name = data.get('product_name', 'Unknown')
+            brand = data.get('brand', 'Unknown')
+            protein = data.get('protein_per_100g', 0)
+            self.test_barcode_product = data  # Store for barcode log test
+            return self.log_test("Barcode Lookup", True, 
+                f"- Product: {product_name} ({brand}), Protein: {protein}g/100g")
+        else:
+            return self.log_test("Barcode Lookup", False, f"Status: {status}, Data: {data}")
+
+    def test_barcode_log(self):
+        """Test adding barcode product directly to log"""
+        if not hasattr(self, 'test_barcode_product') or not self.test_barcode_product:
+            return self.log_test("Barcode Log", False, "No barcode product data available")
+            
+        barcode = self.test_barcode_product['barcode']
+        params = f'barcode={barcode}&servings=1&serving_size=50&meal_type=snack'
+        success, status, data = self.make_request('POST', f'barcode/log?{params}', expected_status=200)
+        
+        if success and data.get('log_id'):
+            log_id = data['log_id']
+            product = data.get('product', {})
+            return self.log_test("Barcode Log", True, f"- Log ID: {log_id}, Product: {product.get('product_name', 'Unknown')}")
+        else:
+            return self.log_test("Barcode Log", False, f"Status: {status}")
+
+    def test_amino_acid_suggestions(self):
+        """Test amino acid suggestions endpoint"""
+        success, status, data = self.make_request('GET', 'suggestions/amino-acids', expected_status=200)
+        
+        if success and 'complete_profile' in data:
+            complete = data.get('complete_profile', False)
+            low_count = len(data.get('low_amino_acids', []))
+            missing_count = len(data.get('missing_amino_acids', []))
+            date = data.get('date', 'Unknown')
+            return self.log_test("Amino Acid Suggestions", True, 
+                f"- Date: {date}, Complete: {complete}, Low: {low_count}, Missing: {missing_count}")
+        else:
+            return self.log_test("Amino Acid Suggestions", False, f"Status: {status}")
+
+    def test_complete_protein_foods(self):
+        """Test complete protein foods endpoint"""
+        success, status, data = self.make_request('GET', 'suggestions/complete-protein', expected_status=200)
+        
+        if success and 'complete_protein_foods' in data:
+            foods = data.get('complete_protein_foods', [])
+            tip = data.get('tip', '')
+            return self.log_test("Complete Protein Foods", True, 
+                f"- {len(foods)} complete protein foods listed, Tip available: {bool(tip)}")
+        else:
+            return self.log_test("Complete Protein Foods", False, f"Status: {status}")
+
+    def test_invalid_barcode(self):
+        """Test invalid barcode handling"""
+        invalid_barcode = "123"  # Too short
+        success, status, data = self.make_request('GET', f'barcode/{invalid_barcode}', expected_status=400)
+        
+        if success or status == 400:
+            return self.log_test("Invalid Barcode Handling", True, f"- Correctly rejected barcode: {invalid_barcode}")
+        else:
+            return self.log_test("Invalid Barcode Handling", False, f"Status: {status}, Expected: 400")
+
+    def test_nonexistent_barcode(self):
+        """Test nonexistent barcode handling"""
+        fake_barcode = "99999999999999"  # Valid format but doesn't exist
+        success, status, data = self.make_request('GET', f'barcode/{fake_barcode}', expected_status=404)
+        
+        if success or status == 404:
+            return self.log_test("Nonexistent Barcode Handling", True, f"- Correctly returned 404 for: {fake_barcode}")
+        else:
+            return self.log_test("Nonexistent Barcode Handling", False, f"Status: {status}, Expected: 404")
+
     def cleanup_test_data(self):
         """Clean up created test data"""
         cleanup_count = 0
@@ -289,7 +366,7 @@ class KetroNutritionAPITester:
         print(f"🌐 Testing endpoint: {self.base_url}")
         print("=" * 60)
         
-        # Critical flow tests
+        # Critical flow tests (including new barcode and suggestions features)
         tests = [
             self.test_health_check,
             self.test_user_login,  # Use existing test user
@@ -304,6 +381,14 @@ class KetroNutritionAPITester:
             self.test_get_favorites,
             self.test_check_favorite_status,
             self.test_update_protein_goal,
+            # New barcode scanning features
+            self.test_barcode_lookup,
+            self.test_barcode_log,
+            self.test_invalid_barcode,
+            self.test_nonexistent_barcode,
+            # New amino acid suggestions features  
+            self.test_amino_acid_suggestions,
+            self.test_complete_protein_foods,
             self.cleanup_test_data
         ]
         

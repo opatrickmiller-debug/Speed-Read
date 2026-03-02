@@ -15,7 +15,9 @@ import {
   CheckCircle2,
   AlertTriangle,
   Loader2,
-  ArrowRight
+  ArrowRight,
+  Sparkles,
+  ScanBarcode
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -206,12 +208,53 @@ export const Dashboard = () => {
             </GlassCardHeader>
             <GlassCardContent className="pt-0">
               {aminoAcidsArray.length > 0 ? (
-                <AminoAcidList aminoAcids={aminoAcidsArray} showAll={false} />
+                <>
+                  <AminoAcidList aminoAcids={aminoAcidsArray} showAll={false} />
+                  <Link 
+                    to="/suggestions"
+                    data-testid="get-suggestions-btn"
+                    className="flex items-center justify-center gap-2 mt-4 p-3 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400 hover:bg-violet-500/20 transition-all text-sm font-medium"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Get Food Suggestions
+                  </Link>
+                </>
               ) : (
                 <div className="py-8 text-center text-zinc-500 text-sm">
                   <p>No amino acids tracked yet</p>
                 </div>
               )}
+            </GlassCardContent>
+          </GlassCard>
+
+          {/* Quick Actions */}
+          <GlassCard className="lg:col-span-12" data-testid="quick-actions-card">
+            <GlassCardContent className="p-6">
+              <div className="flex flex-wrap items-center justify-center gap-4">
+                <Link
+                  to="/barcode"
+                  data-testid="quick-barcode-btn"
+                  className="flex items-center gap-3 px-6 py-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-all"
+                >
+                  <ScanBarcode className="w-5 h-5" />
+                  <span className="font-medium">Scan Barcode</span>
+                </Link>
+                <Link
+                  to="/suggestions"
+                  data-testid="quick-suggestions-btn"
+                  className="flex items-center gap-3 px-6 py-3 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400 hover:bg-violet-500/20 transition-all"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  <span className="font-medium">Food Suggestions</span>
+                </Link>
+                <Link
+                  to="/search"
+                  className="flex items-center gap-3 px-6 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-all"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span className="font-medium">Add Food</span>
+                </Link>
+              </div>
             </GlassCardContent>
           </GlassCard>
 

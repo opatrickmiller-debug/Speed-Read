@@ -11,12 +11,16 @@ import {
   LogOut,
   Dna,
   UtensilsCrossed,
+  ScanBarcode,
+  Sparkles,
 } from 'lucide-react';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/search', icon: Search, label: 'Food Search' },
+  { to: '/barcode', icon: ScanBarcode, label: 'Barcode Scan' },
   { to: '/log', icon: UtensilsCrossed, label: 'Food Log' },
+  { to: '/suggestions', icon: Sparkles, label: 'Suggestions' },
   { to: '/meal-plans', icon: CalendarDays, label: 'Meal Plans' },
   { to: '/favorites', icon: Heart, label: 'Favorites' },
   { to: '/trends', icon: TrendingUp, label: 'Trends' },
