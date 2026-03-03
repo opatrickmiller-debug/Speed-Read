@@ -60,6 +60,24 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 
 ## What's Been Implemented
 
+### March 3, 2026 - Unified Food Search (USDA + Open Food Facts)
+- **NEW**: Unified Food Database Search
+  - Parallel search across USDA FoodData Central and Open Food Facts APIs
+  - Search results from both sources displayed with distinct badges:
+    - Cyan for USDA items
+    - Orange for Open Food Facts items
+    - Purple for Custom foods
+  - "AA Data" badge shows for USDA items with amino acid profiles (SR Legacy, Foundation, Survey)
+  - Results sorted: Custom foods first → USDA with amino acids → Open Food Facts → USDA branded
+  - Food details load from respective APIs (USDA or Open Food Facts)
+  - "Basic Nutrition Data" notice for items without amino acid profiles
+  - Add to Log and Favorite functionality works for both sources
+  - OFF food IDs use `off:` prefix (e.g., `off:5449000054227`)
+- **Fixed**: Open Food Facts results previously being dropped from unified search
+  - Improved error handling in async API calls
+  - Increased timeout from 15s to 20s for better reliability
+- **Note**: Search takes 15-25 seconds due to external API latency
+
 ### March 2, 2026 - Essential Fatty Acids + Nutrition Score + P1 Features + Bug Fix + Refactoring
 - **NEW**: Essential Fatty Acids tracking (Omega-3 and Omega-6)
   - Extracts fatty acids from USDA FDC data using nutrient IDs (LA:1269, ALA:1270, DHA:1272, EPA:1278)
@@ -143,6 +161,9 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - [x] Camera-based barcode scanning with Quagga2 fallback (DONE - March 2, 2026)
 - [x] Loading skeleton states for Dashboard, FoodSearch, Suggestions (DONE - March 2, 2026)
 - [x] Mobile responsive refinements with bottom nav "More" menu (DONE - March 2, 2026)
+- [x] Unified Food Search (USDA + Open Food Facts) (DONE - March 3, 2026)
+- [ ] Custom Foods feature - User-created food entries with macros
+- [ ] Re-enable USDA Branded foods with better error handling
 
 ### P2 - Medium Priority
 - [ ] Food portion size presets (1 oz, 1 cup, etc.)
@@ -173,6 +194,6 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - `/api/keto-score` - Keto score calculation
 
 ## Test Reports
-- Latest: `/app/test_reports/iteration_5.json`
-- Backend: 100% (13/13 tests passed)
-- Frontend: 100% (All fatty acids features working correctly)
+- Latest: `/app/test_reports/iteration_7.json`
+- Backend: 94% (15/16 tests passed, 1 skipped)
+- Frontend: 100% (All unified search features working correctly)
