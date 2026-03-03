@@ -28,6 +28,7 @@ from routes.suggestions import router as suggestions_router
 from routes.meals import router as meals_router
 from routes.keto_score import router as keto_score_router
 from routes.nutrition_score import router as nutrition_score_router
+from routes.custom_foods import router as custom_foods_router
 
 api_router.include_router(auth_router)
 api_router.include_router(foods_router)
@@ -38,6 +39,7 @@ api_router.include_router(suggestions_router)
 api_router.include_router(meals_router)
 api_router.include_router(keto_score_router)
 api_router.include_router(nutrition_score_router)
+api_router.include_router(custom_foods_router)
 
 # Root routes
 @api_router.get("/")

@@ -44,15 +44,9 @@ export const FoodSearch = () => {
     
     try {
       const res = await foodsApi.search(query);
-      // Sort results to prioritize SR Legacy and Foundation foods (more reliable)
+      // Results are already sorted by the backend (custom → USDA with amino acids → OFF → branded)
       const foods = res.data.foods || [];
-      const sortedFoods = foods.sort((a, b) => {
-        const priority = { 'SR Legacy': 0, 'Foundation': 1, 'Survey (FNDDS)': 2 };
-        const aPriority = priority[a.data_type] ?? 3;
-        const bPriority = priority[b.data_type] ?? 3;
-        return aPriority - bPriority;
-      });
-      setResults(sortedFoods);
+      setResults(foods);
     } catch (err) {
       toast.error('Search failed. Please try again.');
     } finally {
@@ -74,9 +68,16 @@ export const FoodSearch = () => {
       setIsFavorite(favRes.data.is_favorite);
       setFavoriteId(favRes.data.favorite_id);
     } catch (err) {
-      // Show more helpful error message
+      // Show more helpful error message based on source
       if (err.response?.status === 404) {
-        toast.error('This food item is no longer available in the USDA database. Try a different item.');
+        const source = food.source || 'unknown';
+        if (source === 'usda') {
+          toast.error('This USDA food item is no longer available. Try a different item.');
+        } else if (source === 'off') {
+          toast.error('This Open Food Facts product could not be loaded. Try a different item.');
+        } else {
+          toast.error('Food details not found. Try a different item.');
+        }
       } else {
         toast.error('Failed to load food details. Please try again.');
       }
@@ -157,7 +158,7 @@ export const FoodSearch = () => {
             Food Search
           </h1>
           <p className="text-zinc-500 mt-2">
-            Search the USDA database for detailed amino acid profiles
+            Search USDA, Open Food Facts & custom foods for nutritional data
           </p>
         </div>
 
@@ -193,7 +194,7 @@ export const FoodSearch = () => {
             ) : results.length > 0 ? (
               results.map((food, idx) => (
                 <button
-                  key={food.fdc_id}
+                  key={food.fdc_id || food.id}
                   onClick={() => handleSelectFood(food)}
                   data-testid={`food-result-${idx}`}
                   className={`w-full text-left p-4 rounded-xl border transition-all animate-fade-in ${
@@ -206,14 +207,31 @@ export const FoodSearch = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-medium truncate">{food.description}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                          food.data_type === 'SR Legacy' ? 'bg-emerald-500/20 text-emerald-400' :
-                          food.data_type === 'Foundation' ? 'bg-cyan-500/20 text-cyan-400' :
-                          'bg-zinc-700/50 text-zinc-400'
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        {/* Source Badge */}
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                          food.source === 'usda' && food.has_amino_acids 
+                            ? 'bg-emerald-500/20 text-emerald-400' 
+                            : food.source === 'usda' 
+                            ? 'bg-cyan-500/20 text-cyan-400'
+                            : food.source === 'off' 
+                            ? 'bg-orange-500/20 text-orange-400'
+                            : food.source === 'custom'
+                            ? 'bg-purple-500/20 text-purple-400'
+                            : 'bg-zinc-700/50 text-zinc-400'
                         }`}>
-                          {food.data_type || 'Branded'}
+                          {food.source === 'usda' ? (food.data_type || 'USDA') :
+                           food.source === 'off' ? 'Open Food Facts' :
+                           food.source === 'custom' ? 'Custom' : 
+                           food.data_type || 'Unknown'}
                         </span>
+                        {/* Amino acids indicator */}
+                        {food.has_amino_acids && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500">
+                            AA Data
+                          </span>
+                        )}
+                        {/* Brand name */}
                         {food.brand_owner && (
                           <span className="text-xs text-zinc-500 truncate">{food.brand_owner}</span>
                         )}
@@ -252,9 +270,22 @@ export const FoodSearch = () => {
                 <GlassCardHeader className="flex flex-row items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <GlassCardTitle className="text-xl">{foodDetails.description}</GlassCardTitle>
-                    <p className="text-sm text-zinc-500 mt-1">
-                      Per {foodDetails.serving_size}{foodDetails.serving_unit}
-                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-sm text-zinc-500">
+                        Per {foodDetails.serving_size}{foodDetails.serving_unit}
+                      </p>
+                      {/* Source badge */}
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                        foodDetails.source === 'usda' ? 'bg-cyan-500/20 text-cyan-400' :
+                        foodDetails.source === 'off' ? 'bg-orange-500/20 text-orange-400' :
+                        foodDetails.source === 'custom' ? 'bg-purple-500/20 text-purple-400' :
+                        'bg-zinc-700/50 text-zinc-400'
+                      }`}>
+                        {foodDetails.source === 'usda' ? 'USDA' :
+                         foodDetails.source === 'off' ? 'Open Food Facts' :
+                         foodDetails.source === 'custom' ? 'Custom' : 'Unknown'}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -280,32 +311,42 @@ export const FoodSearch = () => {
                 </GlassCardHeader>
                 
                 <GlassCardContent className="space-y-6">
-                  {/* Protein Status */}
-                  <div className={`flex items-center gap-3 p-4 rounded-xl ${
-                    foodDetails.is_complete_protein 
-                      ? 'bg-emerald-500/10 border border-emerald-500/20' 
-                      : 'bg-amber-500/10 border border-amber-500/20'
-                  }`}>
-                    {foodDetails.is_complete_protein ? (
-                      <>
-                        <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-                        <div>
-                          <p className="text-emerald-400 font-semibold">Complete Protein</p>
-                          <p className="text-xs text-emerald-400/70">Contains all 9 essential amino acids</p>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle className="w-6 h-6 text-amber-400" />
-                        <div>
-                          <p className="text-amber-400 font-semibold">Incomplete Protein</p>
-                          <p className="text-xs text-amber-400/70">
-                            Missing: {foodDetails.missing_amino_acids?.join(', ') || 'Some essential amino acids'}
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  {/* Protein Status - Only show if has amino acid data */}
+                  {foodDetails.has_amino_acids ? (
+                    <div className={`flex items-center gap-3 p-4 rounded-xl ${
+                      foodDetails.is_complete_protein 
+                        ? 'bg-emerald-500/10 border border-emerald-500/20' 
+                        : 'bg-amber-500/10 border border-amber-500/20'
+                    }`}>
+                      {foodDetails.is_complete_protein ? (
+                        <>
+                          <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                          <div>
+                            <p className="text-emerald-400 font-semibold">Complete Protein</p>
+                            <p className="text-xs text-emerald-400/70">Contains all 9 essential amino acids</p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle className="w-6 h-6 text-amber-400" />
+                          <div>
+                            <p className="text-amber-400 font-semibold">Incomplete Protein</p>
+                            <p className="text-xs text-amber-400/70">
+                              Missing: {foodDetails.missing_amino_acids?.join(', ') || 'Some essential amino acids'}
+                            </p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
+                      <AlertTriangle className="w-5 h-5 text-zinc-400" />
+                      <div>
+                        <p className="text-zinc-400 font-medium text-sm">Basic Nutrition Data</p>
+                        <p className="text-xs text-zinc-500">Amino acid profile not available for this item</p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Macros */}
                   <div className="grid grid-cols-4 gap-3">
