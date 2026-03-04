@@ -60,6 +60,21 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 
 ## What's Been Implemented
 
+### March 4, 2026 - Enhanced Suggestions & Total Carbs Update
+- **ENHANCED**: Suggestions Page with Personalized Quick Actions
+  - "Quick Suggestions for You" section at top of page
+  - Personalized cards: "You're low on [Nutrient] - Try [Food]"
+  - Search icon on each card to quickly find the suggested food
+  - Shows top 2 amino acid gaps + 1 fatty acid gap
+  - Badge counts on tabs showing deficiency numbers
+  - Improved header with icon and updated description
+- **CHANGED**: Carb Tracking Now Uses TOTAL Carbs (Not Net Carbs)
+  - Keto Score calculation based on total carbs for conservative tracking
+  - Dashboard displays "Total Carbs" label with fiber shown separately
+  - Settings page note: "Based on total carbs (not net carbs)"
+  - Education content updated to explain this approach
+  - All keto-related messages reference "total carb limit"
+
 ### March 4, 2026 - User Engagement Features (Education, Onboarding, Community)
 - **NEW**: Onboarding Flow for New Users
   - 4-step guided onboarding modal after first login

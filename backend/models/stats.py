@@ -46,7 +46,8 @@ class FattyAcidSuggestionsResponse(BaseModel):
 
 class KetoScore(BaseModel):
     date: str
-    net_carbs: float
+    total_carbs: float  # Using total carbs (not net carbs) for keto tracking
+    fiber: float = 0.0  # Fiber shown separately for reference
     carb_limit: float
     carbs_remaining: float
     score: int

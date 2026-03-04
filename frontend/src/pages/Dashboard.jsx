@@ -219,7 +219,7 @@ export const Dashboard = () => {
                           ketoScore.color === 'amber' && 'bg-gradient-to-r from-amber-600 to-amber-400',
                           ketoScore.color === 'red' && 'bg-gradient-to-r from-red-600 to-red-400'
                         )}
-                        style={{ width: `${Math.min(100, (ketoScore.net_carbs / ketoScore.carb_limit) * 100)}%` }}
+                        style={{ width: `${Math.min(100, ((ketoScore.total_carbs || ketoScore.net_carbs || 0) / ketoScore.carb_limit) * 100)}%` }}
                       />
                     </div>
                     
@@ -232,9 +232,9 @@ export const Dashboard = () => {
                           ketoScore.color === 'amber' && 'text-amber-500',
                           ketoScore.color === 'red' && 'text-red-500'
                         )}>
-                          {ketoScore.net_carbs}g
+                          {ketoScore.total_carbs ?? ketoScore.net_carbs}g
                         </p>
-                        <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>Net Carbs</p>
+                        <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>Total Carbs</p>
                       </div>
                       <div className="text-right">
                         <p className={cn(
@@ -246,6 +246,16 @@ export const Dashboard = () => {
                         <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>Remaining</p>
                       </div>
                     </div>
+
+                    {/* Fiber note */}
+                    {ketoScore.fiber > 0 && (
+                      <p className={cn(
+                        "text-xs",
+                        theme === 'dark' ? 'text-zinc-600' : 'text-gray-500'
+                      )}>
+                        Includes {ketoScore.fiber}g fiber
+                      </p>
+                    )}
                     
                     {/* Message */}
                     <div className={cn(

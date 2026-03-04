@@ -3,6 +3,7 @@ import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { InfoTooltip } from '../components/Education';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { authApi } from '../lib/api';
@@ -468,7 +469,10 @@ export const Settings = () => {
               {/* Carb Limit */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}>Daily Carb Limit (g)</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}>Daily Carb Limit (g)</Label>
+                    <InfoTooltip contentKey="ketoScore" />
+                  </div>
                   <span className={cn(
                     'px-2 py-0.5 rounded-full text-xs font-medium',
                     ketoTier.color === 'emerald' && 'text-emerald-600 bg-emerald-500/20',
@@ -492,6 +496,12 @@ export const Settings = () => {
                       : 'bg-white border-gray-300 text-gray-900'
                   )}
                 />
+                <p className={cn(
+                  "text-xs",
+                  theme === 'dark' ? 'text-amber-500/80' : 'text-amber-600'
+                )}>
+                  Based on total carbs (not net carbs)
+                </p>
                 <div className={cn(
                   "flex items-center justify-between text-xs",
                   theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { OmegaSummary } from '../components/FattyAcidChart';
 import { SuggestionsSkeleton } from '../components/Skeletons';
+import { InfoTooltip } from '../components/Education';
 import { useTheme } from '../context/ThemeContext';
 import { 
   Sparkles, 
@@ -18,12 +19,83 @@ import {
   Leaf,
   ChefHat,
   Droplets,
-  Fish
+  Fish,
+  Lightbulb,
+  Search
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+// Quick action card for personalized suggestions
+const QuickSuggestionCard = ({ type, item, theme, onSearch }) => {
+  const isAmino = type === 'amino';
+  const name = isAmino ? item.amino_acid : item.fatty_acid;
+  const topFood = item.suggested_foods?.[0];
+  
+  if (!topFood) return null;
+  
+  return (
+    <div className={cn(
+      "p-4 rounded-xl border transition-all hover:scale-[1.02]",
+      theme === 'dark' 
+        ? 'bg-gradient-to-br from-zinc-900 to-zinc-900/50 border-white/10 hover:border-emerald-500/30' 
+        : 'bg-gradient-to-br from-white to-gray-50 border-gray-200 hover:border-emerald-500/50 shadow-sm'
+    )}>
+      <div className="flex items-start gap-3">
+        <div className={cn(
+          "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+          isAmino ? 'bg-amber-500/20' : 'bg-cyan-500/20'
+        )}>
+          <Lightbulb className={cn(
+            "w-5 h-5",
+            isAmino ? 'text-amber-500' : 'text-cyan-500'
+          )} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className={cn(
+            "text-sm font-medium mb-1",
+            theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
+          )}>
+            You're low on <span className={isAmino ? 'text-amber-500' : 'text-cyan-500'}>{name}</span>
+          </p>
+          <p className={cn(
+            "text-lg font-semibold mb-2",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
+            Try {topFood.name}
+          </p>
+          <div className="flex items-center gap-2">
+            <span className={cn(
+              "text-xs px-2 py-0.5 rounded-full",
+              isAmino ? 'bg-emerald-500/20 text-emerald-500' : 'bg-cyan-500/20 text-cyan-500'
+            )}>
+              {topFood.amount_per_100g}g per 100g
+            </span>
+            {topFood.keto_friendly && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-500">
+                Keto
+              </span>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={() => onSearch(topFood.name)}
+          className={cn(
+            "p-2 rounded-lg transition-colors flex-shrink-0",
+            theme === 'dark' 
+              ? 'bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white' 
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700'
+          )}
+          title="Search for this food"
+        >
+          <Search className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export const Suggestions = () => {
   const navigate = useNavigate();
@@ -93,21 +165,93 @@ export const Suggestions = () => {
     );
   }
 
+  const handleSearchFood = (foodName) => {
+    navigate(`/search?q=${encodeURIComponent(foodName)}`);
+  };
+
   return (
     <Layout>
       <div className="p-6 md:p-8 max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className={cn(
-            "font-heading text-3xl md:text-4xl font-bold",
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>
-            Nutrition Suggestions
-          </h1>
-          <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>
-            Personalized food recommendations to complete your amino acid & fatty acid profile
-          </p>
+          <div className="flex items-center gap-3 mb-2">
+            <div className={cn(
+              "w-12 h-12 rounded-xl flex items-center justify-center",
+              theme === 'dark' ? 'bg-emerald-500/20' : 'bg-emerald-100'
+            )}>
+              <Sparkles className="w-6 h-6 text-emerald-500" />
+            </div>
+            <div>
+              <h1 className={cn(
+                "font-heading text-3xl md:text-4xl font-bold",
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              )}>
+                Nutrition Suggestions
+              </h1>
+              <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>
+                Personalized recommendations based on today's intake
+              </p>
+            </div>
+          </div>
         </div>
+
+        {/* Quick Suggestions - Top 3 personalized recommendations */}
+        {((suggestions?.low_amino_acids?.length > 0) || (fattySuggestions?.low_fatty_acids?.length > 0)) && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Lightbulb className="w-5 h-5 text-amber-500" />
+              <h2 className={cn(
+                "text-lg font-semibold",
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              )}>Quick Suggestions for You</h2>
+              <InfoTooltip contentKey="aminoAcids" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {suggestions?.low_amino_acids?.slice(0, 2).map((item) => (
+                <QuickSuggestionCard 
+                  key={item.amino_acid}
+                  type="amino"
+                  item={item}
+                  theme={theme}
+                  onSearch={handleSearchFood}
+                />
+              ))}
+              {fattySuggestions?.low_fatty_acids?.slice(0, 1).map((item) => (
+                <QuickSuggestionCard 
+                  key={item.fatty_acid}
+                  type="fatty"
+                  item={item}
+                  theme={theme}
+                  onSearch={handleSearchFood}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* All Complete Banner */}
+        {suggestions?.complete_profile && fattySuggestions?.complete_profile && (
+          <GlassCard className="mb-8">
+            <GlassCardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
+                  <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+                </div>
+                <div>
+                  <h2 className={cn(
+                    "text-xl font-semibold",
+                    theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'
+                  )}>
+                    Excellent Nutrition Today!
+                  </h2>
+                  <p className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}>
+                    You've met your amino acid and fatty acid requirements. Keep it up!
+                  </p>
+                </div>
+              </div>
+            </GlassCardContent>
+          </GlassCard>
+        )}
 
         {/* Tab Selector */}
         <div className={cn(
@@ -125,6 +269,11 @@ export const Suggestions = () => {
           >
             <Beaker className="w-4 h-4" />
             Amino Acids
+            {suggestions?.low_amino_acids?.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-500">
+                {suggestions.low_amino_acids.length}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setActiveTab('fatty')}
@@ -137,6 +286,11 @@ export const Suggestions = () => {
           >
             <Droplets className="w-4 h-4" />
             Fatty Acids
+            {fattySuggestions?.low_fatty_acids?.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-cyan-500/20 text-cyan-500">
+                {fattySuggestions.low_fatty_acids.length}
+              </span>
+            )}
           </button>
         </div>
 

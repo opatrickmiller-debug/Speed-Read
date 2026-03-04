@@ -23,32 +23,33 @@ async def get_keto_score(
         "logged_at": {"$gte": start.isoformat(), "$lt": end.isoformat()}
     }, {"_id": 0}).to_list(500)
     
+    # Use TOTAL carbs (not net carbs) for keto tracking
     total_carbs = sum(log.get("carbs", 0) * log.get("servings", 1) for log in logs)
     total_fiber = sum(log.get("fiber", 0) * log.get("servings", 1) for log in logs)
-    net_carbs = max(0, total_carbs - total_fiber)
     
     carb_limit = current_user.get("daily_carb_limit", 20.0)
-    carbs_remaining = max(0, carb_limit - net_carbs)
+    carbs_remaining = max(0, carb_limit - total_carbs)
     
-    if net_carbs <= carb_limit:
+    if total_carbs <= carb_limit:
         score = 100
         status = "ketosis"
         color = "emerald"
-        message = f"Perfect! You're within your {carb_limit}g carb limit."
-    elif net_carbs <= carb_limit * 1.5:
-        score = max(50, int(100 - ((net_carbs - carb_limit) / carb_limit) * 100))
+        message = f"Perfect! You're within your {carb_limit}g total carb limit."
+    elif total_carbs <= carb_limit * 1.5:
+        score = max(50, int(100 - ((total_carbs - carb_limit) / carb_limit) * 100))
         status = "borderline"
         color = "amber"
-        message = f"Borderline - {net_carbs - carb_limit:.1f}g over your limit. You might still be in ketosis."
+        message = f"Borderline - {total_carbs - carb_limit:.1f}g over your limit. You might still be in ketosis."
     else:
-        score = max(0, int(50 - ((net_carbs - carb_limit * 1.5) / carb_limit) * 50))
+        score = max(0, int(50 - ((total_carbs - carb_limit * 1.5) / carb_limit) * 50))
         status = "over_limit"
         color = "red"
-        message = f"Over limit by {net_carbs - carb_limit:.1f}g. Consider reducing carbs tomorrow."
+        message = f"Over limit by {total_carbs - carb_limit:.1f}g. Consider reducing carbs tomorrow."
     
     return KetoScore(
         date=date,
-        net_carbs=round(net_carbs, 1),
+        total_carbs=round(total_carbs, 1),
+        fiber=round(total_fiber, 1),
         carb_limit=carb_limit,
         carbs_remaining=round(carbs_remaining, 1),
         score=score,

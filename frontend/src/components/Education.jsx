@@ -55,13 +55,15 @@ High-fat protein sources like beef, salmon, and eggs typically provide complete 
   },
   ketoScore: {
     title: 'Keto Score',
-    quick: 'Measures how keto-friendly your daily intake is (0-100).',
+    quick: 'Measures how keto-friendly your daily intake is (0-100). Based on total carbs.',
     detailed: `The Keto Score rates your daily food choices on a 0-100 scale based on macronutrient ratios optimal for ketosis.
 
+**Important: Uses Total Carbs**
+This app tracks TOTAL carbs (not net carbs) for more conservative and consistent keto tracking. Fiber is shown separately for your reference.
+
 **Scoring Factors:**
-• Net carbs (biggest impact)
+• Total carbs (biggest impact)
 • Fat-to-protein ratio
-• Fiber content
 • Food quality
 
 **Score Ranges:**
@@ -71,7 +73,7 @@ High-fat protein sources like beef, salmon, and eggs typically provide complete 
 • Below 50: May kick you out of ketosis
 
 **Tips to improve:**
-• Stay under 20g net carbs
+• Stay under your daily carb limit
 • Prioritize healthy fats
 • Moderate protein intake
 • Choose whole foods`
