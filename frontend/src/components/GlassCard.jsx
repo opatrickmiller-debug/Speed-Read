@@ -57,7 +57,7 @@ export const GlassCardDescription = ({ children, className, ...props }) => {
   return (
     <p className={cn(
       'text-sm mt-1',
-      theme === 'dark' ? 'text-zinc-500' : 'text-gray-500',
+      theme === 'dark' ? 'text-zinc-500' : 'text-gray-600',
       className
     )} {...props}>
       {children}

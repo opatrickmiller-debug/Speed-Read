@@ -8,6 +8,7 @@ import { NutritionScoreCard } from '../components/NutritionScore';
 import { DashboardSkeleton } from '../components/Skeletons';
 import { statsApi, logsApi, ketoApi } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { 
   Flame, 
   Beef, 
@@ -28,6 +29,7 @@ import { cn } from '../lib/utils';
 
 export const Dashboard = () => {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [stats, setStats] = useState(null);
   const [ketoScore, setKetoScore] = useState(null);
   const [recentLogs, setRecentLogs] = useState([]);
@@ -77,10 +79,16 @@ export const Dashboard = () => {
       <div className="p-6 md:p-8 max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-10">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 mb-2">
+          <p className={cn(
+            "text-xs font-bold uppercase tracking-[0.2em] mb-2",
+            theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+          )}>
             {format(new Date(), 'EEEE, MMMM d')}
           </p>
-          <h1 className="font-heading text-3xl md:text-4xl font-bold text-white">
+          <h1 className={cn(
+            "font-heading text-3xl md:text-4xl font-bold",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
             Welcome back, {user?.name?.split(' ')[0]}
           </h1>
         </div>
@@ -133,14 +141,14 @@ export const Dashboard = () => {
             <GlassCardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Leaf className="w-5 h-5 text-emerald-400" />
+                  <Leaf className="w-5 h-5 text-emerald-500" />
                   <GlassCardTitle>Keto Score</GlassCardTitle>
                 </div>
                 <div className={cn(
                   'text-4xl font-bold',
-                  ketoScore?.color === 'emerald' && 'text-emerald-400',
-                  ketoScore?.color === 'amber' && 'text-amber-400',
-                  ketoScore?.color === 'red' && 'text-red-400'
+                  ketoScore?.color === 'emerald' && 'text-emerald-500',
+                  ketoScore?.color === 'amber' && 'text-amber-500',
+                  ketoScore?.color === 'red' && 'text-red-500'
                 )}>
                   {ketoScore?.score || 0}
                 </div>
@@ -150,7 +158,10 @@ export const Dashboard = () => {
               {ketoScore ? (
                 <div className="space-y-4">
                   {/* Progress bar */}
-                  <div className="relative h-4 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className={cn(
+                    "relative h-4 rounded-full overflow-hidden",
+                    theme === 'dark' ? 'bg-zinc-800' : 'bg-gray-200'
+                  )}>
                     <div
                       className={cn(
                         'h-full rounded-full transition-all duration-500',
@@ -169,28 +180,31 @@ export const Dashboard = () => {
                     <div>
                       <p className={cn(
                         'text-2xl font-semibold',
-                        ketoScore.color === 'emerald' && 'text-emerald-400',
-                        ketoScore.color === 'amber' && 'text-amber-400',
-                        ketoScore.color === 'red' && 'text-red-400'
+                        ketoScore.color === 'emerald' && 'text-emerald-500',
+                        ketoScore.color === 'amber' && 'text-amber-500',
+                        ketoScore.color === 'red' && 'text-red-500'
                       )}>
                         {ketoScore.net_carbs}g
                       </p>
-                      <p className="text-zinc-500">Net Carbs</p>
+                      <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>Net Carbs</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-semibold text-zinc-300">
+                      <p className={cn(
+                        "text-2xl font-semibold",
+                        theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
+                      )}>
                         {ketoScore.carbs_remaining}g
                       </p>
-                      <p className="text-zinc-500">Remaining</p>
+                      <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>Remaining</p>
                     </div>
                   </div>
                   
                   {/* Message */}
                   <div className={cn(
                     'p-3 rounded-xl text-sm',
-                    ketoScore.color === 'emerald' && 'bg-emerald-500/10 text-emerald-400',
-                    ketoScore.color === 'amber' && 'bg-amber-500/10 text-amber-400',
-                    ketoScore.color === 'red' && 'bg-red-500/10 text-red-400'
+                    ketoScore.color === 'emerald' && 'bg-emerald-500/10 text-emerald-600',
+                    ketoScore.color === 'amber' && 'bg-amber-500/10 text-amber-600',
+                    ketoScore.color === 'red' && 'bg-red-500/10 text-red-600'
                   )}>
                     {ketoScore.status === 'ketosis' && <CheckCircle2 className="w-4 h-4 inline mr-2" />}
                     {ketoScore.status === 'borderline' && <AlertTriangle className="w-4 h-4 inline mr-2" />}
@@ -199,7 +213,10 @@ export const Dashboard = () => {
                   </div>
                 </div>
               ) : (
-                <div className="py-8 text-center text-zinc-500">
+                <div className={cn(
+                  "py-8 text-center",
+                  theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                )}>
                   <p>Log foods to see your Keto Score</p>
                 </div>
               )}

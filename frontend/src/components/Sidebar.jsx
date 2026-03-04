@@ -90,10 +90,10 @@ export const Sidebar = () => {
               cn(
                 'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group',
                 isActive
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                  ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
                   : theme === 'dark' 
                     ? 'text-zinc-400 hover:text-white hover:bg-white/5'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
               )
             }
           >
@@ -116,7 +116,7 @@ export const Sidebar = () => {
             "w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-2 transition-all duration-200",
             theme === 'dark' 
               ? 'text-zinc-400 hover:text-white hover:bg-white/5'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
           )}
         >
           {theme === 'dark' ? (
@@ -141,7 +141,7 @@ export const Sidebar = () => {
             )}>{user?.name}</p>
             <p className={cn(
               "text-xs truncate",
-              theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+              theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'
             )}>{user?.email}</p>
           </div>
           <button
@@ -151,7 +151,7 @@ export const Sidebar = () => {
               "p-2 rounded-lg transition-colors",
               theme === 'dark' 
                 ? 'text-zinc-500 hover:text-white hover:bg-white/5'
-                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
             )}
             title="Logout"
           >
@@ -203,10 +203,10 @@ export const MobileNav = () => {
                   cn(
                     'flex flex-col items-center gap-2 p-3 rounded-xl transition-all',
                     isActive 
-                      ? 'bg-emerald-500/10 text-emerald-400' 
+                      ? 'bg-emerald-500/10 text-emerald-600' 
                       : theme === 'dark' 
                         ? 'text-zinc-400 hover:bg-white/5'
-                        : 'text-gray-500 hover:bg-gray-100'
+                        : 'text-gray-700 hover:bg-gray-100'
                   )
                 }
               >
@@ -224,7 +224,7 @@ export const MobileNav = () => {
               "w-full flex items-center justify-center gap-2 mt-3 py-3 rounded-xl transition-all",
               theme === 'dark' 
                 ? 'bg-white/5 text-zinc-400 hover:text-white'
-                : 'bg-gray-100 text-gray-600 hover:text-gray-900'
+                : 'bg-gray-100 text-gray-700 hover:text-gray-900'
             )}
           >
             {theme === 'dark' ? (
@@ -246,7 +246,7 @@ export const MobileNav = () => {
               </div>
               <span className={cn(
                 "text-sm truncate max-w-[120px]",
-                theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+                theme === 'dark' ? 'text-zinc-400' : 'text-gray-700'
               )}>{user?.name}</span>
             </div>
             <button
