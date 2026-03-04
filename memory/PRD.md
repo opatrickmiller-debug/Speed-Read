@@ -84,10 +84,25 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
   - Progress bar shows during search with "Searching USDA & Open Food Facts..." text
   - Animated percentage from 0% to 100%
   - Gradient from emerald to cyan color
+- **NEW**: Dark/Light Theme Toggle
+  - Theme toggle button in sidebar with Sun/Moon icon
+  - Full light mode styling: white backgrounds, dark text, subtle shadows
+  - Theme persists in localStorage across sessions
+  - Smooth transition animations between themes
+  - All components updated for theme support (Sidebar, GlassCard, Layout)
+- **NEW**: Portion Size Presets
+  - Quick portion buttons in Add to Log dialog: ¼, ½, 1, 1½, 2, 3, 4, 5
+  - Clicking preset updates servings input instantly
+  - Total calculation now shows both protein AND calories
+- **NEW**: Search Result Caching
+  - Client-side cache with 5-minute TTL
+  - Cached searches are ~100x faster
+  - Toast shows "(cached)" for cached results
+  - Cache auto-cleans expired entries
 - **Fixed**: Open Food Facts results previously being dropped from unified search
   - Improved error handling in async API calls
   - Increased timeout from 15s to 20s for better reliability
-- **Note**: Search takes 15-25 seconds due to external API latency
+- **Note**: Search takes 15-25 seconds due to external API latency (instant if cached)
 
 ### March 2, 2026 - Essential Fatty Acids + Nutrition Score + P1 Features + Bug Fix + Refactoring
 - **NEW**: Essential Fatty Acids tracking (Omega-3 and Omega-6)
@@ -175,7 +190,10 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - [x] Unified Food Search (USDA + Open Food Facts) (DONE - March 3, 2026)
 - [x] Custom Foods feature - User-created food entries with macros (DONE - March 3, 2026)
 - [x] Search progress indicator (DONE - March 3, 2026)
-- [ ] Re-enable USDA Branded foods with better error handling
+- [x] Dark/Light theme toggle (DONE - March 4, 2026)
+- [x] Portion size presets (DONE - March 4, 2026)
+- [x] Search result caching for performance (DONE - March 4, 2026)
+- [ ] Re-enable USDA Branded foods with better error handling (backend already supports it)
 
 ### P2 - Medium Priority
 - [ ] Food portion size presets (1 oz, 1 cup, etc.)
@@ -206,6 +224,8 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - `/api/keto-score` - Keto score calculation
 
 ## Test Reports
-- Latest: `/app/test_reports/iteration_8.json`
-- Backend: 100% (9/9 Custom Foods tests passed)
-- Frontend: 100% (All Custom Foods CRUD and search progress features working)
+- Latest: `/app/test_reports/iteration_9.json`
+- Frontend: 100% (Theme toggle, portion presets, caching all working)
+- Theme toggle: All 12 tests passed
+- Portion presets: All 10 tests passed  
+- Caching: 105x performance improvement (12.4s → 0.1s for cached searches)
