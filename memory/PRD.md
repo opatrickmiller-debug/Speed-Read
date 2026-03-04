@@ -68,15 +68,23 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
   - Smooth transition animations between themes
   - All components updated for theme support (Sidebar, GlassCard, Layout, all pages)
   - Improved text contrast throughout light mode
+  - **DEFAULT changed to LIGHT MODE** (March 4, 2026)
 - **NEW**: Imperial/Metric Unit Toggle
   - Toggle between metric (kg, cm) and imperial (lbs, in) units
   - Body weight displays in selected unit system
   - Lean Body Mass displays in selected unit system  
   - Unit preference saved to user profile
-- **NEW**: Portion Size Presets
-  - Quick portion buttons in Add to Log dialog: ¼, ½, 1, 1½, 2, 3, 4, 5
-  - Clicking preset updates servings input instantly
-  - Total calculation now shows both protein AND calories
+  - **DEFAULT changed to IMPERIAL** for new users (March 4, 2026)
+- **REMOVED**: Portion Size Presets (March 4, 2026)
+  - Quick portion buttons removed from Add to Log dialog
+  - Users now manually enter servings value
+- **CHANGED**: All Data Inputs Manual Entry (March 4, 2026)
+  - Replaced all sliders with text inputs on Settings page:
+    - Body Weight (kg/lbs)
+    - Body Fat (%)
+    - Protein per kg LBM (g/kg)
+    - Daily Carb Limit (g)
+  - Users now type values directly instead of using sliders
 - **NEW**: Search Result Caching
   - Client-side cache with 5-minute TTL
   - Cached searches are ~100x faster
