@@ -93,6 +93,11 @@ export const FoodSearch = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [categoryFoods, setCategoryFoods] = useState([]);
   const [categoryLoading, setCategoryLoading] = useState(false);
+  
+  // Autocomplete state
+  const [autocompleteResults, setAutocompleteResults] = useState([]);
+  const [autocompleteLoading, setAutocompleteLoading] = useState(false);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
 
   const getToken = () => localStorage.getItem('token');
 
@@ -136,6 +141,38 @@ export const FoodSearch = () => {
     
     loadInitialData();
   }, []);
+
+  // Autocomplete search with debounce
+  useEffect(() => {
+    if (query.length < 2) {
+      setAutocompleteResults([]);
+      setShowAutocomplete(false);
+      return;
+    }
+    
+    const debounceTimer = setTimeout(async () => {
+      setAutocompleteLoading(true);
+      try {
+        const token = getToken();
+        // Quick search - just get top 5 results
+        const res = await fetch(`${API_URL}/api/foods/search?query=${encodeURIComponent(query)}&page_size=5`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          setAutocompleteResults(data.foods?.slice(0, 5) || []);
+          setShowAutocomplete(true);
+        }
+      } catch (err) {
+        console.error('Autocomplete error:', err);
+      } finally {
+        setAutocompleteLoading(false);
+      }
+    }, 300); // 300ms debounce
+    
+    return () => clearTimeout(debounceTimer);
+  }, [query]);
 
   // Load foods for a specific category
   const loadCategoryFoods = useCallback(async (categoryId) => {
@@ -352,7 +389,16 @@ export const FoodSearch = () => {
             <Input
               value={query}
               onChange={(e) => { setQuery(e.target.value); setActiveView('search'); }}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setShowAutocomplete(false);
+                  handleSearch();
+                }
+                if (e.key === 'Escape') {
+                  setShowAutocomplete(false);
+                }
+              }}
+              onFocus={() => query.length >= 2 && autocompleteResults.length > 0 && setShowAutocomplete(true)}
               placeholder="Search for chicken, eggs, salmon..."
               data-testid="food-search-input"
               className={cn(
@@ -362,9 +408,55 @@ export const FoodSearch = () => {
                   : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
               )}
             />
+            
+            {/* Autocomplete Dropdown */}
+            {showAutocomplete && (autocompleteResults.length > 0 || autocompleteLoading) && (
+              <div className={cn(
+                "absolute z-50 w-full mt-1 rounded-xl border shadow-xl overflow-hidden",
+                theme === 'dark' 
+                  ? 'bg-zinc-900 border-white/10' 
+                  : 'bg-white border-gray-200'
+              )}>
+                {autocompleteLoading && (
+                  <div className="p-3 flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
+                    <span className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-500'}>Searching...</span>
+                  </div>
+                )}
+                {!autocompleteLoading && autocompleteResults.map((food, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setShowAutocomplete(false);
+                      quickSelectFood(food);
+                    }}
+                    className={cn(
+                      "w-full p-3 text-left flex items-center justify-between transition-colors",
+                      theme === 'dark' 
+                        ? 'hover:bg-white/5 border-b border-white/5 last:border-0' 
+                        : 'hover:bg-gray-50 border-b border-gray-100 last:border-0'
+                    )}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className={cn(
+                        "font-medium truncate",
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                      )}>{food.description}</p>
+                      <p className={cn(
+                        "text-xs",
+                        theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                      )}>{food.source === 'custom' ? 'Custom Food' : food.source?.toUpperCase()}</p>
+                    </div>
+                    <span className="text-emerald-500 text-sm font-semibold ml-2">
+                      {food.protein_per_100g?.toFixed(0) || food.protein?.toFixed(0) || 0}g
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <button
-            onClick={handleSearch}
+            onClick={() => { setShowAutocomplete(false); handleSearch(); }}
             disabled={loading || !query.trim()}
             data-testid="food-search-btn"
             className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] disabled:opacity-50 disabled:cursor-not-allowed"

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { ProteinProgress } from '../components/ProteinProgress';
@@ -13,20 +14,24 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
-  UtensilsCrossed
+  UtensilsCrossed,
+  RotateCcw,
+  Plus
 } from 'lucide-react';
 import { format, addDays, subDays } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 
 export const FoodLog = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { theme } = useTheme();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [logs, setLogs] = useState([]);
   const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [relogging, setRelogging] = useState(null);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -62,6 +67,33 @@ export const FoodLog = () => {
       loadData();
     } catch (err) {
       toast.error('Failed to remove food');
+    }
+  };
+
+  const handleLogAgain = async (log) => {
+    setRelogging(log.id);
+    try {
+      await logsApi.create({
+        fdc_id: log.fdc_id,
+        description: log.description,
+        serving_size: log.serving_size,
+        serving_unit: log.serving_unit,
+        servings: log.servings,
+        calories: log.calories,
+        protein: log.protein,
+        fat: log.fat,
+        carbs: log.carbs,
+        fiber: log.fiber,
+        amino_acids: log.amino_acids || [],
+        fatty_acids: log.fatty_acids || [],
+        meal_type: log.meal_type
+      });
+      toast.success('Food logged again!');
+      loadData();
+    } catch (err) {
+      toast.error('Failed to log food');
+    } finally {
+      setRelogging(null);
     }
   };
 
@@ -222,27 +254,66 @@ export const FoodLog = () => {
                         {mealLogs.map((log) => (
                           <div
                             key={log.id}
-                            className="flex items-center justify-between p-4 rounded-xl bg-black/30 border border-white/5 group"
+                            className={cn(
+                              "flex items-center justify-between p-4 rounded-xl border group",
+                              theme === 'dark' 
+                                ? 'bg-black/30 border-white/5' 
+                                : 'bg-gray-50 border-gray-200'
+                            )}
                           >
                             <div className="flex-1 min-w-0">
-                              <p className="text-white font-medium truncate">{log.description}</p>
-                              <p className="text-xs text-zinc-500 mt-1">
+                              <p className={cn(
+                                "font-medium truncate",
+                                theme === 'dark' ? 'text-white' : 'text-gray-900'
+                              )}>{log.description}</p>
+                              <p className={cn(
+                                "text-xs mt-1",
+                                theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                              )}>
                                 {log.servings} × {log.serving_size}{log.serving_unit}
                               </p>
                             </div>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-3">
                               <div className="text-right">
-                                <p className="text-emerald-400 font-semibold">
+                                <p className="text-emerald-500 font-semibold">
                                   {(log.protein * log.servings).toFixed(1)}g
                                 </p>
-                                <p className="text-xs text-zinc-500">
+                                <p className={cn(
+                                  "text-xs",
+                                  theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                                )}>
                                   {(log.calories * log.servings).toFixed(0)} cal
                                 </p>
                               </div>
                               <button
+                                onClick={() => handleLogAgain(log)}
+                                disabled={relogging === log.id}
+                                data-testid={`log-again-${log.id}`}
+                                className={cn(
+                                  "p-2 rounded-lg transition-all",
+                                  theme === 'dark' 
+                                    ? 'text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10' 
+                                    : 'text-gray-400 hover:text-emerald-600 hover:bg-emerald-50',
+                                  "opacity-0 group-hover:opacity-100"
+                                )}
+                                title="Log again"
+                              >
+                                {relogging === log.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <RotateCcw className="w-4 h-4" />
+                                )}
+                              </button>
+                              <button
                                 onClick={() => handleDeleteLog(log.id)}
                                 data-testid={`delete-log-${log.id}`}
-                                className="p-2 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
+                                className={cn(
+                                  "p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100",
+                                  theme === 'dark' 
+                                    ? 'text-zinc-600 hover:text-red-400 hover:bg-red-500/10' 
+                                    : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                                )}
+                                title="Delete"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
