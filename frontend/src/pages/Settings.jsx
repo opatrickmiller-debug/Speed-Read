@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { Input } from '../components/ui/input';
@@ -14,20 +14,30 @@ import {
   Scale,
   Calculator,
   Leaf,
-  Sparkles,
   Ruler
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 
+// Constants moved outside component to prevent recreation
+const KG_TO_LBS = 2.20462;
+const ESSENTIAL_AMINO_ACIDS = ['Histidine', 'Isoleucine', 'Leucine', 'Lysine', 'Methionine', 
+                               'Phenylalanine', 'Threonine', 'Tryptophan', 'Valine'];
+
+// Conversion helpers - pure functions outside component
+const kgToLbs = (kg) => kg * KG_TO_LBS;
+const lbsToKg = (lbs) => lbs / KG_TO_LBS;
+
+const getKetoTierLabel = (carbs) => {
+  if (carbs <= 20) return { label: 'Strict Keto', color: 'emerald' };
+  if (carbs <= 35) return { label: 'Moderate Keto', color: 'cyan' };
+  if (carbs <= 50) return { label: 'Liberal Keto', color: 'amber' };
+  return { label: 'Low Carb', color: 'orange' };
+};
+
 export const Settings = () => {
   const { user, updateUser } = useAuth();
   const { theme } = useTheme();
-  
-  // Scroll to top on mount
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
   
   // Form states - store as numbers for calculations
   const [bodyWeight, setBodyWeight] = useState(user?.body_weight_kg || 70);
@@ -45,93 +55,100 @@ export const Settings = () => {
   const [carbLimitInput, setCarbLimitInput] = useState('');
   
   const [saving, setSaving] = useState(false);
-  const [calculatedProtein, setCalculatedProtein] = useState(null);
 
-  // Conversion helpers
-  const kgToLbs = (kg) => kg * 2.20462;
-  const lbsToKg = (lbs) => lbs / 2.20462;
+  // Memoized calculations
+  const displayWeight = useMemo(() => 
+    unitSystem === 'imperial' ? kgToLbs(bodyWeight) : bodyWeight
+  , [unitSystem, bodyWeight]);
   
-  // Display weight based on unit system
-  const displayWeight = unitSystem === 'imperial' ? kgToLbs(bodyWeight) : bodyWeight;
   const weightUnit = unitSystem === 'imperial' ? 'lbs' : 'kg';
+  
+  const ketoTier = useMemo(() => getKetoTierLabel(carbLimit), [carbLimit]);
 
-  // Initialize input strings from numeric values
-  useEffect(() => {
-    const weightVal = unitSystem === 'imperial' ? Math.round(kgToLbs(bodyWeight)) : Math.round(bodyWeight * 10) / 10;
-    setWeightInput(String(weightVal));
-    setBodyFatInput(String(bodyFat));
-    setProteinMultiplierInput(String(proteinMultiplier));
-    setProteinGoalInput(String(proteinGoal));
-    setCarbLimitInput(String(carbLimit));
-  }, [user]); // Only on initial load
-
-  // Update weight input when unit system changes
-  useEffect(() => {
-    const weightVal = unitSystem === 'imperial' ? Math.round(kgToLbs(bodyWeight)) : Math.round(bodyWeight * 10) / 10;
-    setWeightInput(String(weightVal));
-  }, [unitSystem]);
-
-  // Calculate lean body mass and recommended protein
-  useEffect(() => {
+  const calculatedProtein = useMemo(() => {
     const lbm = bodyWeight * (1 - bodyFat / 100);
     const recommended = lbm * proteinMultiplier;
-    setCalculatedProtein({
+    return {
       lbm: lbm.toFixed(1),
       lbmDisplay: unitSystem === 'imperial' ? kgToLbs(lbm).toFixed(1) : lbm.toFixed(1),
       recommended: Math.round(recommended)
-    });
+    };
   }, [bodyWeight, bodyFat, proteinMultiplier, unitSystem]);
 
-  const handleWeightInputChange = (e) => {
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Initialize input strings from user data (only on mount)
+  useEffect(() => {
+    if (user) {
+      const weightVal = unitSystem === 'imperial' 
+        ? Math.round(kgToLbs(user.body_weight_kg || 70)) 
+        : Math.round((user.body_weight_kg || 70) * 10) / 10;
+      setWeightInput(String(weightVal));
+      setBodyFatInput(String(user.body_fat_percentage || 20));
+      setProteinMultiplierInput(String(user.protein_per_kg_lbm || 2.0));
+      setProteinGoalInput(String(user.protein_goal || 150));
+      setCarbLimitInput(String(user.daily_carb_limit || 20));
+    }
+  }, [user?.id]); // Only re-run if user changes
+
+  // Update weight input when unit system changes
+  useEffect(() => {
+    const weightVal = unitSystem === 'imperial' 
+      ? Math.round(kgToLbs(bodyWeight)) 
+      : Math.round(bodyWeight * 10) / 10;
+    setWeightInput(String(weightVal));
+  }, [unitSystem, bodyWeight]);
+
+  // Memoized input handlers to prevent recreation
+  const handleWeightInputChange = useCallback((e) => {
     const val = e.target.value;
     setWeightInput(val);
     const numVal = parseFloat(val);
     if (!isNaN(numVal) && numVal > 0) {
-      if (unitSystem === 'imperial') {
-        setBodyWeight(lbsToKg(numVal));
-      } else {
-        setBodyWeight(numVal);
-      }
+      setBodyWeight(unitSystem === 'imperial' ? lbsToKg(numVal) : numVal);
     }
-  };
+  }, [unitSystem]);
 
-  const handleBodyFatInputChange = (e) => {
+  const handleBodyFatInputChange = useCallback((e) => {
     const val = e.target.value;
     setBodyFatInput(val);
     const numVal = parseFloat(val);
     if (!isNaN(numVal) && numVal >= 0) {
       setBodyFat(numVal);
     }
-  };
+  }, []);
 
-  const handleProteinMultiplierInputChange = (e) => {
+  const handleProteinMultiplierInputChange = useCallback((e) => {
     const val = e.target.value;
     setProteinMultiplierInput(val);
     const numVal = parseFloat(val);
     if (!isNaN(numVal) && numVal > 0) {
       setProteinMultiplier(numVal);
     }
-  };
+  }, []);
 
-  const handleProteinGoalInputChange = (e) => {
+  const handleProteinGoalInputChange = useCallback((e) => {
     const val = e.target.value;
     setProteinGoalInput(val);
     const numVal = parseFloat(val);
     if (!isNaN(numVal) && numVal > 0) {
       setProteinGoal(numVal);
     }
-  };
+  }, []);
 
-  const handleCarbLimitInputChange = (e) => {
+  const handleCarbLimitInputChange = useCallback((e) => {
     const val = e.target.value;
     setCarbLimitInput(val);
     const numVal = parseFloat(val);
     if (!isNaN(numVal) && numVal >= 0) {
       setCarbLimit(numVal);
     }
-  };
+  }, []);
 
-  const handleSaveSettings = async () => {
+  const handleSaveSettings = useCallback(async () => {
     setSaving(true);
     try {
       const res = await authApi.updateSettings({
@@ -150,23 +167,14 @@ export const Settings = () => {
     } finally {
       setSaving(false);
     }
-  };
+  }, [bodyWeight, bodyFat, proteinMultiplier, proteinGoal, carbLimit, unitSystem, updateUser]);
 
-  const applyCalculatedProtein = () => {
+  const applyCalculatedProtein = useCallback(() => {
     if (calculatedProtein) {
       setProteinGoal(calculatedProtein.recommended);
       setProteinGoalInput(String(calculatedProtein.recommended));
     }
-  };
-
-  const getKetoTierLabel = (carbs) => {
-    if (carbs <= 20) return { label: 'Strict Keto', color: 'emerald' };
-    if (carbs <= 35) return { label: 'Moderate Keto', color: 'cyan' };
-    if (carbs <= 50) return { label: 'Liberal Keto', color: 'amber' };
-    return { label: 'Low Carb', color: 'orange' };
-  };
-
-  const ketoTier = getKetoTierLabel(carbLimit);
+  }, [calculatedProtein]);
 
   return (
     <Layout>

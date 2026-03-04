@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { AminoAcidRadar, AminoAcidList } from '../components/AminoAcidRadar';
@@ -12,22 +12,33 @@ import {
   Search as SearchIcon, 
   Loader2, 
   Heart,
-  HeartOff,
   Plus,
   CheckCircle2,
   AlertTriangle,
-  X,
-  ChevronRight,
-  Droplets
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Label } from '../components/ui/label';
 
-// Simple search result cache
+// Simple search result cache - module level for persistence
 const searchCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+let lastCacheCleanup = Date.now();
+
+// Clean cache periodically (max once per minute)
+const cleanCache = () => {
+  const now = Date.now();
+  if (now - lastCacheCleanup < 60000) return; // Skip if cleaned recently
+  
+  for (const [key, value] of searchCache.entries()) {
+    if (now - value.timestamp > CACHE_DURATION) {
+      searchCache.delete(key);
+    }
+  }
+  lastCacheCleanup = now;
+};
 
 export const FoodSearch = () => {
   const { theme } = useTheme();
@@ -49,7 +60,7 @@ export const FoodSearch = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     if (!query.trim()) return;
     
     const cacheKey = query.toLowerCase().trim();
@@ -67,30 +78,20 @@ export const FoodSearch = () => {
     setSelectedFood(null);
     setFoodDetails(null);
     
-    // Simulate progress during API call (actual search takes 15-25s)
+    // Simulate progress during API call
     const progressInterval = setInterval(() => {
-      setSearchProgress(prev => {
-        if (prev >= 90) return prev;
-        return prev + Math.random() * 15;
-      });
+      setSearchProgress(prev => prev >= 90 ? prev : prev + Math.random() * 15);
     }, 1000);
     
     try {
       const res = await foodsApi.search(query);
       setSearchProgress(100);
-      // Results are already sorted by the backend (custom → USDA with amino acids → OFF → branded)
       const foods = res.data.foods || [];
       setResults(foods);
       
-      // Cache results
+      // Cache results and clean periodically
       searchCache.set(cacheKey, { foods, timestamp: Date.now() });
-      
-      // Clean old cache entries
-      for (const [key, value] of searchCache.entries()) {
-        if (Date.now() - value.timestamp > CACHE_DURATION) {
-          searchCache.delete(key);
-        }
-      }
+      cleanCache();
     } catch (err) {
       toast.error('Search failed. Please try again.');
     } finally {
@@ -98,12 +99,12 @@ export const FoodSearch = () => {
       setLoading(false);
       setSearchProgress(0);
     }
-  };
+  }, [query]);
 
-  const handleSelectFood = async (food) => {
+  const handleSelectFood = useCallback(async (food) => {
     setSelectedFood(food);
     setDetailsLoading(true);
-    setFoodDetails(null); // Clear previous details
+    setFoodDetails(null);
     
     try {
       const [detailsRes, favRes] = await Promise.all([
@@ -114,16 +115,14 @@ export const FoodSearch = () => {
       setIsFavorite(favRes.data.is_favorite);
       setFavoriteId(favRes.data.favorite_id);
     } catch (err) {
-      // Show more helpful error message based on source
+      const source = food.source || 'unknown';
       if (err.response?.status === 404) {
-        const source = food.source || 'unknown';
-        if (source === 'usda') {
-          toast.error('This USDA food item is no longer available. Try a different item.');
-        } else if (source === 'off') {
-          toast.error('This Open Food Facts product could not be loaded. Try a different item.');
-        } else {
-          toast.error('Food details not found. Try a different item.');
-        }
+        const messages = {
+          usda: 'This USDA food item is no longer available. Try a different item.',
+          off: 'This Open Food Facts product could not be loaded. Try a different item.',
+          default: 'Food details not found. Try a different item.'
+        };
+        toast.error(messages[source] || messages.default);
       } else {
         toast.error('Failed to load food details. Please try again.');
       }
@@ -131,9 +130,9 @@ export const FoodSearch = () => {
     } finally {
       setDetailsLoading(false);
     }
-  };
+  }, []);
 
-  const handleAddToLog = async () => {
+  const handleAddToLog = useCallback(async () => {
     if (!foodDetails) return;
     
     try {
@@ -142,23 +141,23 @@ export const FoodSearch = () => {
         description: foodDetails.description,
         serving_size: foodDetails.serving_size,
         serving_unit: foodDetails.serving_unit,
-        servings: servings,
+        servings,
         calories: foodDetails.calories,
         protein: foodDetails.protein,
         fat: foodDetails.fat,
         carbs: foodDetails.carbs,
         fiber: foodDetails.fiber,
-        amino_acids: foodDetails.amino_acids.map(aa => ({
+        amino_acids: foodDetails.amino_acids?.map(aa => ({
           name: aa.name,
           value: aa.value,
           is_essential: aa.is_essential
-        })),
-        fatty_acids: (foodDetails.fatty_acids || []).map(fa => ({
+        })) || [],
+        fatty_acids: foodDetails.fatty_acids?.map(fa => ({
           name: fa.name,
           value: fa.value,
           is_essential: fa.is_essential,
           omega_type: fa.omega_type
-        })),
+        })) || [],
         meal_type: mealType
       });
       
@@ -168,9 +167,9 @@ export const FoodSearch = () => {
     } catch (err) {
       toast.error('Failed to add food to log');
     }
-  };
+  }, [foodDetails, servings, mealType]);
 
-  const toggleFavorite = async () => {
+  const toggleFavorite = useCallback(async () => {
     if (!foodDetails) return;
     
     try {
@@ -193,7 +192,16 @@ export const FoodSearch = () => {
     } catch (err) {
       toast.error('Failed to update favorites');
     }
-  };
+  }, [foodDetails, isFavorite, favoriteId]);
+
+  // Memoize computed values for the log dialog
+  const totalProtein = useMemo(() => 
+    ((foodDetails?.protein || 0) * servings).toFixed(1)
+  , [foodDetails?.protein, servings]);
+  
+  const totalCalories = useMemo(() => 
+    ((foodDetails?.calories || 0) * servings).toFixed(0)
+  , [foodDetails?.calories, servings]);
 
   return (
     <Layout>
