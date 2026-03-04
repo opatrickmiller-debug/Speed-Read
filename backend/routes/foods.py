@@ -114,6 +114,8 @@ async def search_foods(
     - USDA FoodData Central (with amino acid data)
     - Open Food Facts (2M+ products)
     - User's custom foods
+    
+    Results are ranked to prioritize simple whole foods over complex meals.
     """
     source = source or "all"
     all_results = []
@@ -129,8 +131,15 @@ async def search_foods(
     
     tasks = []
     
+    # For USDA, search foundation/SR Legacy foods first (whole foods with amino acid data)
+    # Then supplement with branded if requested
     if source in ["all", "usda"]:
-        tasks.append(safe_search("usda", fdc_client.search_foods(query, page_size, page)))
+        # Search Foundation and SR Legacy foods (high-quality whole foods)
+        tasks.append(safe_search("usda_foundation", fdc_client.search_foods(query, page_size, page, data_type="Foundation")))
+        tasks.append(safe_search("usda_sr_legacy", fdc_client.search_foods(query, page_size, page, data_type="SR Legacy")))
+        tasks.append(safe_search("usda_survey", fdc_client.search_foods(query, page_size, page, data_type="Survey (FNDDS)")))
+        if include_branded:
+            tasks.append(safe_search("usda_branded", fdc_client.search_foods(query, page_size // 2, page, data_type="Branded")))
     
     if source in ["all", "off"]:
         tasks.append(safe_search("off", search_open_food_facts(query, page_size)))
@@ -142,15 +151,21 @@ async def search_foods(
     results = await asyncio.gather(*tasks)
     results_by_source = dict(results)
     
-    # Process USDA results
-    if "usda" in results_by_source:
-        usda_data = results_by_source["usda"]
-        
-        # Data types with reliable amino acid data
-        AMINO_ACID_SOURCES = {"SR Legacy", "Foundation", "Survey (FNDDS)"}
-        
+    # Process USDA results from multiple data type searches
+    # Data types with reliable amino acid data
+    AMINO_ACID_SOURCES = {"SR Legacy", "Foundation", "Survey (FNDDS)"}
+    seen_fdc_ids = set()  # Avoid duplicates across data type searches
+    
+    def process_usda_foods(usda_data, data_type_override=None):
+        """Process USDA foods from a search result"""
+        foods_to_add = []
         for food in usda_data.get("foods", []):
-            food_data_type = food.get("dataType", "")
+            fdc_id = str(food.get("fdcId", ""))
+            if fdc_id in seen_fdc_ids:
+                continue
+            seen_fdc_ids.add(fdc_id)
+            
+            food_data_type = data_type_override or food.get("dataType", "")
             
             # Skip branded if not requested
             if not include_branded and food_data_type == "Branded":
@@ -164,9 +179,9 @@ async def search_foods(
             
             has_amino = food_data_type in AMINO_ACID_SOURCES
             
-            all_results.append({
-                "id": str(food.get("fdcId", "")),
-                "fdc_id": str(food.get("fdcId", "")),
+            foods_to_add.append({
+                "id": fdc_id,
+                "fdc_id": fdc_id,
                 "description": food.get("description", ""),
                 "brand_owner": food.get("brandOwner"),
                 "data_type": food_data_type,
@@ -175,41 +190,164 @@ async def search_foods(
                 "has_amino_acids": has_amino,
                 "has_fatty_acids": has_amino
             })
+        return foods_to_add
+    
+    # Process Foundation foods first (highest quality)
+    if "usda_foundation" in results_by_source:
+        all_results.extend(process_usda_foods(results_by_source["usda_foundation"], "Foundation"))
+    
+    # Then SR Legacy (whole foods reference)
+    if "usda_sr_legacy" in results_by_source:
+        all_results.extend(process_usda_foods(results_by_source["usda_sr_legacy"], "SR Legacy"))
+    
+    # Then Survey foods (common foods)
+    if "usda_survey" in results_by_source:
+        all_results.extend(process_usda_foods(results_by_source["usda_survey"], "Survey (FNDDS)"))
+    
+    # Finally branded (if enabled)
+    if "usda_branded" in results_by_source:
+        all_results.extend(process_usda_foods(results_by_source["usda_branded"], "Branded"))
+    
+    # Legacy support for old "usda" key (single search)
+    if "usda" in results_by_source:
+        all_results.extend(process_usda_foods(results_by_source["usda"]))
     
     # Add Open Food Facts results
     if "off" in results_by_source:
         off_results = results_by_source["off"]
         all_results.extend(off_results)
     
-    # Add custom foods results (prioritize at top)
+    # Add custom foods results
     if "custom" in results_by_source:
         custom_results = results_by_source["custom"]
-        all_results = custom_results + all_results
+        all_results.extend(custom_results)
     
-    # Sort: Custom first, then interleave USDA with amino acids with other sources
-    # Group results by priority
-    custom_foods = [f for f in all_results if f["source"] == "custom"]
-    usda_with_amino = [f for f in all_results if f["source"] == "usda" and f.get("has_amino_acids")]
-    usda_branded = [f for f in all_results if f["source"] == "usda" and not f.get("has_amino_acids")]
-    off_foods = [f for f in all_results if f["source"] == "off"]
+    # ==================== SMART RANKING ====================
+    # Prioritize: simple whole foods > complex meals > obscure products
     
-    # Interleave results: custom first, then mix USDA amino + OFF, then branded
-    final_results = custom_foods.copy()
+    def calculate_relevance_score(food, search_query):
+        """
+        Score foods to prioritize simple, whole foods over complex/obscure meals.
+        Higher score = more relevant = appears first.
+        
+        Scoring breakdown:
+        - Exact/prefix match: +100-80 points
+        - Simplicity (word count): +60 to 0 points  
+        - Data source quality: +70 to +5 points
+        - Amino acid data: +30 points
+        - High protein: +15 points
+        - Complex/branded penalty: -15 to -20 points
+        """
+        score = 0
+        description = food.get("description", "").lower()
+        query_lower = search_query.lower().strip()
+        query_words = query_lower.split()
+        
+        # Clean description for matching (remove parentheses content)
+        desc_clean = description.split(',')[0].strip()
+        
+        # 1. EXACT MATCH BONUS (highest priority)
+        if desc_clean == query_lower:
+            score += 150  # Perfect exact match
+        elif description.startswith(query_lower):
+            score += 100  # Starts with query
+        elif desc_clean.startswith(query_lower):
+            score += 90   # First part starts with query
+        elif query_lower in desc_clean:
+            score += 70   # Query in first part of description
+        elif all(word in description for word in query_words):
+            score += 50   # All query words present
+        
+        # 2. SIMPLICITY SCORE - fewer words = simpler food (more aggressive)
+        # Count words excluding common qualifiers
+        word_count = len(description.replace(',', ' ').split())
+        if word_count <= 2:
+            score += 60  # Very simple: "Chicken breast", "Eggs"
+        elif word_count <= 3:
+            score += 45  # Simple: "Chicken breast raw"
+        elif word_count <= 4:
+            score += 30  # Moderate: "Chicken breast grilled skinless"
+        elif word_count <= 6:
+            score += 15  # Acceptable complexity
+        # 7+ words = complex, no bonus
+        
+        # 3. DATA SOURCE QUALITY (rebalanced for better whole food ranking)
+        source = food.get("source", "")
+        data_type = food.get("data_type", "")
+        
+        if source == "custom":
+            score += 80  # User's own foods first
+        elif source == "usda":
+            if data_type == "Foundation":
+                score += 70  # Foundation foods (highest quality data)
+            elif data_type == "SR Legacy":
+                score += 65  # Standard reference (whole foods)
+            elif data_type == "Survey (FNDDS)":
+                score += 40  # Survey foods (common meals)
+            elif data_type == "Branded":
+                score += 5   # Branded products (lowest priority)
+            else:
+                score += 20
+        elif source == "off":
+            score += 10  # Open Food Facts (usually branded)
+        
+        # 4. AMINO ACID DATA AVAILABILITY (important for this app)
+        if food.get("has_amino_acids"):
+            score += 30
+        
+        # 5. PROTEIN CONTENT (keto relevance)
+        protein = food.get("protein_per_100g", 0) or 0
+        if protein >= 25:
+            score += 15  # Very high protein
+        elif protein >= 15:
+            score += 10  # High protein
+        elif protein >= 8:
+            score += 5   # Moderate protein
+        
+        # 6. PENALTY for complex/prepared foods (more aggressive)
+        complex_indicators = [
+            'with', 'and', 'style', 'flavored', 'flavour', 'recipe',
+            'prepared', 'meal', 'dinner', 'lunch', 'breakfast',
+            'frozen', 'instant', 'mix', 'sauce', 'soup', 'stew', 
+            'casserole', 'sandwich', 'pizza', 'noodles', 'pasta', 
+            'cereal', 'pie', 'cake', 'restaurant', 'homemade',
+            'cooked in', 'made with', 'fast food'
+        ]
+        penalty_count = 0
+        for indicator in complex_indicators:
+            if indicator in description:
+                penalty_count += 1
+        score -= min(penalty_count * 8, 40)  # Cap penalty at -40
+        
+        # 7. PENALTY for brand names (usually processed)
+        if food.get("brand_owner"):
+            score -= 20
+        
+        # 8. BONUS for raw/unprocessed indicators
+        raw_indicators = ['raw', 'fresh', 'plain', 'unseasoned', 'natural']
+        for indicator in raw_indicators:
+            if indicator in description:
+                score += 10
+                break
+        
+        return score
     
-    # Interleave USDA amino and OFF results
-    max_len = max(len(usda_with_amino), len(off_foods))
-    for i in range(max_len):
-        if i < len(usda_with_amino):
-            final_results.append(usda_with_amino[i])
-        if i < len(off_foods):
-            final_results.append(off_foods[i])
+    # Score and sort all results
+    for food in all_results:
+        food["_relevance_score"] = calculate_relevance_score(food, query)
     
-    # Add branded USDA at the end
-    final_results.extend(usda_branded)
+    # Sort by relevance score (highest first)
+    all_results.sort(key=lambda x: x.get("_relevance_score", 0), reverse=True)
+    
+    # Remove internal score field before returning
+    final_results = []
+    for food in all_results[:page_size]:
+        food_copy = {k: v for k, v in food.items() if not k.startswith("_")}
+        final_results.append(food_copy)
     
     return {
-        "foods": final_results[:page_size],
-        "total_hits": len(final_results),
+        "foods": final_results,
+        "total_hits": len(all_results),
         "current_page": page,
         "page_size": page_size,
         "sources": list(set(f["source"] for f in all_results))

@@ -1,143 +1,157 @@
 <analysis>**original_problem_statement:**
-The user wants to build a Keto-based nutrition tracker. The primary feature is to track protein intake and provide a detailed breakdown of the amino acids in each food.
+The user's primary goal is to build a sophisticated Keto-based nutrition tracker. The core differentiator is its focus on detailed protein and amino acid tracking.
 
-Subsequent feature requests from the user included:
-- Barcode scanning for food products.
-- Suggestions for foods to complete a user's daily amino acid profile (keto-friendly).
-- A Keto Meal Builder to create custom meals.
-- User-configurable settings for protein goals and carbohydrate limits.
-- A Keto Score and a combined Nutrition Score.
-- The ability for users to save custom meals.
-- Tracking of essential fatty acids (Omega-3, Omega-6).
-- A significantly expanded food database, combining USDA, Open Food Facts, and user-created custom foods.
-- UI/UX improvements including a dark/light theme, better mobile responsiveness, loading skeletons, and improved search performance (debouncing and caching).
-- Adding portion size presets for quicker food logging.
-- An imperial/metric unit toggle for weights.
-- Numerous UI fixes, primarily for improving text contrast in light mode and standardizing page layouts.
+Initial and subsequent feature requests include:
+- A Keto Meal Builder and the ability to save custom meals.
+- Tracking essential fatty acids (Omega-3, Omega-6).
+- An expanded food database combining USDA, Open Food Facts, and user-created custom foods.
+- UI/UX improvements: dark/light theme, mobile responsiveness, loading skeletons, and debounced/cached search.
+- Imperial/metric unit toggle and portion size presets.
+- Defaulting the app to light mode, imperial units, and ensuring all data inputs are manual (removing sliders).
+- Broadening the app's appeal by adding: an educational layer (tooltips), a public meal library, and a guided onboarding flow.
+- Changing carb calculations to be based on total carbs instead of net carbs.
+- Significantly improving the speed and ease of finding food through features like category browsing, time-based suggestions, recent foods, autocomplete, and a log again button.
+- Prioritizing search results to show simple, whole foods before complex, branded meals.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application with a modular FastAPI backend, React frontend, and MongoDB database. The application is feature-rich and stable.
+A feature-rich full-stack application (FastAPI, React, MongoDB). Key features include JWT authentication, a comprehensive dashboard, unified food search (USDA, Open Food Facts, Custom Foods), full CRUD for custom foods, and a dark/light theme.
 
-Key implemented features:
-- **Authentication**: JWT-based user registration and login.
-- **Dashboard**: A central hub displaying daily goals, macros, Keto Score, and a combined Nutrition Score. The layout has been refined based on user feedback to include a prominent Quick Actions bar for adding food.
-- **Unified Food Search**: A robust search engine that queries the USDA API, the Open Food Facts API, and user-created custom foods in parallel. Results are cached client-side for performance.
-- **Custom Foods**: Users can create, view, edit, and delete their own food entries through a dedicated Custom Foods page. These foods are seamlessly integrated into the main search.
-- **Themeing**: A full dark/light mode theme is implemented, with the user's preference saved in . The light mode has undergone several revisions to ensure high text contrast and readability across all pages.
-- **Unit System**: Users can toggle between imperial (lbs) and metric (kg) units in their settings. This preference is saved to their user profile and reflected in relevant data displays.
-- **UI/UX Enhancements**: Loading skeletons, an improved mobile navigation bar, portion size presets for food logging, debounced search input, and a standardized scroll-to-top behavior on all page navigations provide a polished user experience.
+Recent major additions include:
+- **Onboarding Flow**: A multi-step process for new users to set their initial goals.
+- **Manual Data Entry**: All settings sliders have been replaced with manual text inputs.
+- **Public Meal Library**: Users can browse a public collection of meals.
+- **Enhanced Food Search**: The search page now includes Browse by Category, Recently Logged, time-based Dinner Ideas, and search autocomplete to make finding food faster.
+- **Enhanced Suggestions**: A dedicated page provides personalized food suggestions to fill nutrient gaps.
+- **Code Optimization**: Key frontend components (, ) have been refactored for better performance using memoization and optimized hooks.
+- **Total Carbs Standard**: All calculations and UI labels now refer to total carbs for clarity.
 
 **Last working item**:
--   **Last item agent was working**: Adding a toggle on the Settings page to allow users to switch between imperial (lbs) and metric (kg) measurement systems. This involved backend changes to the user model and frontend UI/logic to handle the display and conversion of weight values.
--   **Status**: USER VERIFICATION PENDING
--   **Agent Testing Done**: Y
--   **Which testing method agent to use?**: Frontend testing agent
+-   **Last item agent was working**: Implementing a smart ranking system for search results. The goal is to prioritize simple, whole foods (e.g., chicken breast) over complex or branded meals (e.g., chicken and broccoli casserole) in the search results to improve user experience.
+-   **Status**: IN PROGRESS
+-   **Agent Testing Done**: N
+-   **Which testing method agent to use?**: backend testing agent
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-There are no pending or in-progress issues. The application is stable.
+-   **Issue 1: Prioritize search results (P0)**: The user wants search results to be ranked, showing simple whole foods first.
+
+**Issues Detail**:
+-   **Issue 1: Prioritize search results**
+    -   **Attempted fixes**: The agent began implementing a scoring function () and sorting logic in  but was interrupted before completion.
+    -   **Next debug checklist**:
+        1.  Resume work in .
+        2.  Complete the  function. The logic should assign a higher score to items with fewer words and penalize items containing common meal keywords (e.g., stew, casserole, with) or brand names.
+        3.  Apply this score to sort the  list before returning it from the search endpoint.
+        4.  Use  or the backend testing agent to test the  endpoint with queries like chicken, beef, and egg to verify that chicken breast appears before chicken soup.
+        5.  Verify the frontend correctly displays the newly ranked results.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is a direct user request that will significantly improve the core food logging workflow by making it much faster to find and select basic ingredients.
+    -   **Status**: IN PROGRESS
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: Both
+    -   **Blocked on other issue**: None
 
 **In progress Task List**:
-There are no in-progress tasks.
+-   None.
 
 **Upcoming and Future Tasks**
-- **Upcoming Tasks**:
-    - **P1 - Meal Builder / Meal Plans**: Enhance the existing Meal Builder page to allow users to create, save, and log custom meals composed of multiple food items from the search.
-- **Future Tasks**:
-    - **P2 - Historical Trends V2**: Improve the Trends page with more advanced charting, allowing users to view their nutritional history over longer and more flexible date ranges (e.g., monthly, yearly).
-    - **P2 - Sharing**: Add a feature to allow users to share their custom meals or food logs with others.
+-   **Upcoming Tasks**:
+    -   **P0 - Propose AI-Powered Features**: The user explicitly asked about incorporating AI. Present the following options:
+        1.  **AI Meal Planner**: Generate a full day/week of keto-friendly meals.
+        2.  **Snap a Pic Food Logging**: Use image recognition to identify and log food from a photo.
+        3.  **Conversational AI Coach**: A chatbot to answer nutrition questions and provide encouragement.
+    -   **P1 - Voice Search**: Implement a voice search feature (e.g., Add 2 eggs).
+-   **Future Tasks**:
+    -   **P2 - Historical Trends V2**: Enhance the Trends page with advanced charting for longer date ranges.
+    -   **P2 - Sharing V2**: Allow users to share custom meals or food logs with other users directly.
 
 **Completed work in this session**
-- **Unified Food Search Implementation**: Fixed a critical backend bug that was preventing Open Food Facts results from being returned. The frontend was then updated to correctly display results from multiple sources (USDA, Open Food Facts, Custom) with distinct badges.
-- **Custom Foods Feature**: Implemented the full CRUD (Create, Read, Update, Delete) functionality for user-created foods, complete with a dedicated management page and integration into the unified search.
-- **Search Performance Overhaul**:
-    - Implemented a  hook on the search input to prevent excessive API calls while typing.
-    - Added client-side caching for search queries to provide near-instant results for repeated searches.
-    - Added a progress bar to give users feedback during initial, uncached searches.
-- **Comprehensive UI/Theme Improvements**:
-    - Implemented a full dark/light mode theme toggle, with the user's preference persisted in .
-    - Systematically refactored all pages to fix low-contrast text issues in light mode, ensuring accessibility and readability.
-    - Implemented a  hook to ensure all pages render starting from the top on navigation.
-- **Feature Additions based on User Feedback**:
-    - Added portion size preset buttons to the Add Food Log dialog, simplifying the logging process.
-    - Implemented an imperial/metric unit toggle in the user settings.
-    - Reorganized the Dashboard layout to make the Add Food action more prominent.
+-   **Default Settings**: Changed app defaults to light mode and imperial units for new users.
+-   **Manual Input Conversion**: Replaced all data input sliders on the  with manual text fields and removed portion preset buttons.
+-   **Input Bug Fixes**: Fixed bugs related to data type mismatches and leading zeros in number inputs on the .
+-   **Code Optimization**: Refactored  and  with , , and optimized  hooks to improve performance.
+-   **Onboarding Flow**: Implemented a multi-step onboarding experience for new users, including goal setting ().
+-   **Public Meal Library**: Created backend routes () and a frontend page ().
+-   **Carb Calculation Change**: Switched the entire app from net carbs to total carbs and added explanatory tooltips.
+-   **Enhanced Suggestions Page**: Redesigned the page to show personalized recommendations for nutrient deficiencies.
+-   **Advanced Food Finding**:
+    -   Added Browse by Category, time-based suggestions, and Recently Logged sections to .
+    -   Added a Log Again button to the .
+    -   Implemented a debounced search autocomplete feature.
+-   **Bug Fixes**:
+    -   Resolved an issue where the search autocomplete dropdown would incorrectly overlay search results.
+    -   Fixed a critical backend routing bug in  by reordering routes.
 
 **Earlier issues found/mentioned but not fixed**
-- None. All issues raised by the user during the session were addressed and resolved.
+-   None.
 
 **Known issue recurrence from previous fork**
-- None.
+-   None.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Backend**: FastAPI, MongoDB (via ), Pydantic, JWT, .
--   **Frontend**: React, React Router, Context API ( for theme), Custom Hooks, Tailwind CSS (with dark mode variant), Shadcn UI, Recharts, Framer Motion, .
--   **State Management**: A mix of component-level state () and context (). User preferences are persisted in MongoDB and .
--   **Third-Party APIs**: USDA FoodData Central, Open Food Facts.
+-   **Backend**: FastAPI, MongoDB (via ), Pydantic, JWT.
+-   **Frontend**: React, React Router, Context API, Tailwind CSS, Shadcn UI.
+-   **Performance**: , ,  for frontend optimization.
+-   **State Management**: Mix of  and local string state for controlled form inputs to prevent UI bugs.
+-   **API Design**: Importance of specific route ordering before dynamic routes in FastAPI.
 
 **key DB schema**
--   **users**:  (newly added field, defaults to 'metric')
+-   **users**: 
+-   **meals**:  (New collection)
 -   **custom_foods**: 
 
 **changes in tech stack**
--   No changes to the core technologies. Added  to the frontend dependencies.
+-   None.
 
 **All files of reference**
--   : Manages the application's dark/light mode state.
--   : Provides utility functions for converting between metric and imperial units.
--   : A custom hook to ensure page navigation scrolls the view to the top.
--   : Updated to enable Tailwind's  mode variant.
--   : Heavily modified to include the theme and unit system toggles.
--   : Significantly updated to handle unified search results, caching, debouncing, progress indicators, and theme-aware styling.
--   : A new page providing full CRUD functionality for user-created foods.
--   : The User model was updated to include the  preference.
--    & : Updated to handle saving and retrieving the new  user preference.
+-   : **(Crucial)** Contains the search logic currently being modified for ranking.
+-   : A large, complex component that orchestrates all food finding features.
+-   : Contains the refactored form logic with manual inputs.
+-   : Contains the new endpoints for categories/suggestions and the corrected route order.
+-   : The new user onboarding flow.
+-   : The new public meal library UI.
 
 **Areas that need refactoring**:
--   The  component is very large and handles multiple responsibilities (search input, API calls, caching, results display, detail view, logging dialog). It could be broken down into smaller, more focused components to improve maintainability.
+-    remains very large and handles many distinct responsibilities (autocomplete, category browsing, recents, search results). It should be broken down into smaller, self-contained components to improve maintainability.
+-    uses numerous  hooks for its form. It could be simplified using a  hook or a form library like  to manage form state more cleanly.
 
 **key api endpoints**
--    (PUT): Updated to handle the  payload.
--    (GET): Now stable and returning combined results from USDA, Open Food Facts, and custom foods.
--    (GET, POST, PUT, DELETE): A full set of CRUD endpoints for managing user-created foods.
+-    (GET): Being updated to return ranked results.
+-    (GET): New endpoint for browsing food categories.
+-    (GET): New endpoint for meal-time suggestions.
+-    (GET): Fetches meals for the public library.
+-    (POST): Marks the user's onboarding as finished.
 
 **Critical Info for New Agent**
--   The application is in a very good state. The user's most recent requests have all been implemented.
--   The next logical step is to work on the Meal Builder feature, as outlined in the Upcoming Tasks. This will involve allowing users to group multiple food items into a saved meal.
--   When creating new UI, be sure to use the  context to ensure components are correctly styled in both light and dark modes. The pattern for this is well-established in existing pages.
--   For any features involving user weight, use the  hook to correctly display data in the user's preferred unit system (metric or imperial).
+-   Your first priority is to complete the search ranking feature in .
+-   After implementing the search ranking, you must proactively propose the AI features the user inquired about. This is a key interest for the user and should be the next major focus.
+-   Be mindful that  is a very complex component. Any changes there should be made carefully. Consider small refactors if you need to modify its logic significantly.
 
 **documents and test reports created in this job**
--    (updated with completed tasks and future roadmap)
--   Multiple test reports in  confirming the stability of new features.
+-    (updated multiple times to reflect new features and priorities)
+-   Multiple test reports in  confirming stability of new features like onboarding and manual inputs.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.   - User asked for the app URL. (Completed)
-2.   - User reported poor text contrast on the dashboard. (Completed)
-3.   - User provided a screenshot showing more contrast issues. (Completed)
-4.   - User requested a layout change for the dashboard. (Completed)
-5.   - User reported contrast issues on the search page. (Completed)
-6.   - User approved the plan to fix search page contrast. (Completed)
-7.   - User requested a global fix for light mode contrast and page scrolling. (Completed)
-8.   - User requested the unit conversion feature. (Completed, pending user verification)
+1.  ****: User requested the final quick win search features and asked about AI capabilities. (Status: Quick wins done, AI proposal pending).
+2.  ****: User reported a bug with the search autocomplete overlaying results. (Status: **RESOLVED**).
+3.  ****: User's latest request, which is the current . (Status: **IN PROGRESS**).
 
 **Project Health Check:**
--   **Working**: All core features are implemented and functional.
--   **Broken**: None.
+-   **Working**: All core application features, including the newly added onboarding, manual inputs, meal library, and enhanced search/suggestion pages.
+-   **Broken**: Search result ranking is incomplete. Results are currently unsorted.
 -   **Mocked**: None.
 
 **3rd Party Integrations**
--   **USDA FoodData Central**: Used for foundational food and nutrient data.
--   **Open Food Facts**: Used to expand the food database with branded products.
--   **Quagga2**: Frontend library used as a fallback for barcode scanning.
+-   **USDA FoodData Central**: For foundational food and nutrient data.
+-   **Open Food Facts**: To supplement the database with branded products.
+-   **Quagga2**: A frontend library for barcode scanning functionality.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES. The testing agent was used multiple times to validate major features like the theme toggle, portion presets, and custom foods. All runs passed successfully.
+-   **Testing agent used after significant changes**: YES, multiple times for onboarding, manual inputs, and other features.
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: None.
 -   **Known regressions**: None.
@@ -147,4 +161,4 @@ There are no in-progress tasks.
 -   Password: 
 
 **What agent forgot to execute**
--   The agent successfully completed all user requests from this session. Nothing was forgotten.</analysis>
+-   The agent was sidetracked by bug fixes and did not get to formally propose the AI features the user asked about. This should be the next action item after completing the current search ranking task.</analysis>
