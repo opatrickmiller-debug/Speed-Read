@@ -7,6 +7,7 @@ import { SearchResultsSkeleton, FoodDetailSkeleton } from '../components/Skeleto
 import { Input } from '../components/ui/input';
 import { foodsApi, logsApi, favoritesApi } from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
+import { cn } from '../lib/utils';
 import { 
   Search as SearchIcon, 
   Loader2, 
@@ -194,10 +195,13 @@ export const FoodSearch = () => {
       <div className="p-6 md:p-8 max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-heading text-3xl md:text-4xl font-bold text-white">
+          <h1 className={cn(
+            "font-heading text-3xl md:text-4xl font-bold",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
             Food Search
           </h1>
-          <p className="text-zinc-500 mt-2">
+          <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>
             Search USDA, Open Food Facts & custom foods for nutritional data
           </p>
         </div>
@@ -205,14 +209,22 @@ export const FoodSearch = () => {
         {/* Search Bar */}
         <div className="flex gap-3 mb-8">
           <div className="relative flex-1">
-            <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+            <SearchIcon className={cn(
+              "absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5",
+              theme === 'dark' ? 'text-zinc-500' : 'text-gray-400'
+            )} />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="Search for chicken, eggs, salmon..."
               data-testid="food-search-input"
-              className="pl-12 bg-black/50 border-white/10 text-white placeholder:text-zinc-600 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 h-14 text-lg"
+              className={cn(
+                "pl-12 h-14 text-lg focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50",
+                theme === 'dark' 
+                  ? 'bg-black/50 border-white/10 text-white placeholder:text-zinc-600'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
+              )}
             />
           </div>
           <button
@@ -228,11 +240,17 @@ export const FoodSearch = () => {
         {/* Search Progress Bar */}
         {loading && (
           <div className="mb-4">
-            <div className="flex items-center justify-between text-xs text-zinc-500 mb-1">
+            <div className={cn(
+              "flex items-center justify-between text-xs mb-1",
+              theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+            )}>
               <span>Searching USDA & Open Food Facts...</span>
               <span>{Math.round(searchProgress)}%</span>
             </div>
-            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+            <div className={cn(
+              "h-1.5 rounded-full overflow-hidden",
+              theme === 'dark' ? 'bg-zinc-800' : 'bg-gray-200'
+            )}>
               <div 
                 className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all duration-500 ease-out"
                 style={{ width: `${searchProgress}%` }}
@@ -253,28 +271,34 @@ export const FoodSearch = () => {
                   key={food.fdc_id || food.id}
                   onClick={() => handleSelectFood(food)}
                   data-testid={`food-result-${idx}`}
-                  className={`w-full text-left p-4 rounded-xl border transition-all animate-fade-in ${
+                  className={cn(
+                    "w-full text-left p-4 rounded-xl border transition-all animate-fade-in",
                     selectedFood?.fdc_id === food.fdc_id
                       ? 'bg-emerald-500/10 border-emerald-500/30'
-                      : 'bg-zinc-900/40 border-white/5 hover:border-white/10'
-                  }`}
+                      : theme === 'dark'
+                        ? 'bg-zinc-900/40 border-white/5 hover:border-white/10'
+                        : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm'
+                  )}
                   style={{ animationDelay: `${idx * 0.05}s` }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-medium truncate">{food.description}</p>
+                      <p className={cn(
+                        "font-medium truncate",
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                      )}>{food.description}</p>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         {/* Source Badge */}
                         <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
                           food.source === 'usda' && food.has_amino_acids 
-                            ? 'bg-emerald-500/20 text-emerald-400' 
+                            ? 'bg-emerald-500/20 text-emerald-600' 
                             : food.source === 'usda' 
-                            ? 'bg-cyan-500/20 text-cyan-400'
+                            ? 'bg-cyan-500/20 text-cyan-600'
                             : food.source === 'off' 
-                            ? 'bg-orange-500/20 text-orange-400'
+                            ? 'bg-orange-500/20 text-orange-600'
                             : food.source === 'custom'
-                            ? 'bg-purple-500/20 text-purple-400'
-                            : 'bg-zinc-700/50 text-zinc-400'
+                            ? 'bg-purple-500/20 text-purple-600'
+                            : theme === 'dark' ? 'bg-zinc-700/50 text-zinc-400' : 'bg-gray-200 text-gray-600'
                         }`}>
                           {food.source === 'usda' ? (food.data_type || 'USDA') :
                            food.source === 'off' ? 'Open Food Facts' :
@@ -283,38 +307,50 @@ export const FoodSearch = () => {
                         </span>
                         {/* Amino acids indicator */}
                         {food.has_amino_acids && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600">
                             AA Data
                           </span>
                         )}
                         {/* Brand name */}
                         {food.brand_owner && (
-                          <span className="text-xs text-zinc-500 truncate">{food.brand_owner}</span>
+                          <span className={cn(
+                            "text-xs truncate",
+                            theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'
+                          )}>{food.brand_owner}</span>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center gap-3 ml-3">
                       <div className="text-right">
-                        <p className="text-emerald-400 font-semibold text-sm">
+                        <p className="text-emerald-600 font-semibold text-sm">
                           {food.protein_per_100g?.toFixed(1) || 0}g
                         </p>
-                        <p className="text-[10px] text-zinc-500">per 100g</p>
+                        <p className={cn(
+                          "text-[10px]",
+                          theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                        )}>per 100g</p>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-zinc-600" />
+                      <ChevronRight className={cn(
+                        "w-4 h-4",
+                        theme === 'dark' ? 'text-zinc-600' : 'text-gray-400'
+                      )} />
                     </div>
                   </div>
                 </button>
               ))
             ) : (
               <div className="py-20 text-center">
-                <SearchIcon className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
-                <p className="text-zinc-500">
+                <SearchIcon className={cn(
+                  "w-12 h-12 mx-auto mb-4",
+                  theme === 'dark' ? 'text-zinc-700' : 'text-gray-400'
+                )} />
+                <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'}>
                   {query ? 'No results found' : 'Search for foods to see their amino acid profiles'}
                 </p>
                 {query && (
                   <a 
                     href="/custom-foods" 
-                    className="mt-4 inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+                    className="mt-4 inline-flex items-center gap-2 text-sm text-emerald-500 hover:text-emerald-400 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                     Create a custom food
