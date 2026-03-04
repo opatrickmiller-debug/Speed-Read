@@ -16,6 +16,7 @@ import { Settings } from "./pages/Settings";
 import { BarcodeScanner } from "./pages/BarcodeScanner";
 import { Suggestions } from "./pages/Suggestions";
 import { MealBuilder } from "./pages/MealBuilder";
+import { CustomFoods } from "./pages/CustomFoods";
 import { Loader2 } from "lucide-react";
 
 // Protected Route Wrapper
@@ -73,6 +74,7 @@ function AppRoutes() {
       <Route path="/barcode" element={<ProtectedRoute><BarcodeScanner /></ProtectedRoute>} />
       <Route path="/suggestions" element={<ProtectedRoute><Suggestions /></ProtectedRoute>} />
       <Route path="/meal-builder" element={<ProtectedRoute><MealBuilder /></ProtectedRoute>} />
+      <Route path="/custom-foods" element={<ProtectedRoute><CustomFoods /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       
       {/* Default redirect */}

@@ -16,6 +16,7 @@ import {
   Sparkles,
   ChefHat,
   MoreHorizontal,
+  PlusCircle,
 } from 'lucide-react';
 
 const navItems = [
@@ -26,6 +27,7 @@ const navItems = [
   { to: '/meal-builder', icon: ChefHat, label: 'Meal Builder' },
   { to: '/suggestions', icon: Sparkles, label: 'Suggestions' },
   { to: '/meal-plans', icon: CalendarDays, label: 'Meal Plans' },
+  { to: '/custom-foods', icon: PlusCircle, label: 'Custom Foods' },
   { to: '/favorites', icon: Heart, label: 'Favorites' },
   { to: '/trends', icon: TrendingUp, label: 'Trends' },
   { to: '/settings', icon: Settings, label: 'Settings' },

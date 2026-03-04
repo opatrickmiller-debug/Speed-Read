@@ -27,6 +27,7 @@ export const FoodSearch = () => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchProgress, setSearchProgress] = useState(0);
   const [selectedFood, setSelectedFood] = useState(null);
   const [foodDetails, setFoodDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -39,18 +40,30 @@ export const FoodSearch = () => {
   const handleSearch = async () => {
     if (!query.trim()) return;
     setLoading(true);
+    setSearchProgress(0);
     setSelectedFood(null);
     setFoodDetails(null);
     
+    // Simulate progress during API call (actual search takes 15-25s)
+    const progressInterval = setInterval(() => {
+      setSearchProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + Math.random() * 15;
+      });
+    }, 1000);
+    
     try {
       const res = await foodsApi.search(query);
+      setSearchProgress(100);
       // Results are already sorted by the backend (custom → USDA with amino acids → OFF → branded)
       const foods = res.data.foods || [];
       setResults(foods);
     } catch (err) {
       toast.error('Search failed. Please try again.');
     } finally {
+      clearInterval(progressInterval);
       setLoading(false);
+      setSearchProgress(0);
     }
   };
 
@@ -185,6 +198,22 @@ export const FoodSearch = () => {
           </button>
         </div>
 
+        {/* Search Progress Bar */}
+        {loading && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between text-xs text-zinc-500 mb-1">
+              <span>Searching USDA & Open Food Facts...</span>
+              <span>{Math.round(searchProgress)}%</span>
+            </div>
+            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all duration-500 ease-out"
+                style={{ width: `${searchProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Results Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Search Results */}
@@ -255,6 +284,15 @@ export const FoodSearch = () => {
                 <p className="text-zinc-500">
                   {query ? 'No results found' : 'Search for foods to see their amino acid profiles'}
                 </p>
+                {query && (
+                  <a 
+                    href="/custom-foods" 
+                    className="mt-4 inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create a custom food
+                  </a>
+                )}
               </div>
             )}
           </div>

@@ -105,4 +105,13 @@ export const favoritesApi = {
   check: (fdcId) => api.get(`/favorites/check/${fdcId}`),
 };
 
+// Custom Foods
+export const customFoodsApi = {
+  create: (data) => api.post('/custom-foods', data),
+  getAll: () => api.get('/custom-foods'),
+  get: (foodId) => api.get(`/custom-foods/${foodId}`),
+  update: (foodId, data) => api.put(`/custom-foods/${foodId}`, data),
+  delete: (foodId) => api.delete(`/custom-foods/${foodId}`),
+};
+
 export default api;
