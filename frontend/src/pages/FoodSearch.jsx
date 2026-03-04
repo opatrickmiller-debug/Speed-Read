@@ -15,7 +15,16 @@ import {
   Plus,
   CheckCircle2,
   AlertTriangle,
-  ChevronRight
+  ChevronRight,
+  Beef,
+  Milk,
+  Leaf,
+  Droplet,
+  Fish,
+  Cookie,
+  Clock,
+  History,
+  Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
@@ -40,6 +49,27 @@ const cleanCache = () => {
   lastCacheCleanup = now;
 };
 
+// Category icons mapping
+const categoryIcons = {
+  proteins: Beef,
+  dairy: Milk,
+  vegetables: Leaf,
+  fats: Droplet,
+  seafood: Fish,
+  snacks: Cookie
+};
+
+const categoryColors = {
+  proteins: 'red',
+  dairy: 'blue',
+  vegetables: 'green',
+  fats: 'amber',
+  seafood: 'cyan',
+  snacks: 'purple'
+};
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
+
 export const FoodSearch = () => {
   const { theme } = useTheme();
   const [query, setQuery] = useState('');
@@ -54,10 +84,103 @@ export const FoodSearch = () => {
   const [mealType, setMealType] = useState('snack');
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteId, setFavoriteId] = useState(null);
+  
+  // New states for categories and suggestions
+  const [categories, setCategories] = useState([]);
+  const [timeSuggestions, setTimeSuggestions] = useState(null);
+  const [recentFoods, setRecentFoods] = useState([]);
+  const [activeView, setActiveView] = useState('search'); // 'search', 'category', 'suggestions'
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [categoryFoods, setCategoryFoods] = useState([]);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+
+  const getToken = () => localStorage.getItem('token');
 
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  // Load categories, time-based suggestions, and recent foods on mount
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const token = getToken();
+        const headers = { 'Authorization': `Bearer ${token}` };
+        
+        // Load all in parallel
+        const [catRes, timeRes, recentRes] = await Promise.all([
+          fetch(`${API_URL}/api/foods/categories`),
+          fetch(`${API_URL}/api/foods/suggestions/time-based`, { headers }),
+          fetch(`${API_URL}/api/foods/recent?limit=8`, { headers })
+        ]);
+        
+        if (catRes.ok) {
+          const data = await catRes.json();
+          setCategories(data.categories || []);
+        }
+        
+        if (timeRes.ok) {
+          const data = await timeRes.json();
+          setTimeSuggestions(data);
+        }
+        
+        if (recentRes.ok) {
+          const data = await recentRes.json();
+          setRecentFoods(data.recent_foods || []);
+        }
+      } catch (err) {
+        console.error('Error loading initial data:', err);
+      }
+    };
+    
+    loadInitialData();
+  }, []);
+
+  // Load foods for a specific category
+  const loadCategoryFoods = useCallback(async (categoryId) => {
+    setCategoryLoading(true);
+    setSelectedCategory(categoryId);
+    setActiveView('category');
+    
+    try {
+      const token = getToken();
+      const res = await fetch(`${API_URL}/api/foods/categories/${categoryId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setCategoryFoods(data.foods || []);
+      }
+    } catch (err) {
+      toast.error('Failed to load category foods');
+    } finally {
+      setCategoryLoading(false);
+    }
+  }, []);
+
+  // Quick select a food from suggestions/recent
+  const quickSelectFood = useCallback(async (food) => {
+    setSelectedFood(food);
+    setDetailsLoading(true);
+    setFoodDetails(null);
+    setActiveView('search');
+    
+    try {
+      const [detailsRes, favRes] = await Promise.all([
+        foodsApi.getDetails(food.fdc_id),
+        favoritesApi.check(food.fdc_id)
+      ]);
+      setFoodDetails(detailsRes.data);
+      setIsFavorite(favRes.data.is_favorite);
+      setFavoriteId(favRes.data.favorite_id);
+    } catch (err) {
+      toast.error('Failed to load food details');
+      setSelectedFood(null);
+    } finally {
+      setDetailsLoading(false);
+    }
   }, []);
 
   const handleSearch = useCallback(async () => {
@@ -207,7 +330,7 @@ export const FoodSearch = () => {
     <Layout>
       <div className="p-6 md:p-8 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className={cn(
             "font-heading text-3xl md:text-4xl font-bold",
             theme === 'dark' ? 'text-white' : 'text-gray-900'
@@ -215,12 +338,12 @@ export const FoodSearch = () => {
             Food Search
           </h1>
           <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>
-            Search USDA, Open Food Facts & custom foods for nutritional data
+            Search or browse categories for nutritional data
           </p>
         </div>
 
         {/* Search Bar */}
-        <div className="flex gap-3 mb-8">
+        <div className="flex gap-3 mb-6">
           <div className="relative flex-1">
             <SearchIcon className={cn(
               "absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5",
@@ -228,7 +351,7 @@ export const FoodSearch = () => {
             )} />
             <Input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => { setQuery(e.target.value); setActiveView('search'); }}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="Search for chicken, eggs, salmon..."
               data-testid="food-search-input"
@@ -249,6 +372,189 @@ export const FoodSearch = () => {
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Search'}
           </button>
         </div>
+
+        {/* Time-Based Suggestions */}
+        {timeSuggestions && timeSuggestions.suggestions?.length > 0 && activeView === 'search' && !results.length && !selectedFood && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="w-4 h-4 text-amber-500" />
+              <h3 className={cn(
+                "text-sm font-semibold",
+                theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+              )}>
+                {timeSuggestions.meal_name} Ideas
+              </h3>
+              <span className={cn(
+                "text-xs px-2 py-0.5 rounded-full",
+                theme === 'dark' ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-100 text-amber-700'
+              )}>
+                Based on time of day
+              </span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {timeSuggestions.suggestions.map((food, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => quickSelectFood(food)}
+                  className={cn(
+                    "flex-shrink-0 px-4 py-2 rounded-xl border transition-all hover:scale-105",
+                    theme === 'dark' 
+                      ? 'bg-zinc-900/50 border-white/10 hover:border-amber-500/30 text-white' 
+                      : 'bg-white border-gray-200 hover:border-amber-500/50 text-gray-900 shadow-sm'
+                  )}
+                >
+                  <span className="font-medium text-sm">{food.search_term}</span>
+                  <span className={cn(
+                    "ml-2 text-xs",
+                    theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'
+                  )}>{food.protein_per_100g?.toFixed(0)}g protein</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Recent Foods */}
+        {recentFoods.length > 0 && activeView === 'search' && !results.length && !selectedFood && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <History className="w-4 h-4 text-cyan-500" />
+              <h3 className={cn(
+                "text-sm font-semibold",
+                theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+              )}>
+                Recently Logged
+              </h3>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {recentFoods.map((food, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => quickSelectFood(food)}
+                  className={cn(
+                    "flex-shrink-0 px-4 py-2 rounded-xl border transition-all hover:scale-105",
+                    theme === 'dark' 
+                      ? 'bg-zinc-900/50 border-white/10 hover:border-cyan-500/30 text-white' 
+                      : 'bg-white border-gray-200 hover:border-cyan-500/50 text-gray-900 shadow-sm'
+                  )}
+                >
+                  <span className="font-medium text-sm truncate max-w-[150px]">{food.description?.split(',')[0]}</span>
+                  <span className={cn(
+                    "ml-2 text-xs",
+                    theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'
+                  )}>{food.protein?.toFixed(0)}g</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Category Browsing */}
+        {categories.length > 0 && activeView === 'search' && !results.length && !selectedFood && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="w-4 h-4 text-violet-500" />
+              <h3 className={cn(
+                "text-sm font-semibold",
+                theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+              )}>
+                Browse by Category
+              </h3>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              {categories.map((cat) => {
+                const IconComponent = categoryIcons[cat.id] || Leaf;
+                const color = categoryColors[cat.id] || 'emerald';
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => loadCategoryFoods(cat.id)}
+                    className={cn(
+                      "p-4 rounded-xl border text-left transition-all hover:scale-105",
+                      theme === 'dark' 
+                        ? 'bg-zinc-900/50 border-white/10 hover:border-white/20' 
+                        : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm'
+                    )}
+                  >
+                    <div className={cn(
+                      "w-10 h-10 rounded-lg flex items-center justify-center mb-2",
+                      `bg-${color}-500/20`
+                    )}>
+                      <IconComponent className={`w-5 h-5 text-${color}-500`} />
+                    </div>
+                    <p className={cn(
+                      "font-semibold text-sm",
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    )}>{cat.name}</p>
+                    <p className={cn(
+                      "text-xs mt-0.5",
+                      theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                    )}>{cat.description}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Category Foods View */}
+        {activeView === 'category' && (
+          <div className="mb-6">
+            <button
+              onClick={() => { setActiveView('search'); setSelectedCategory(null); setCategoryFoods([]); }}
+              className={cn(
+                "flex items-center gap-1 text-sm mb-4",
+                theme === 'dark' ? 'text-zinc-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'
+              )}
+            >
+              ← Back to search
+            </button>
+            
+            <h3 className={cn(
+              "text-lg font-semibold mb-4",
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            )}>
+              {categories.find(c => c.id === selectedCategory)?.name || 'Category'}
+            </h3>
+            
+            {categoryLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {categoryFoods.map((food, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => quickSelectFood(food)}
+                    className={cn(
+                      "p-4 rounded-xl border text-left transition-all hover:border-emerald-500/50",
+                      theme === 'dark' 
+                        ? 'bg-zinc-900/50 border-white/10' 
+                        : 'bg-white border-gray-200 shadow-sm'
+                    )}
+                  >
+                    <p className={cn(
+                      "font-medium",
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    )}>{food.description}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-emerald-500 text-sm font-semibold">
+                        {food.protein_per_100g?.toFixed(0)}g protein
+                      </span>
+                      <span className={cn(
+                        "text-xs",
+                        theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                      )}>
+                        {food.calories_per_100g?.toFixed(0)} cal / 100g
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Search Progress Bar */}
         {loading && (
