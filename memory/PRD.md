@@ -60,7 +60,7 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 
 ## What's Been Implemented
 
-### March 3, 2026 - Unified Food Search (USDA + Open Food Facts)
+### March 3, 2026 - Unified Food Search (USDA + Open Food Facts) + Custom Foods UI
 - **NEW**: Unified Food Database Search
   - Parallel search across USDA FoodData Central and Open Food Facts APIs
   - Search results from both sources displayed with distinct badges:
@@ -73,6 +73,17 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
   - "Basic Nutrition Data" notice for items without amino acid profiles
   - Add to Log and Favorite functionality works for both sources
   - OFF food IDs use `off:` prefix (e.g., `off:5449000054227`)
+- **NEW**: Custom Foods UI
+  - Full CRUD interface for user-created food entries
+  - Form with name, brand, serving size, unit, macros (calories, protein, fat, carbs, fiber, sugar, sodium), notes
+  - Edit and delete existing custom foods
+  - Search/filter within custom foods list
+  - Custom foods appear in unified search results with purple "Custom" badge
+  - Navigation link added to sidebar
+- **NEW**: Search Progress Indicator
+  - Progress bar shows during search with "Searching USDA & Open Food Facts..." text
+  - Animated percentage from 0% to 100%
+  - Gradient from emerald to cyan color
 - **Fixed**: Open Food Facts results previously being dropped from unified search
   - Improved error handling in async API calls
   - Increased timeout from 15s to 20s for better reliability
@@ -162,7 +173,8 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - [x] Loading skeleton states for Dashboard, FoodSearch, Suggestions (DONE - March 2, 2026)
 - [x] Mobile responsive refinements with bottom nav "More" menu (DONE - March 2, 2026)
 - [x] Unified Food Search (USDA + Open Food Facts) (DONE - March 3, 2026)
-- [ ] Custom Foods feature - User-created food entries with macros
+- [x] Custom Foods feature - User-created food entries with macros (DONE - March 3, 2026)
+- [x] Search progress indicator (DONE - March 3, 2026)
 - [ ] Re-enable USDA Branded foods with better error handling
 
 ### P2 - Medium Priority
@@ -194,6 +206,6 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - `/api/keto-score` - Keto score calculation
 
 ## Test Reports
-- Latest: `/app/test_reports/iteration_7.json`
-- Backend: 94% (15/16 tests passed, 1 skipped)
-- Frontend: 100% (All unified search features working correctly)
+- Latest: `/app/test_reports/iteration_8.json`
+- Backend: 100% (9/9 Custom Foods tests passed)
+- Frontend: 100% (All Custom Foods CRUD and search progress features working)
