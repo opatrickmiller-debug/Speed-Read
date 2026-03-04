@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { nutritionApi } from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
+import { InfoTooltip } from './Education';
 import { 
   Award, 
   Loader2, 
@@ -165,6 +166,7 @@ export const NutritionScoreCard = ({ className = '' }) => {
             "text-lg font-semibold",
             theme === 'dark' ? 'text-white' : 'text-gray-900'
           )}>Nutrition Score</h3>
+          <InfoTooltip contentKey="nutritionScore" />
         </div>
 
         {/* Main Score Display */}

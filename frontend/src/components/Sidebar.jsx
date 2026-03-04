@@ -20,6 +20,7 @@ import {
   PlusCircle,
   Sun,
   Moon,
+  Users,
 } from 'lucide-react';
 
 const navItems = [
@@ -28,6 +29,7 @@ const navItems = [
   { to: '/barcode', icon: ScanBarcode, label: 'Barcode Scan' },
   { to: '/log', icon: UtensilsCrossed, label: 'Food Log' },
   { to: '/meal-builder', icon: ChefHat, label: 'Meal Builder' },
+  { to: '/meal-library', icon: Users, label: 'Meal Library' },
   { to: '/suggestions', icon: Sparkles, label: 'Suggestions' },
   { to: '/meal-plans', icon: CalendarDays, label: 'Meal Plans' },
   { to: '/custom-foods', icon: PlusCircle, label: 'Custom Foods' },

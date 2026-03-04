@@ -21,6 +21,7 @@ class UserResponse(BaseModel):
     body_fat_percentage: float = 20.0
     protein_per_kg_lbm: float = 2.0
     unit_system: str = "imperial"  # "metric" or "imperial"
+    onboarding_completed: bool = False
     created_at: datetime
 
 class TokenResponse(BaseModel):
@@ -35,6 +36,7 @@ class UserSettingsUpdate(BaseModel):
     body_fat_percentage: Optional[float] = Field(None, ge=0, le=100)
     protein_per_kg_lbm: Optional[float] = Field(None, gt=0)
     unit_system: Optional[str] = Field(None, pattern="^(metric|imperial)$")
+    onboarding_completed: Optional[bool] = None
 
 class ProteinGoalUpdate(BaseModel):
     protein_goal: float = Field(gt=0)

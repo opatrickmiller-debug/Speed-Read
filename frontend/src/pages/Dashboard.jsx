@@ -6,6 +6,7 @@ import { ProteinProgress, MacroCard } from '../components/ProteinProgress';
 import { AminoAcidRadar, AminoAcidList } from '../components/AminoAcidRadar';
 import { NutritionScoreCard } from '../components/NutritionScore';
 import { DashboardSkeleton } from '../components/Skeletons';
+import { InfoTooltip, LearnMoreLink } from '../components/Education';
 import { statsApi, logsApi, ketoApi } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -191,6 +192,7 @@ export const Dashboard = () => {
                   <div className="flex items-center gap-2">
                     <Leaf className="w-5 h-5 text-emerald-500" />
                     <GlassCardTitle>Keto Score</GlassCardTitle>
+                    <InfoTooltip contentKey="ketoScore" />
                   </div>
                   <div className={cn(
                     'text-4xl font-bold',

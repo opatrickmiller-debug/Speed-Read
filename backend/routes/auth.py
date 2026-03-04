@@ -117,6 +117,8 @@ async def update_user_settings(data: UserSettingsUpdate, current_user: dict = De
         update_fields["protein_per_kg_lbm"] = data.protein_per_kg_lbm
     if data.unit_system is not None:
         update_fields["unit_system"] = data.unit_system
+    if data.onboarding_completed is not None:
+        update_fields["onboarding_completed"] = data.onboarding_completed
     
     if update_fields:
         await db.users.update_one(
@@ -141,7 +143,8 @@ async def update_user_settings(data: UserSettingsUpdate, current_user: dict = De
         body_weight_kg=updated_user.get("body_weight_kg", 70.0),
         body_fat_percentage=updated_user.get("body_fat_percentage", 20.0),
         protein_per_kg_lbm=updated_user.get("protein_per_kg_lbm", 2.0),
-        unit_system=updated_user.get("unit_system", "metric"),
+        unit_system=updated_user.get("unit_system", "imperial"),
+        onboarding_completed=updated_user.get("onboarding_completed", False),
         created_at=created_at
     )
 

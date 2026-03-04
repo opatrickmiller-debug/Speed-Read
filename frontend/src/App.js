@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
+import { useState, useEffect } from "react";
 
 // Pages
 import { Login } from "./pages/Login";
@@ -18,12 +19,26 @@ import { BarcodeScanner } from "./pages/BarcodeScanner";
 import { Suggestions } from "./pages/Suggestions";
 import { MealBuilder } from "./pages/MealBuilder";
 import { CustomFoods } from "./pages/CustomFoods";
+import { MealLibrary } from "./pages/MealLibrary";
 import { Loader2 } from "lucide-react";
 
-// Protected Route Wrapper
+// Components
+import { Onboarding } from "./components/Onboarding";
+
+// Protected Route Wrapper with Onboarding
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   const { theme } = useTheme();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  
+  useEffect(() => {
+    if (user && !loading) {
+      const onboardingCompleted = localStorage.getItem('onboarding_completed');
+      if (!onboardingCompleted && !user.onboarding_completed) {
+        setShowOnboarding(true);
+      }
+    }
+  }, [user, loading]);
   
   if (loading) {
     return (
@@ -35,6 +50,10 @@ const ProtectedRoute = ({ children }) => {
   
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+  
+  if (showOnboarding) {
+    return <Onboarding onComplete={() => setShowOnboarding(false)} />;
   }
   
   return children;
@@ -77,6 +96,7 @@ function AppRoutes() {
       <Route path="/barcode" element={<ProtectedRoute><BarcodeScanner /></ProtectedRoute>} />
       <Route path="/suggestions" element={<ProtectedRoute><Suggestions /></ProtectedRoute>} />
       <Route path="/meal-builder" element={<ProtectedRoute><MealBuilder /></ProtectedRoute>} />
+      <Route path="/meal-library" element={<ProtectedRoute><MealLibrary /></ProtectedRoute>} />
       <Route path="/custom-foods" element={<ProtectedRoute><CustomFoods /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       

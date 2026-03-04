@@ -361,3 +361,228 @@ async def check_favorite(fdc_id: str, current_user: dict = Depends(get_current_u
         "fdc_id": fdc_id
     }, {"_id": 0})
     return {"is_favorite": fav is not None, "favorite_id": fav.get("id") if fav else None}
+
+
+# ==================== PUBLIC MEAL LIBRARY ====================
+
+@router.post("/meals/publish/{meal_id}")
+async def publish_meal(meal_id: str, current_user: dict = Depends(get_current_user)):
+    """Make a custom meal public in the community library"""
+    meal = await db.custom_meals.find_one({
+        "id": meal_id,
+        "user_id": current_user["id"]
+    }, {"_id": 0})
+    
+    if not meal:
+        raise HTTPException(status_code=404, detail="Meal not found")
+    
+    if meal.get("is_public"):
+        raise HTTPException(status_code=400, detail="Meal is already public")
+    
+    await db.custom_meals.update_one(
+        {"id": meal_id},
+        {"$set": {
+            "is_public": True,
+            "published_at": datetime.now(timezone.utc).isoformat(),
+            "author_name": current_user.get("name", "Anonymous"),
+            "likes": 0,
+            "saves": 0
+        }}
+    )
+    
+    return {"message": "Meal published to community library", "meal_id": meal_id}
+
+@router.post("/meals/unpublish/{meal_id}")
+async def unpublish_meal(meal_id: str, current_user: dict = Depends(get_current_user)):
+    """Remove a meal from the public library"""
+    result = await db.custom_meals.update_one(
+        {"id": meal_id, "user_id": current_user["id"]},
+        {"$set": {"is_public": False}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Meal not found")
+    
+    return {"message": "Meal removed from public library"}
+
+@router.get("/meals/library")
+async def get_public_meal_library(
+    skip: int = 0,
+    limit: int = 20,
+    sort_by: str = "recent",  # recent, popular, protein
+    keto_tier: Optional[str] = None,
+    search: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Browse the public meal library"""
+    query = {"is_public": True}
+    
+    if keto_tier:
+        query["keto_tier"] = keto_tier
+    
+    if search:
+        query["$or"] = [
+            {"name": {"$regex": search, "$options": "i"}},
+            {"description": {"$regex": search, "$options": "i"}}
+        ]
+    
+    # Determine sort order
+    sort_field = "published_at"
+    sort_order = -1
+    if sort_by == "popular":
+        sort_field = "likes"
+    elif sort_by == "protein":
+        sort_field = "total_protein"
+    elif sort_by == "saves":
+        sort_field = "saves"
+    
+    cursor = db.custom_meals.find(query, {"_id": 0}).sort(sort_field, sort_order).skip(skip).limit(limit)
+    meals = await cursor.to_list(length=limit)
+    
+    total = await db.custom_meals.count_documents(query)
+    
+    # Check if current user has saved each meal
+    user_saved = await db.saved_meals.find(
+        {"user_id": current_user["id"]},
+        {"meal_id": 1, "_id": 0}
+    ).to_list(length=1000)
+    saved_ids = {s["meal_id"] for s in user_saved}
+    
+    for meal in meals:
+        meal["is_saved"] = meal["id"] in saved_ids
+        meal["is_own"] = meal.get("user_id") == current_user["id"]
+    
+    return {
+        "meals": meals,
+        "total": total,
+        "has_more": skip + limit < total
+    }
+
+@router.post("/meals/library/{meal_id}/save")
+async def save_public_meal(meal_id: str, current_user: dict = Depends(get_current_user)):
+    """Save a public meal to your collection"""
+    meal = await db.custom_meals.find_one({"id": meal_id, "is_public": True}, {"_id": 0})
+    
+    if not meal:
+        raise HTTPException(status_code=404, detail="Public meal not found")
+    
+    # Check if already saved
+    existing = await db.saved_meals.find_one({
+        "user_id": current_user["id"],
+        "meal_id": meal_id
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Meal already saved")
+    
+    # Save the meal
+    save_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "meal_id": meal_id,
+        "saved_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.saved_meals.insert_one(save_doc)
+    
+    # Increment save count
+    await db.custom_meals.update_one(
+        {"id": meal_id},
+        {"$inc": {"saves": 1}}
+    )
+    
+    return {"message": "Meal saved", "save_id": save_doc["id"]}
+
+@router.delete("/meals/library/{meal_id}/unsave")
+async def unsave_public_meal(meal_id: str, current_user: dict = Depends(get_current_user)):
+    """Remove a saved meal from your collection"""
+    result = await db.saved_meals.delete_one({
+        "user_id": current_user["id"],
+        "meal_id": meal_id
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Saved meal not found")
+    
+    # Decrement save count
+    await db.custom_meals.update_one(
+        {"id": meal_id},
+        {"$inc": {"saves": -1}}
+    )
+    
+    return {"message": "Meal removed from saved"}
+
+@router.post("/meals/library/{meal_id}/like")
+async def like_public_meal(meal_id: str, current_user: dict = Depends(get_current_user)):
+    """Like a public meal"""
+    meal = await db.custom_meals.find_one({"id": meal_id, "is_public": True})
+    
+    if not meal:
+        raise HTTPException(status_code=404, detail="Public meal not found")
+    
+    # Check if already liked
+    existing = await db.meal_likes.find_one({
+        "user_id": current_user["id"],
+        "meal_id": meal_id
+    })
+    
+    if existing:
+        # Unlike
+        await db.meal_likes.delete_one({"_id": existing["_id"]})
+        await db.custom_meals.update_one({"id": meal_id}, {"$inc": {"likes": -1}})
+        return {"message": "Like removed", "liked": False}
+    else:
+        # Like
+        await db.meal_likes.insert_one({
+            "user_id": current_user["id"],
+            "meal_id": meal_id,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        await db.custom_meals.update_one({"id": meal_id}, {"$inc": {"likes": 1}})
+        return {"message": "Meal liked", "liked": True}
+
+@router.get("/meals/saved")
+async def get_saved_meals(current_user: dict = Depends(get_current_user)):
+    """Get all meals saved by the current user"""
+    saved = await db.saved_meals.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0}
+    ).to_list(length=100)
+    
+    meal_ids = [s["meal_id"] for s in saved]
+    
+    meals = await db.custom_meals.find(
+        {"id": {"$in": meal_ids}},
+        {"_id": 0}
+    ).to_list(length=100)
+    
+    return {"meals": meals, "count": len(meals)}
+
+@router.post("/meals/library/{meal_id}/copy")
+async def copy_meal_to_collection(meal_id: str, current_user: dict = Depends(get_current_user)):
+    """Copy a public meal to your own custom meals"""
+    meal = await db.custom_meals.find_one({"id": meal_id, "is_public": True}, {"_id": 0})
+    
+    if not meal:
+        raise HTTPException(status_code=404, detail="Public meal not found")
+    
+    # Create a copy
+    new_meal_id = str(uuid.uuid4())
+    new_meal = {
+        **meal,
+        "id": new_meal_id,
+        "user_id": current_user["id"],
+        "name": f"{meal['name']} (Copy)",
+        "is_public": False,
+        "copied_from": meal_id,
+        "original_author": meal.get("author_name", "Unknown"),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Remove public-specific fields
+    new_meal.pop("published_at", None)
+    new_meal.pop("likes", None)
+    new_meal.pop("saves", None)
+    
+    await db.custom_meals.insert_one(new_meal)
+    
+    return {"message": "Meal copied to your collection", "new_meal_id": new_meal_id}
