@@ -142,8 +142,26 @@ export const FoodSearch = () => {
     loadInitialData();
   }, []);
 
+  // Close autocomplete when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('[data-autocomplete-container]')) {
+        setShowAutocomplete(false);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
   // Autocomplete search with debounce
   useEffect(() => {
+    // Don't show autocomplete if we already have search results or if currently searching
+    if (results.length > 0 || loading) {
+      setShowAutocomplete(false);
+      return;
+    }
+    
     if (query.length < 2) {
       setAutocompleteResults([]);
       setShowAutocomplete(false);
@@ -223,6 +241,10 @@ export const FoodSearch = () => {
   const handleSearch = useCallback(async () => {
     if (!query.trim()) return;
     
+    // Close autocomplete when searching
+    setShowAutocomplete(false);
+    setAutocompleteResults([]);
+    
     const cacheKey = query.toLowerCase().trim();
     
     // Check cache first
@@ -248,6 +270,8 @@ export const FoodSearch = () => {
       setSearchProgress(100);
       const foods = res.data.foods || [];
       setResults(foods);
+      setShowAutocomplete(false); // Close autocomplete when results arrive
+      setAutocompleteResults([]); // Clear autocomplete results
       
       // Cache results and clean periodically
       searchCache.set(cacheKey, { foods, timestamp: Date.now() });
@@ -381,7 +405,7 @@ export const FoodSearch = () => {
 
         {/* Search Bar */}
         <div className="flex gap-3 mb-6">
-          <div className="relative flex-1">
+          <div className="relative flex-1" data-autocomplete-container>
             <SearchIcon className={cn(
               "absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5",
               theme === 'dark' ? 'text-zinc-500' : 'text-gray-400'
@@ -398,7 +422,7 @@ export const FoodSearch = () => {
                   setShowAutocomplete(false);
                 }
               }}
-              onFocus={() => query.length >= 2 && autocompleteResults.length > 0 && setShowAutocomplete(true)}
+              onFocus={() => query.length >= 2 && autocompleteResults.length > 0 && results.length === 0 && setShowAutocomplete(true)}
               placeholder="Search for chicken, eggs, salmon..."
               data-testid="food-search-input"
               className={cn(
@@ -409,8 +433,8 @@ export const FoodSearch = () => {
               )}
             />
             
-            {/* Autocomplete Dropdown */}
-            {showAutocomplete && (autocompleteResults.length > 0 || autocompleteLoading) && (
+            {/* Autocomplete Dropdown - only show if no results and not loading */}
+            {showAutocomplete && !loading && results.length === 0 && (autocompleteResults.length > 0 || autocompleteLoading) && (
               <div className={cn(
                 "absolute z-50 w-full mt-1 rounded-xl border shadow-xl overflow-hidden",
                 theme === 'dark' 
