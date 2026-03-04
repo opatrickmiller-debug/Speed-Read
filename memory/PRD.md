@@ -39,7 +39,7 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 ├── routes/
 │   ├── auth.py         # Authentication routes
 │   ├── barcode.py      # Barcode lookup routes
-│   ├── foods.py        # Food search routes
+│   ├── foods.py        # Food search routes with smart ranking
 │   ├── keto_score.py   # Keto score routes
 │   ├── logs.py         # Food log routes
 │   ├── meals.py        # Meal plans, custom meals, favorites
@@ -59,6 +59,27 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - `favorites`: User favorite foods
 
 ## What's Been Implemented
+
+### March 4, 2026 - Search Ranking & Mobile Optimization
+- **NEW**: Smart Search Result Ranking
+  - Prioritizes simple whole foods over complex meals/branded products
+  - Scoring factors: exact match (+150), simplicity (+60 for 2 words), data source quality
+  - Foundation foods ranked highest (+70), then SR Legacy (+65), Survey (+40), Branded (+5)
+  - Amino acid availability bonus (+30)
+  - Penalty for complex food indicators (with, sauce, casserole, etc.)
+  - Searches USDA by data type: Foundation, SR Legacy, Survey, then Branded
+- **NEW**: Dedicated Food Details Page
+  - Clicking search result navigates to `/food/:fdcId` page (not split view)
+  - "Back to Search" button for easy navigation
+  - Full details: macros, amino acid radar chart, fatty acid profile
+  - Add to Log dialog with servings and meal type
+  - Favorite toggle functionality
+- **IMPROVED**: Mobile-First UI Optimization
+  - Responsive search page with 2-column category grid on mobile
+  - Touch-friendly cards with `active:scale-95` feedback
+  - Horizontal scroll for quick suggestions with `-mx-4 px-4` edge-to-edge
+  - Food details page optimized for mobile with stacked layout
+  - Bottom navigation bar for easy thumb access
 
 ### March 4, 2026 - Enhanced Suggestions & Total Carbs Update
 - **ENHANCED**: Suggestions Page with Personalized Quick Actions
