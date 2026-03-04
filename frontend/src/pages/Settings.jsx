@@ -29,13 +29,20 @@ export const Settings = () => {
     window.scrollTo(0, 0);
   }, []);
   
-  // Form states
+  // Form states - store as numbers for calculations
   const [bodyWeight, setBodyWeight] = useState(user?.body_weight_kg || 70);
   const [bodyFat, setBodyFat] = useState(user?.body_fat_percentage || 20);
   const [proteinMultiplier, setProteinMultiplier] = useState(user?.protein_per_kg_lbm || 2.0);
   const [proteinGoal, setProteinGoal] = useState(user?.protein_goal || 150);
   const [carbLimit, setCarbLimit] = useState(user?.daily_carb_limit || 20);
   const [unitSystem, setUnitSystem] = useState(user?.unit_system || 'imperial');
+  
+  // Input display states - store as strings for proper input handling
+  const [weightInput, setWeightInput] = useState('');
+  const [bodyFatInput, setBodyFatInput] = useState('');
+  const [proteinMultiplierInput, setProteinMultiplierInput] = useState('');
+  const [proteinGoalInput, setProteinGoalInput] = useState('');
+  const [carbLimitInput, setCarbLimitInput] = useState('');
   
   const [saving, setSaving] = useState(false);
   const [calculatedProtein, setCalculatedProtein] = useState(null);
@@ -48,6 +55,22 @@ export const Settings = () => {
   const displayWeight = unitSystem === 'imperial' ? kgToLbs(bodyWeight) : bodyWeight;
   const weightUnit = unitSystem === 'imperial' ? 'lbs' : 'kg';
 
+  // Initialize input strings from numeric values
+  useEffect(() => {
+    const weightVal = unitSystem === 'imperial' ? Math.round(kgToLbs(bodyWeight)) : Math.round(bodyWeight * 10) / 10;
+    setWeightInput(String(weightVal));
+    setBodyFatInput(String(bodyFat));
+    setProteinMultiplierInput(String(proteinMultiplier));
+    setProteinGoalInput(String(proteinGoal));
+    setCarbLimitInput(String(carbLimit));
+  }, [user]); // Only on initial load
+
+  // Update weight input when unit system changes
+  useEffect(() => {
+    const weightVal = unitSystem === 'imperial' ? Math.round(kgToLbs(bodyWeight)) : Math.round(bodyWeight * 10) / 10;
+    setWeightInput(String(weightVal));
+  }, [unitSystem]);
+
   // Calculate lean body mass and recommended protein
   useEffect(() => {
     const lbm = bodyWeight * (1 - bodyFat / 100);
@@ -59,12 +82,52 @@ export const Settings = () => {
     });
   }, [bodyWeight, bodyFat, proteinMultiplier, unitSystem]);
 
-  const handleWeightChange = (value) => {
-    if (unitSystem === 'imperial') {
-      // Convert lbs to kg for storage
-      setBodyWeight(lbsToKg(value));
-    } else {
-      setBodyWeight(value);
+  const handleWeightInputChange = (e) => {
+    const val = e.target.value;
+    setWeightInput(val);
+    const numVal = parseFloat(val);
+    if (!isNaN(numVal) && numVal > 0) {
+      if (unitSystem === 'imperial') {
+        setBodyWeight(lbsToKg(numVal));
+      } else {
+        setBodyWeight(numVal);
+      }
+    }
+  };
+
+  const handleBodyFatInputChange = (e) => {
+    const val = e.target.value;
+    setBodyFatInput(val);
+    const numVal = parseFloat(val);
+    if (!isNaN(numVal) && numVal >= 0) {
+      setBodyFat(numVal);
+    }
+  };
+
+  const handleProteinMultiplierInputChange = (e) => {
+    const val = e.target.value;
+    setProteinMultiplierInput(val);
+    const numVal = parseFloat(val);
+    if (!isNaN(numVal) && numVal > 0) {
+      setProteinMultiplier(numVal);
+    }
+  };
+
+  const handleProteinGoalInputChange = (e) => {
+    const val = e.target.value;
+    setProteinGoalInput(val);
+    const numVal = parseFloat(val);
+    if (!isNaN(numVal) && numVal > 0) {
+      setProteinGoal(numVal);
+    }
+  };
+
+  const handleCarbLimitInputChange = (e) => {
+    const val = e.target.value;
+    setCarbLimitInput(val);
+    const numVal = parseFloat(val);
+    if (!isNaN(numVal) && numVal >= 0) {
+      setCarbLimit(numVal);
     }
   };
 
@@ -92,6 +155,7 @@ export const Settings = () => {
   const applyCalculatedProtein = () => {
     if (calculatedProtein) {
       setProteinGoal(calculatedProtein.recommended);
+      setProteinGoalInput(String(calculatedProtein.recommended));
     }
   };
 
@@ -243,12 +307,10 @@ export const Settings = () => {
                     Body Weight ({weightUnit})
                   </Label>
                   <Input
-                    type="number"
-                    value={Math.round(displayWeight * 10) / 10}
-                    onChange={(e) => handleWeightChange(parseFloat(e.target.value) || 0)}
-                    min={unitSystem === 'imperial' ? 88 : 40}
-                    max={unitSystem === 'imperial' ? 440 : 200}
-                    step={unitSystem === 'imperial' ? 1 : 0.5}
+                    type="text"
+                    inputMode="decimal"
+                    value={weightInput}
+                    onChange={handleWeightInputChange}
                     data-testid="weight-input"
                     className={cn(
                       "h-12 text-lg",
@@ -272,12 +334,10 @@ export const Settings = () => {
                     Body Fat (%)
                   </Label>
                   <Input
-                    type="number"
-                    value={bodyFat}
-                    onChange={(e) => setBodyFat(parseFloat(e.target.value) || 0)}
-                    min={5}
-                    max={50}
-                    step={1}
+                    type="text"
+                    inputMode="decimal"
+                    value={bodyFatInput}
+                    onChange={handleBodyFatInputChange}
                     data-testid="bodyfat-input"
                     className={cn(
                       "h-12 text-lg",
@@ -313,12 +373,10 @@ export const Settings = () => {
                     theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
                   )}>Protein per kg LBM (g/kg)</Label>
                   <Input
-                    type="number"
-                    value={proteinMultiplier}
-                    onChange={(e) => setProteinMultiplier(parseFloat(e.target.value) || 1.2)}
-                    min={1.2}
-                    max={3.0}
-                    step={0.1}
+                    type="text"
+                    inputMode="decimal"
+                    value={proteinMultiplierInput}
+                    onChange={handleProteinMultiplierInputChange}
                     data-testid="protein-multiplier-input"
                     className={cn(
                       "h-12 text-lg",
@@ -385,11 +443,10 @@ export const Settings = () => {
                   <span className="text-emerald-500 font-mono text-lg">{proteinGoal}g</span>
                 </div>
                 <Input
-                  type="number"
-                  value={proteinGoal}
-                  onChange={(e) => setProteinGoal(parseFloat(e.target.value) || 0)}
-                  min={50}
-                  max={500}
+                  type="text"
+                  inputMode="decimal"
+                  value={proteinGoalInput}
+                  onChange={handleProteinGoalInputChange}
                   data-testid="protein-goal-input"
                   className={cn(
                     "h-12 text-lg",
@@ -415,12 +472,10 @@ export const Settings = () => {
                   </span>
                 </div>
                 <Input
-                  type="number"
-                  value={carbLimit}
-                  onChange={(e) => setCarbLimit(parseFloat(e.target.value) || 0)}
-                  min={10}
-                  max={100}
-                  step={5}
+                  type="text"
+                  inputMode="decimal"
+                  value={carbLimitInput}
+                  onChange={handleCarbLimitInputChange}
                   data-testid="carb-limit-input"
                   className={cn(
                     "h-12 text-lg",
