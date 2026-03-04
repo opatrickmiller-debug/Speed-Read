@@ -136,92 +136,134 @@ export const Dashboard = () => {
             </GlassCardContent>
           </GlassCard>
 
-          {/* Keto Score */}
-          <GlassCard className="lg:col-span-5" data-testid="keto-score-card">
-            <GlassCardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Leaf className="w-5 h-5 text-emerald-500" />
-                  <GlassCardTitle>Keto Score</GlassCardTitle>
+          {/* Quick Actions - Add Food */}
+          <div className="lg:col-span-5 flex flex-col gap-4">
+            <GlassCard className="flex-shrink-0" data-testid="quick-add-card">
+              <GlassCardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <Link
+                    to="/search"
+                    data-testid="quick-add-food-btn"
+                    className="flex-1 flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 px-4 rounded-xl transition-all"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Add Food
+                  </Link>
+                  <Link
+                    to="/barcode"
+                    data-testid="quick-scan-btn"
+                    className={cn(
+                      "flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition-all font-medium",
+                      theme === 'dark'
+                        ? 'bg-white/5 hover:bg-white/10 text-white'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+                    )}
+                  >
+                    <ScanBarcode className="w-5 h-5" />
+                    Scan
+                  </Link>
+                  <Link
+                    to="/meal-builder"
+                    data-testid="quick-meal-btn"
+                    className={cn(
+                      "flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition-all font-medium",
+                      theme === 'dark'
+                        ? 'bg-white/5 hover:bg-white/10 text-white'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+                    )}
+                  >
+                    <ChefHat className="w-5 h-5" />
+                    Meal
+                  </Link>
                 </div>
-                <div className={cn(
-                  'text-4xl font-bold',
-                  ketoScore?.color === 'emerald' && 'text-emerald-500',
-                  ketoScore?.color === 'amber' && 'text-amber-500',
-                  ketoScore?.color === 'red' && 'text-red-500'
-                )}>
-                  {ketoScore?.score || 0}
-                </div>
-              </div>
-            </GlassCardHeader>
-            <GlassCardContent className="pt-0">
-              {ketoScore ? (
-                <div className="space-y-4">
-                  {/* Progress bar */}
+              </GlassCardContent>
+            </GlassCard>
+
+            {/* Keto Score */}
+            <GlassCard className="flex-1" data-testid="keto-score-card">
+              <GlassCardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Leaf className="w-5 h-5 text-emerald-500" />
+                    <GlassCardTitle>Keto Score</GlassCardTitle>
+                  </div>
                   <div className={cn(
-                    "relative h-4 rounded-full overflow-hidden",
-                    theme === 'dark' ? 'bg-zinc-800' : 'bg-gray-200'
+                    'text-4xl font-bold',
+                    ketoScore?.color === 'emerald' && 'text-emerald-500',
+                    ketoScore?.color === 'amber' && 'text-amber-500',
+                    ketoScore?.color === 'red' && 'text-red-500'
                   )}>
-                    <div
-                      className={cn(
-                        'h-full rounded-full transition-all duration-500',
-                        ketoScore.color === 'emerald' && 'bg-gradient-to-r from-emerald-600 to-emerald-400',
-                        ketoScore.color === 'amber' && 'bg-gradient-to-r from-amber-600 to-amber-400',
-                        ketoScore.color === 'red' && 'bg-gradient-to-r from-red-600 to-red-400'
-                      )}
-                      style={{ width: `${Math.min(100, (ketoScore.net_carbs / ketoScore.carb_limit) * 100)}%` }}
-                    />
-                    {/* Goal marker */}
-                    <div className="absolute top-0 bottom-0 w-0.5 bg-white/50" style={{ left: '100%' }} />
+                    {ketoScore?.score || 0}
                   </div>
-                  
-                  {/* Stats */}
-                  <div className="flex justify-between text-sm">
-                    <div>
-                      <p className={cn(
-                        'text-2xl font-semibold',
-                        ketoScore.color === 'emerald' && 'text-emerald-500',
-                        ketoScore.color === 'amber' && 'text-amber-500',
-                        ketoScore.color === 'red' && 'text-red-500'
-                      )}>
-                        {ketoScore.net_carbs}g
-                      </p>
-                      <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>Net Carbs</p>
+                </div>
+              </GlassCardHeader>
+              <GlassCardContent className="pt-0">
+                {ketoScore ? (
+                  <div className="space-y-4">
+                    {/* Progress bar */}
+                    <div className={cn(
+                      "relative h-4 rounded-full overflow-hidden",
+                      theme === 'dark' ? 'bg-zinc-800' : 'bg-gray-200'
+                    )}>
+                      <div
+                        className={cn(
+                          'h-full rounded-full transition-all duration-500',
+                          ketoScore.color === 'emerald' && 'bg-gradient-to-r from-emerald-600 to-emerald-400',
+                          ketoScore.color === 'amber' && 'bg-gradient-to-r from-amber-600 to-amber-400',
+                          ketoScore.color === 'red' && 'bg-gradient-to-r from-red-600 to-red-400'
+                        )}
+                        style={{ width: `${Math.min(100, (ketoScore.net_carbs / ketoScore.carb_limit) * 100)}%` }}
+                      />
                     </div>
-                    <div className="text-right">
-                      <p className={cn(
-                        "text-2xl font-semibold",
-                        theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
-                      )}>
-                        {ketoScore.carbs_remaining}g
-                      </p>
-                      <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>Remaining</p>
+                    
+                    {/* Stats */}
+                    <div className="flex justify-between text-sm">
+                      <div>
+                        <p className={cn(
+                          'text-2xl font-semibold',
+                          ketoScore.color === 'emerald' && 'text-emerald-500',
+                          ketoScore.color === 'amber' && 'text-amber-500',
+                          ketoScore.color === 'red' && 'text-red-500'
+                        )}>
+                          {ketoScore.net_carbs}g
+                        </p>
+                        <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>Net Carbs</p>
+                      </div>
+                      <div className="text-right">
+                        <p className={cn(
+                          "text-2xl font-semibold",
+                          theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
+                        )}>
+                          {ketoScore.carbs_remaining}g
+                        </p>
+                        <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>Remaining</p>
+                      </div>
+                    </div>
+                    
+                    {/* Message */}
+                    <div className={cn(
+                      'p-3 rounded-xl text-sm',
+                      ketoScore.color === 'emerald' && 'bg-emerald-500/10 text-emerald-600',
+                      ketoScore.color === 'amber' && 'bg-amber-500/10 text-amber-600',
+                      ketoScore.color === 'red' && 'bg-red-500/10 text-red-600'
+                    )}>
+                      {ketoScore.status === 'ketosis' && <CheckCircle2 className="w-4 h-4 inline mr-2" />}
+                      {ketoScore.status === 'borderline' && <AlertTriangle className="w-4 h-4 inline mr-2" />}
+                      {ketoScore.status === 'over_limit' && <AlertTriangle className="w-4 h-4 inline mr-2" />}
+                      {ketoScore.message}
                     </div>
                   </div>
-                  
-                  {/* Message */}
+                ) : (
                   <div className={cn(
-                    'p-3 rounded-xl text-sm',
-                    ketoScore.color === 'emerald' && 'bg-emerald-500/10 text-emerald-600',
-                    ketoScore.color === 'amber' && 'bg-amber-500/10 text-amber-600',
-                    ketoScore.color === 'red' && 'bg-red-500/10 text-red-600'
+                    "py-8 text-center",
+                    theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
                   )}>
-                    {ketoScore.status === 'ketosis' && <CheckCircle2 className="w-4 h-4 inline mr-2" />}
-                    {ketoScore.status === 'borderline' && <AlertTriangle className="w-4 h-4 inline mr-2" />}
-                    {ketoScore.status === 'over_limit' && <AlertTriangle className="w-4 h-4 inline mr-2" />}
-                    {ketoScore.message}
+                    <p>No data yet</p>
                   </div>
-                </div>
-              ) : (
-                <div className={cn(
-                  "py-8 text-center",
-                  theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-                )}>
-                  <p>Log foods to see your Keto Score</p>
-                </div>
-              )}
-            </GlassCardContent>
-          </GlassCard>
+                )}
+              </GlassCardContent>
+            </GlassCard>
+          </div>
 
           {/* Nutrition Score */}
           <div className="lg:col-span-5" data-testid="nutrition-score-card">
@@ -251,14 +293,6 @@ export const Dashboard = () => {
           <GlassCard className="lg:col-span-7" data-testid="recent-logs-card">
             <GlassCardHeader className="flex flex-row items-center justify-between pb-4">
               <GlassCardTitle>Recent Foods</GlassCardTitle>
-              <Link 
-                to="/search"
-                data-testid="add-food-btn"
-                className="flex items-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-full text-sm font-medium transition-all"
-              >
-                <Plus className="w-4 h-4" />
-                Add Food
-              </Link>
             </GlassCardHeader>
             <GlassCardContent className="pt-0">
               {recentLogs.length > 0 ? (
@@ -266,26 +300,43 @@ export const Dashboard = () => {
                   {recentLogs.map((log, idx) => (
                     <div 
                       key={log.id}
-                      className="flex items-center justify-between p-4 rounded-xl bg-black/30 border border-white/5 hover:border-white/10 transition-all animate-fade-in"
+                      className={cn(
+                        "flex items-center justify-between p-4 rounded-xl border transition-all animate-fade-in",
+                        theme === 'dark' 
+                          ? 'bg-black/30 border-white/5 hover:border-white/10' 
+                          : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                      )}
                       style={{ animationDelay: `${idx * 0.1}s` }}
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-white font-medium truncate">{log.description}</p>
-                        <p className="text-xs text-zinc-500 mt-1">
+                        <p className={cn(
+                          "font-medium truncate",
+                          theme === 'dark' ? 'text-white' : 'text-gray-900'
+                        )}>{log.description}</p>
+                        <p className={cn(
+                          "text-xs mt-1",
+                          theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                        )}>
                           {log.servings} × {log.serving_size}{log.serving_unit} · {log.meal_type}
                         </p>
                       </div>
                       <div className="text-right ml-4">
-                        <p className="text-emerald-400 font-semibold">
+                        <p className="text-emerald-500 font-semibold">
                           {(log.protein * log.servings).toFixed(1)}g
                         </p>
-                        <p className="text-xs text-zinc-500">protein</p>
+                        <p className={cn(
+                          "text-xs",
+                          theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                        )}>protein</p>
                       </div>
                     </div>
                   ))}
                   <Link 
                     to="/log"
-                    className="flex items-center justify-center gap-2 text-zinc-400 hover:text-white py-3 transition-colors"
+                    className={cn(
+                      "flex items-center justify-center gap-2 py-3 transition-colors",
+                      theme === 'dark' ? 'text-zinc-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'
+                    )}
                   >
                     View all logs
                     <ArrowRight className="w-4 h-4" />
@@ -293,10 +344,10 @@ export const Dashboard = () => {
                 </div>
               ) : (
                 <div className="py-12 text-center">
-                  <p className="text-zinc-500">No foods logged today</p>
+                  <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'}>No foods logged today</p>
                   <Link 
                     to="/search"
-                    className="inline-flex items-center gap-2 mt-4 text-emerald-400 hover:text-emerald-300 font-medium"
+                    className="inline-flex items-center gap-2 mt-4 text-emerald-500 hover:text-emerald-400 font-medium"
                   >
                     Search for foods
                     <ArrowRight className="w-4 h-4" />
