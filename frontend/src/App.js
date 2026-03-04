@@ -2,6 +2,7 @@ import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ThemeProvider, useTheme } from "./context/ThemeContext";
 
 // Pages
 import { Login } from "./pages/Login";
@@ -22,10 +23,11 @@ import { Loader2 } from "lucide-react";
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const { theme } = useTheme();
   
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center ${theme === 'dark' ? 'bg-[#050505]' : 'bg-gray-50'}`}>
         <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
       </div>
     );
@@ -41,10 +43,11 @@ const ProtectedRoute = ({ children }) => {
 // Public Route Wrapper (redirect if logged in)
 const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const { theme } = useTheme();
   
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center ${theme === 'dark' ? 'bg-[#050505]' : 'bg-gray-50'}`}>
         <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
       </div>
     );
@@ -86,23 +89,38 @@ function AppRoutes() {
 
 function App() {
   return (
-    <div className="App">
-      <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-          <Toaster 
-            position="top-right" 
-            toastOptions={{
-              style: {
-                background: '#18181B',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: '#FAFAFA',
-              },
-            }}
-          />
-        </AuthProvider>
-      </BrowserRouter>
-    </div>
+    <ThemeProvider>
+      <div className="App">
+        <BrowserRouter>
+          <AuthProvider>
+            <AppRoutes />
+            <ThemedToaster />
+          </AuthProvider>
+        </BrowserRouter>
+      </div>
+    </ThemeProvider>
+  );
+}
+
+// Themed toaster component
+function ThemedToaster() {
+  const { theme } = useTheme();
+  
+  return (
+    <Toaster 
+      position="top-right" 
+      toastOptions={{
+        style: theme === 'dark' ? {
+          background: '#18181B',
+          border: '1px solid rgba(255,255,255,0.1)',
+          color: '#FAFAFA',
+        } : {
+          background: '#FFFFFF',
+          border: '1px solid rgba(0,0,0,0.1)',
+          color: '#18181B',
+        },
+      }}
+    />
   );
 }
 

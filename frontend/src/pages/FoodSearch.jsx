@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { AminoAcidRadar, AminoAcidList } from '../components/AminoAcidRadar';
@@ -6,6 +6,7 @@ import { FattyAcidChart, FattyAcidList, OmegaSummary } from '../components/Fatty
 import { SearchResultsSkeleton, FoodDetailSkeleton } from '../components/Skeletons';
 import { Input } from '../components/ui/input';
 import { foodsApi, logsApi, favoritesApi } from '../lib/api';
+import { useTheme } from '../context/ThemeContext';
 import { 
   Search as SearchIcon, 
   Loader2, 
@@ -23,7 +24,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Label } from '../components/ui/label';
 
+// Simple search result cache
+const searchCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export const FoodSearch = () => {
+  const { theme } = useTheme();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -39,6 +45,17 @@ export const FoodSearch = () => {
 
   const handleSearch = async () => {
     if (!query.trim()) return;
+    
+    const cacheKey = query.toLowerCase().trim();
+    
+    // Check cache first
+    const cached = searchCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      setResults(cached.foods);
+      toast.success(`Found ${cached.foods.length} results (cached)`);
+      return;
+    }
+    
     setLoading(true);
     setSearchProgress(0);
     setSelectedFood(null);
@@ -58,6 +75,16 @@ export const FoodSearch = () => {
       // Results are already sorted by the backend (custom → USDA with amino acids → OFF → branded)
       const foods = res.data.foods || [];
       setResults(foods);
+      
+      // Cache results
+      searchCache.set(cacheKey, { foods, timestamp: Date.now() });
+      
+      // Clean old cache entries
+      for (const [key, value] of searchCache.entries()) {
+        if (Date.now() - value.timestamp > CACHE_DURATION) {
+          searchCache.delete(key);
+        }
+      }
     } catch (err) {
       toast.error('Search failed. Please try again.');
     } finally {
@@ -484,8 +511,39 @@ export const FoodSearch = () => {
               </p>
             </div>
             
+            {/* Portion Size Presets */}
             <div className="space-y-2">
-              <Label className="text-zinc-400">Number of servings</Label>
+              <Label className="text-zinc-400">Quick portions</Label>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { label: '¼', value: 0.25 },
+                  { label: '½', value: 0.5 },
+                  { label: '1', value: 1 },
+                  { label: '1½', value: 1.5 },
+                  { label: '2', value: 2 },
+                  { label: '3', value: 3 },
+                  { label: '4', value: 4 },
+                  { label: '5', value: 5 },
+                ].map((preset) => (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    onClick={() => setServings(preset.value)}
+                    data-testid={`portion-preset-${preset.value}`}
+                    className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                      servings === preset.value
+                        ? 'bg-emerald-500 text-black'
+                        : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-zinc-400">Custom servings</Label>
               <Input
                 type="number"
                 value={servings}
@@ -496,7 +554,7 @@ export const FoodSearch = () => {
                 className="bg-black/50 border-white/10 text-white h-12"
               />
               <p className="text-sm text-emerald-400">
-                Total: {((foodDetails?.protein || 0) * servings).toFixed(1)}g protein
+                Total: {((foodDetails?.protein || 0) * servings).toFixed(1)}g protein, {((foodDetails?.calories || 0) * servings).toFixed(0)} cal
               </p>
             </div>
 
