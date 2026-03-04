@@ -41,8 +41,8 @@ export const Settings = () => {
   const [calculatedProtein, setCalculatedProtein] = useState(null);
 
   // Conversion helpers
-  const kgToLbs = (kg) => (kg * 2.20462).toFixed(1);
-  const lbsToKg = (lbs) => (lbs / 2.20462).toFixed(1);
+  const kgToLbs = (kg) => kg * 2.20462;
+  const lbsToKg = (lbs) => lbs / 2.20462;
   
   // Display weight based on unit system
   const displayWeight = unitSystem === 'imperial' ? kgToLbs(bodyWeight) : bodyWeight;
@@ -54,7 +54,7 @@ export const Settings = () => {
     const recommended = lbm * proteinMultiplier;
     setCalculatedProtein({
       lbm: lbm.toFixed(1),
-      lbmDisplay: unitSystem === 'imperial' ? kgToLbs(lbm) : lbm.toFixed(1),
+      lbmDisplay: unitSystem === 'imperial' ? kgToLbs(lbm).toFixed(1) : lbm.toFixed(1),
       recommended: Math.round(recommended)
     });
   }, [bodyWeight, bodyFat, proteinMultiplier, unitSystem]);
@@ -62,7 +62,7 @@ export const Settings = () => {
   const handleWeightChange = (value) => {
     if (unitSystem === 'imperial') {
       // Convert lbs to kg for storage
-      setBodyWeight(parseFloat(lbsToKg(value)));
+      setBodyWeight(lbsToKg(value));
     } else {
       setBodyWeight(value);
     }
@@ -244,7 +244,7 @@ export const Settings = () => {
                   </Label>
                   <Input
                     type="number"
-                    value={unitSystem === 'imperial' ? displayWeight : bodyWeight}
+                    value={Math.round(displayWeight * 10) / 10}
                     onChange={(e) => handleWeightChange(parseFloat(e.target.value) || 0)}
                     min={unitSystem === 'imperial' ? 88 : 40}
                     max={unitSystem === 'imperial' ? 440 : 200}
