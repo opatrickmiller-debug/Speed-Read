@@ -20,6 +20,7 @@ import { Suggestions } from "./pages/Suggestions";
 import { MealBuilder } from "./pages/MealBuilder";
 import { CustomFoods } from "./pages/CustomFoods";
 import { MealLibrary } from "./pages/MealLibrary";
+import { FoodDetails } from "./pages/FoodDetails";
 import { Loader2 } from "lucide-react";
 
 // Components
@@ -89,6 +90,7 @@ function AppRoutes() {
       {/* Protected Routes */}
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/search" element={<ProtectedRoute><FoodSearch /></ProtectedRoute>} />
+      <Route path="/food/:fdcId" element={<ProtectedRoute><FoodDetails /></ProtectedRoute>} />
       <Route path="/log" element={<ProtectedRoute><FoodLog /></ProtectedRoute>} />
       <Route path="/meal-plans" element={<ProtectedRoute><MealPlans /></ProtectedRoute>} />
       <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
