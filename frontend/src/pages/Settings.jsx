@@ -3,7 +3,6 @@ import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Slider } from '../components/ui/slider';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { authApi } from '../lib/api';
@@ -15,7 +14,8 @@ import {
   Scale,
   Calculator,
   Leaf,
-  Sparkles
+  Sparkles,
+  Ruler
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
@@ -35,9 +35,18 @@ export const Settings = () => {
   const [proteinMultiplier, setProteinMultiplier] = useState(user?.protein_per_kg_lbm || 2.0);
   const [proteinGoal, setProteinGoal] = useState(user?.protein_goal || 150);
   const [carbLimit, setCarbLimit] = useState(user?.daily_carb_limit || 20);
+  const [unitSystem, setUnitSystem] = useState(user?.unit_system || 'imperial');
   
   const [saving, setSaving] = useState(false);
   const [calculatedProtein, setCalculatedProtein] = useState(null);
+
+  // Conversion helpers
+  const kgToLbs = (kg) => (kg * 2.20462).toFixed(1);
+  const lbsToKg = (lbs) => (lbs / 2.20462).toFixed(1);
+  
+  // Display weight based on unit system
+  const displayWeight = unitSystem === 'imperial' ? kgToLbs(bodyWeight) : bodyWeight;
+  const weightUnit = unitSystem === 'imperial' ? 'lbs' : 'kg';
 
   // Calculate lean body mass and recommended protein
   useEffect(() => {
@@ -45,9 +54,19 @@ export const Settings = () => {
     const recommended = lbm * proteinMultiplier;
     setCalculatedProtein({
       lbm: lbm.toFixed(1),
+      lbmDisplay: unitSystem === 'imperial' ? kgToLbs(lbm) : lbm.toFixed(1),
       recommended: Math.round(recommended)
     });
-  }, [bodyWeight, bodyFat, proteinMultiplier]);
+  }, [bodyWeight, bodyFat, proteinMultiplier, unitSystem]);
+
+  const handleWeightChange = (value) => {
+    if (unitSystem === 'imperial') {
+      // Convert lbs to kg for storage
+      setBodyWeight(parseFloat(lbsToKg(value)));
+    } else {
+      setBodyWeight(value);
+    }
+  };
 
   const handleSaveSettings = async () => {
     setSaving(true);
@@ -57,7 +76,8 @@ export const Settings = () => {
         body_fat_percentage: bodyFat,
         protein_per_kg_lbm: proteinMultiplier,
         protein_goal: proteinGoal,
-        daily_carb_limit: carbLimit
+        daily_carb_limit: carbLimit,
+        unit_system: unitSystem
       });
       
       updateUser(res.data);
@@ -137,6 +157,67 @@ export const Settings = () => {
             </GlassCardContent>
           </GlassCard>
 
+          {/* Unit System Toggle */}
+          <GlassCard data-testid="unit-system-card">
+            <GlassCardHeader>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                  <Ruler className="w-5 h-5 text-violet-500" />
+                </div>
+                <div>
+                  <GlassCardTitle>Measurement Units</GlassCardTitle>
+                  <p className={cn(
+                    "text-xs mt-0.5",
+                    theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                  )}>
+                    Choose between metric and imperial units
+                  </p>
+                </div>
+              </div>
+            </GlassCardHeader>
+            <GlassCardContent className="pt-0">
+              <div className={cn(
+                "flex gap-2 p-1 rounded-xl w-full",
+                theme === 'dark' ? 'bg-black/30' : 'bg-gray-100'
+              )}>
+                <button
+                  type="button"
+                  onClick={() => setUnitSystem('metric')}
+                  data-testid="metric-btn"
+                  className={cn(
+                    'flex-1 py-3 px-4 rounded-lg font-medium transition-all text-center',
+                    unitSystem === 'metric' 
+                      ? 'bg-violet-500 text-black' 
+                      : theme === 'dark' ? 'text-zinc-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                  )}
+                >
+                  <span className="block text-sm font-semibold">Metric</span>
+                  <span className={cn(
+                    "block text-xs mt-0.5",
+                    unitSystem === 'metric' ? 'text-black/70' : theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                  )}>kg, cm</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUnitSystem('imperial')}
+                  data-testid="imperial-btn"
+                  className={cn(
+                    'flex-1 py-3 px-4 rounded-lg font-medium transition-all text-center',
+                    unitSystem === 'imperial' 
+                      ? 'bg-violet-500 text-black' 
+                      : theme === 'dark' ? 'text-zinc-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                  )}
+                >
+                  <span className="block text-sm font-semibold">Imperial</span>
+                  <span className={cn(
+                    "block text-xs mt-0.5",
+                    unitSystem === 'imperial' ? 'text-black/70' : theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                  )}>lbs, in</span>
+                </button>
+              </div>
+            </GlassCardContent>
+          </GlassCard>
+
           {/* Body Composition */}
           <GlassCard data-testid="body-comp-card">
             <GlassCardHeader>
@@ -158,50 +239,58 @@ export const Settings = () => {
             <GlassCardContent className="pt-0 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}>Body Weight</Label>
-                    <span className={cn(
-                      "font-mono",
-                      theme === 'dark' ? 'text-white' : 'text-gray-900'
-                    )}>{bodyWeight} kg</span>
-                  </div>
-                  <Slider
-                    value={[bodyWeight]}
-                    onValueChange={([v]) => setBodyWeight(v)}
-                    min={40}
-                    max={200}
-                    step={0.5}
-                    data-testid="weight-slider"
-                    className="py-2"
-                  />
-                  <p className={cn(
-                    "text-xs",
-                    theme === 'dark' ? 'text-zinc-600' : 'text-gray-500'
-                  )}>{(bodyWeight * 2.205).toFixed(0)} lbs</p>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}>Body Fat %</Label>
-                    <span className={cn(
-                      "font-mono",
-                      theme === 'dark' ? 'text-white' : 'text-gray-900'
-                    )}>{bodyFat}%</span>
-                  </div>
-                  <Slider
-                    value={[bodyFat]}
-                    onValueChange={([v]) => setBodyFat(v)}
-                    min={5}
-                    max={50}
-                    step={1}
-                    data-testid="bodyfat-slider"
-                    className="py-2"
+                  <Label className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}>
+                    Body Weight ({weightUnit})
+                  </Label>
+                  <Input
+                    type="number"
+                    value={unitSystem === 'imperial' ? displayWeight : bodyWeight}
+                    onChange={(e) => handleWeightChange(parseFloat(e.target.value) || 0)}
+                    min={unitSystem === 'imperial' ? 88 : 40}
+                    max={unitSystem === 'imperial' ? 440 : 200}
+                    step={unitSystem === 'imperial' ? 1 : 0.5}
+                    data-testid="weight-input"
+                    className={cn(
+                      "h-12 text-lg",
+                      theme === 'dark' 
+                        ? 'bg-black/50 border-white/10 text-white' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    )}
                   />
                   <p className={cn(
                     "text-xs",
                     theme === 'dark' ? 'text-zinc-600' : 'text-gray-500'
                   )}>
-                    Lean Body Mass: {calculatedProtein?.lbm} kg
+                    {unitSystem === 'imperial' 
+                      ? `${bodyWeight.toFixed(1)} kg` 
+                      : `${(bodyWeight * 2.205).toFixed(0)} lbs`}
+                  </p>
+                </div>
+                
+                <div className="space-y-3">
+                  <Label className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}>
+                    Body Fat (%)
+                  </Label>
+                  <Input
+                    type="number"
+                    value={bodyFat}
+                    onChange={(e) => setBodyFat(parseFloat(e.target.value) || 0)}
+                    min={5}
+                    max={50}
+                    step={1}
+                    data-testid="bodyfat-input"
+                    className={cn(
+                      "h-12 text-lg",
+                      theme === 'dark' 
+                        ? 'bg-black/50 border-white/10 text-white' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    )}
+                  />
+                  <p className={cn(
+                    "text-xs",
+                    theme === 'dark' ? 'text-zinc-600' : 'text-gray-500'
+                  )}>
+                    Lean Body Mass: {calculatedProtein?.lbmDisplay} {weightUnit}
                   </p>
                 </div>
               </div>
@@ -219,24 +308,24 @@ export const Settings = () => {
                 </div>
                 
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className={cn(
-                      "text-sm",
-                      theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
-                    )}>Protein per kg LBM</Label>
-                    <span className={cn(
-                      "font-mono",
-                      theme === 'dark' ? 'text-white' : 'text-gray-900'
-                    )}>{proteinMultiplier}g/kg</span>
-                  </div>
-                  <Slider
-                    value={[proteinMultiplier]}
-                    onValueChange={([v]) => setProteinMultiplier(v)}
+                  <Label className={cn(
+                    "text-sm",
+                    theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+                  )}>Protein per kg LBM (g/kg)</Label>
+                  <Input
+                    type="number"
+                    value={proteinMultiplier}
+                    onChange={(e) => setProteinMultiplier(parseFloat(e.target.value) || 1.2)}
                     min={1.2}
                     max={3.0}
                     step={0.1}
-                    data-testid="protein-multiplier-slider"
-                    className="py-2"
+                    data-testid="protein-multiplier-input"
+                    className={cn(
+                      "h-12 text-lg",
+                      theme === 'dark' 
+                        ? 'bg-black/50 border-white/10 text-white' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    )}
                   />
                   <div className={cn(
                     "flex items-center justify-between text-xs",
@@ -314,31 +403,31 @@ export const Settings = () => {
               {/* Carb Limit */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}>Daily Carb Limit</Label>
-                  <div className="flex items-center gap-2">
-                    <span className={cn(
-                      'px-2 py-0.5 rounded-full text-xs font-medium',
-                      ketoTier.color === 'emerald' && 'text-emerald-600 bg-emerald-500/20',
-                      ketoTier.color === 'cyan' && 'text-cyan-600 bg-cyan-500/20',
-                      ketoTier.color === 'amber' && 'text-amber-600 bg-amber-500/20',
-                      ketoTier.color === 'orange' && 'text-orange-600 bg-orange-500/20'
-                    )}>
-                      {ketoTier.label}
-                    </span>
-                    <span className={cn(
-                      "font-mono",
-                      theme === 'dark' ? 'text-white' : 'text-gray-900'
-                    )}>{carbLimit}g</span>
-                  </div>
+                  <Label className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}>Daily Carb Limit (g)</Label>
+                  <span className={cn(
+                    'px-2 py-0.5 rounded-full text-xs font-medium',
+                    ketoTier.color === 'emerald' && 'text-emerald-600 bg-emerald-500/20',
+                    ketoTier.color === 'cyan' && 'text-cyan-600 bg-cyan-500/20',
+                    ketoTier.color === 'amber' && 'text-amber-600 bg-amber-500/20',
+                    ketoTier.color === 'orange' && 'text-orange-600 bg-orange-500/20'
+                  )}>
+                    {ketoTier.label}
+                  </span>
                 </div>
-                <Slider
-                  value={[carbLimit]}
-                  onValueChange={([v]) => setCarbLimit(v)}
+                <Input
+                  type="number"
+                  value={carbLimit}
+                  onChange={(e) => setCarbLimit(parseFloat(e.target.value) || 0)}
                   min={10}
                   max={100}
                   step={5}
-                  data-testid="carb-limit-slider"
-                  className="py-2"
+                  data-testid="carb-limit-input"
+                  className={cn(
+                    "h-12 text-lg",
+                    theme === 'dark' 
+                      ? 'bg-black/50 border-white/10 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  )}
                 />
                 <div className={cn(
                   "flex items-center justify-between text-xs",

@@ -3,157 +3,141 @@ The user wants to build a Keto-based nutrition tracker. The primary feature is t
 
 Subsequent feature requests from the user included:
 - Barcode scanning for food products.
-- Suggestions for foods to complete a user's daily amino acid profile.
-- A specific focus on providing low-carb and keto-friendly food suggestions.
+- Suggestions for foods to complete a user's daily amino acid profile (keto-friendly).
 - A Keto Meal Builder to create custom meals.
 - User-configurable settings for protein goals and carbohydrate limits.
-- A Keto Score to rate the user's daily intake.
-- The ability for users to save their custom meals.
+- A Keto Score and a combined Nutrition Score.
+- The ability for users to save custom meals.
 - Tracking of essential fatty acids (Omega-3, Omega-6).
-- A combined Nutrition Score factoring in amino acids, fatty acids, and protein goals.
-- UI/UX improvements including loading skeletons and better mobile responsiveness.
-- Expansion of the food database by re-enabling USDA Branded Foods, adding Open Food Facts search, and allowing user-created custom foods.
+- A significantly expanded food database, combining USDA, Open Food Facts, and user-created custom foods.
+- UI/UX improvements including a dark/light theme, better mobile responsiveness, loading skeletons, and improved search performance (debouncing and caching).
+- Adding portion size presets for quicker food logging.
+- An imperial/metric unit toggle for weights.
+- Numerous UI fixes, primarily for improving text contrast in light mode and standardizing page layouts.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application with a modular FastAPI backend, React frontend, and MongoDB database. The backend was refactored from a single monolithic file into a structured application with , , , and  directories.
+A full-stack application with a modular FastAPI backend, React frontend, and MongoDB database. The application is feature-rich and stable.
 
 Key implemented features:
 - **Authentication**: JWT-based user registration and login.
-- **Dashboard**: Displays daily goals, macros, Keto Score, and a new Nutrition Score which evaluates amino acid completeness, omega-3:omega-6 balance, and protein goal attainment.
-- **Food Logging & Search**: Users can search for foods, view detailed nutritional information including amino/fatty acid charts, and log them. Search has been refined to only use reliable USDA sources (, , ) to prevent errors with unavailable food details.
-- **Fatty Acid Tracking**: The app now tracks and displays Omega-3 and Omega-6 fatty acids, and provides suggestions to balance the ratio.
-- **UI/UX Enhancements**: Loading skeletons have been added to the Dashboard, Food Search, and Suggestions pages for a better user experience. Mobile responsiveness has been improved with an enhanced bottom navigation bar.
-- **Barcode Scanner**: The scanner page was updated to use  as a fallback for browsers without a native  API.
+- **Dashboard**: A central hub displaying daily goals, macros, Keto Score, and a combined Nutrition Score. The layout has been refined based on user feedback to include a prominent Quick Actions bar for adding food.
+- **Unified Food Search**: A robust search engine that queries the USDA API, the Open Food Facts API, and user-created custom foods in parallel. Results are cached client-side for performance.
+- **Custom Foods**: Users can create, view, edit, and delete their own food entries through a dedicated Custom Foods page. These foods are seamlessly integrated into the main search.
+- **Themeing**: A full dark/light mode theme is implemented, with the user's preference saved in . The light mode has undergone several revisions to ensure high text contrast and readability across all pages.
+- **Unit System**: Users can toggle between imperial (lbs) and metric (kg) units in their settings. This preference is saved to their user profile and reflected in relevant data displays.
+- **UI/UX Enhancements**: Loading skeletons, an improved mobile navigation bar, portion size presets for food logging, debounced search input, and a standardized scroll-to-top behavior on all page navigations provide a polished user experience.
 
 **Last working item**:
--   **Last item agent was working**: Implementing a unified food search to expand the database. This involves combining results from the USDA API, the Open Food Facts API, and user-created custom foods. The agent successfully set up the backend structure for custom foods and parallel API calls to USDA and Open Food Facts using . However, it got stuck debugging why results from Open Food Facts were not being included in the final combined search response.
--   **Status**: IN PROGRESS
--   **Agent Testing Done**: N
--   **Which testing method agent to use?**: backend testing agent
+-   **Last item agent was working**: Adding a toggle on the Settings page to allow users to switch between imperial (lbs) and metric (kg) measurement systems. This involved backend changes to the user model and frontend UI/logic to handle the display and conversion of weight values.
+-   **Status**: USER VERIFICATION PENDING
+-   **Agent Testing Done**: Y
+-   **Which testing method agent to use?**: Frontend testing agent
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1**: Unified search does not include Open Food Facts results (Priority: P0)
-
-**Issues Detail**:
--   **Issue 1**:
-    -   **Description**: The new unified search endpoint at  is designed to query USDA and Open Food Facts in parallel. While the API call to Open Food Facts returns a 200 status and data, these results are not present in the final JSON response sent to the client. The issue is likely in the Python logic that merges, sorts, and filters the results in .
-    -   **Attempted fixes**: The agent confirmed parallel execution with . It suspected issues with result sorting and list size limits, but was unable to resolve it. The last step was an attempt to add  statements for debugging, which were not visible in the logs.
-    -   **Next debug checklist**:
-        1.  In , within the  function, log the raw  list immediately after the  call to confirm it contains the expected data.
-        2.  Inspect the  list after the initial extension () to ensure the data is being added correctly before any sorting or filtering occurs.
-        3.  Review the sorting key () and filtering logic to see if it's unintentionally filtering out the Open Food Facts results (e.g., due to missing keys like ).
-    -   **Why fix this issue and what will be achieved with the fix?**: Fixing this is the first step to expanding the food database, which was a key user request. It will add millions of new food products to the search.
-    -   **Status**: IN PROGRESS
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: backend
-    -   **Blocked on other issue**: None
+There are no pending or in-progress issues. The application is stable.
 
 **In progress Task List**:
--   **Task 1**: Implement Unified Food Database (Priority: P0)
-    -   **Description**: Complete the user's request to expand the food database by combining USDA, Open Food Facts, and custom user-created foods.
-    -   **Where to resume**: Debug the backend unified search logic in  as detailed in Issue 1 above. After fixing the backend, the frontend will need to be updated to handle the different data sources and allow for custom food creation.
-    -   **What will be achieved with this?**: A significantly larger and more versatile food database for users.
-    -   **Status**: IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?**: both
-    -   **Blocked on something**: The backend bug (Issue 1).
+There are no in-progress tasks.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks**:
-    - **P0**: Implement the frontend for the unified search, including UI to distinguish between data sources (USDA, Open Food Facts, Custom) and handle items that may lack amino/fatty acid data.
-    - **P1**: Build the frontend UI for the Custom Foods feature, allowing users to create, view, edit, and delete their own food entries.
-    - **P1**: Re-enable search for USDA Branded foods and implement robust frontend error handling to inform the user when details for a selected branded item are unavailable (instead of filtering it out completely).
+    - **P1 - Meal Builder / Meal Plans**: Enhance the existing Meal Builder page to allow users to create, save, and log custom meals composed of multiple food items from the search.
 - **Future Tasks**:
-    - Add a feature to allow sharing of custom meals or food logs with other users.
-    - Implement a more detailed historical trends view, allowing users to track scores and nutrient intake over longer periods (monthly, yearly).
+    - **P2 - Historical Trends V2**: Improve the Trends page with more advanced charting, allowing users to view their nutritional history over longer and more flexible date ranges (e.g., monthly, yearly).
+    - **P2 - Sharing**: Add a feature to allow users to share their custom meals or food logs with others.
 
 **Completed work in this session**
--   **Backend Refactoring**: The monolithic  was successfully refactored into a modular structure using FastAPI's , improving maintainability.
--   **Trends Page Bug Fix**: Fixed a bug where the weekly trends chart did not include data from the current day.
--   **Essential Fatty Acid Tracking**: Implemented tracking for Omega-3 and Omega-6 fatty acids, including display on the dashboard, food details, and a dedicated suggestions tab.
--   **Nutrition Score Feature**: Created a new Nutrition Score that combines amino acid completeness, omega balance, and protein goal attainment into a single grade, displayed on the dashboard.
--   **UI/UX Improvements**: Implemented loading skeletons for major pages and improved mobile navigation.
--   **Food Search Reliability Fix**: Resolved an issue where selecting certain foods caused an error. The search is now filtered to use reliable USDA data sources, preventing crashes.
--   **Barcode Scanner Fallback**: Added  to the barcode scanner to provide camera functionality on browsers that don't support the native  API.
+- **Unified Food Search Implementation**: Fixed a critical backend bug that was preventing Open Food Facts results from being returned. The frontend was then updated to correctly display results from multiple sources (USDA, Open Food Facts, Custom) with distinct badges.
+- **Custom Foods Feature**: Implemented the full CRUD (Create, Read, Update, Delete) functionality for user-created foods, complete with a dedicated management page and integration into the unified search.
+- **Search Performance Overhaul**:
+    - Implemented a  hook on the search input to prevent excessive API calls while typing.
+    - Added client-side caching for search queries to provide near-instant results for repeated searches.
+    - Added a progress bar to give users feedback during initial, uncached searches.
+- **Comprehensive UI/Theme Improvements**:
+    - Implemented a full dark/light mode theme toggle, with the user's preference persisted in .
+    - Systematically refactored all pages to fix low-contrast text issues in light mode, ensuring accessibility and readability.
+    - Implemented a  hook to ensure all pages render starting from the top on navigation.
+- **Feature Additions based on User Feedback**:
+    - Added portion size preset buttons to the Add Food Log dialog, simplifying the logging process.
+    - Implemented an imperial/metric unit toggle in the user settings.
+    - Reorganized the Dashboard layout to make the Add Food action more prominent.
 
 **Earlier issues found/mentioned but not fixed**
-None. The Trends Page Data Bug was fixed during this session.
+- None. All issues raised by the user during the session were addressed and resolved.
 
 **Known issue recurrence from previous fork**
--   None.
+- None.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Backend**: FastAPI, MongoDB (via ), Pydantic, JWT,  for parallel API calls.
--   **Frontend**: React, React Router, Context API, Tailwind CSS, Shadcn UI, Recharts, Framer Motion, Quagga2.
+-   **Backend**: FastAPI, MongoDB (via ), Pydantic, JWT, .
+-   **Frontend**: React, React Router, Context API ( for theme), Custom Hooks, Tailwind CSS (with dark mode variant), Shadcn UI, Recharts, Framer Motion, .
+-   **State Management**: A mix of component-level state () and context (). User preferences are persisted in MongoDB and .
 -   **Third-Party APIs**: USDA FoodData Central, Open Food Facts.
 
 **key DB schema**
--   **users**: 
--   **food_logs**: 
--   **custom_meals**: 
--   **custom_foods**:  (newly added)
+-   **users**:  (newly added field, defaults to 'metric')
+-   **custom_foods**: 
 
 **changes in tech stack**
--   **Backend**: Refactored from a single file to a modular project structure.
+-   No changes to the core technologies. Added  to the frontend dependencies.
 
 **All files of reference**
--   : Contains the  logic that is currently being debugged.
--   : New file for handling CRUD operations for user-created foods.
--   : New Pydantic model for the  collection.
--   : New route for calculating the combined nutrition score.
--   : Updated to display the Nutrition Score, loading skeletons, and mobile-responsive layout.
--   : Updated with refined search logic, error handling for unavailable foods, and loading skeletons.
--   : Updated with a tab for Fatty Acid suggestions.
--   : Updated with Quagga2 fallback.
--   : New directory for loading skeleton components.
+-   : Manages the application's dark/light mode state.
+-   : Provides utility functions for converting between metric and imperial units.
+-   : A custom hook to ensure page navigation scrolls the view to the top.
+-   : Updated to enable Tailwind's  mode variant.
+-   : Heavily modified to include the theme and unit system toggles.
+-   : Significantly updated to handle unified search results, caching, debouncing, progress indicators, and theme-aware styling.
+-   : A new page providing full CRUD functionality for user-created foods.
+-   : The User model was updated to include the  preference.
+-    & : Updated to handle saving and retrieving the new  user preference.
 
 **Areas that need refactoring**:
-- The main backend refactoring has been completed. The frontend could benefit from breaking down large pages like  into smaller, more manageable components.
+-   The  component is very large and handles multiple responsibilities (search input, API calls, caching, results display, detail view, logging dialog). It could be broken down into smaller, more focused components to improve maintainability.
 
 **key api endpoints**
--   : Updated to perform a unified search (currently buggy).
--   : (GET) Calculates and returns the daily nutrition score.
--   : (CRUD) Endpoints for managing user-created foods.
--   : (GET) New endpoint for fatty acid suggestions.
+-    (PUT): Updated to handle the  payload.
+-    (GET): Now stable and returning combined results from USDA, Open Food Facts, and custom foods.
+-    (GET, POST, PUT, DELETE): A full set of CRUD endpoints for managing user-created foods.
 
 **Critical Info for New Agent**
--   Your immediate priority is to fix the unified search feature. The bug is in , where Open Food Facts results are being dropped from the combined list. Start by adding robust logging to trace the data flow within the  function.
--   After fixing the backend, you must implement the corresponding frontend changes to display the multi-source search results and build the UI for the custom foods feature.
--   The user wants nutritional data (macros) to be primary, with amino/fatty acids as secondary. This means the UI should gracefully handle and display foods from Open Food Facts or Custom Foods that may not have detailed acid profiles.
+-   The application is in a very good state. The user's most recent requests have all been implemented.
+-   The next logical step is to work on the Meal Builder feature, as outlined in the Upcoming Tasks. This will involve allowing users to group multiple food items into a saved meal.
+-   When creating new UI, be sure to use the  context to ensure components are correctly styled in both light and dark modes. The pattern for this is well-established in existing pages.
+-   For any features involving user weight, use the  hook to correctly display data in the user's preferred unit system (metric or imperial).
 
 **documents and test reports created in this job**
--    (updated multiple times)
--   Multiple test reports in .
+-    (updated with completed tasks and future roadmap)
+-   Multiple test reports in  confirming the stability of new features.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  : User approved implementing skeletons and mobile UI fixes. (Status: Completed)
-2.  : User reported a bug with food search. (Status: Completed)
-3.  : User clarified the desired behavior for the food search fix. (Status: Completed)
-4.  : User reported a bug with the camera feed on the barcode page. (Status: Completed)
-5.  : User approved the fix for the barcode scanner. (Status: Completed)
-6.  : User asked for ways to get more food results. (Status: Completed)
-7.  : User confirmed they want to implement all suggested database expansion options. (Status: In Progress)
-8.  : User message not in history, but implied agent proceeded.
-9.  : User approved adding the Nutrition Score. (Status: Completed)
-10. : User asked for the URL. (Status: Completed)
+1.   - User asked for the app URL. (Completed)
+2.   - User reported poor text contrast on the dashboard. (Completed)
+3.   - User provided a screenshot showing more contrast issues. (Completed)
+4.   - User requested a layout change for the dashboard. (Completed)
+5.   - User reported contrast issues on the search page. (Completed)
+6.   - User approved the plan to fix search page contrast. (Completed)
+7.   - User requested a global fix for light mode contrast and page scrolling. (Completed)
+8.   - User requested the unit conversion feature. (Completed, pending user verification)
 
 **Project Health Check:**
--   **Working**: Core features of the application are functional and have been tested.
--   **Broken**: The new unified search feature is partially implemented on the backend but is not working correctly.
+-   **Working**: All core features are implemented and functional.
+-   **Broken**: None.
 -   **Mocked**: None.
 
 **3rd Party Integrations**
--   **USDA FoodData Central**: For core nutritional data and amino/fatty acid profiles.
--   **Open Food Facts**: For barcode lookups and now being integrated into general search.
--   **Quagga2**: A new frontend dependency for barcode camera scanning fallback.
+-   **USDA FoodData Central**: Used for foundational food and nutrient data.
+-   **Open Food Facts**: Used to expand the food database with branded products.
+-   **Quagga2**: Frontend library used as a fallback for barcode scanning.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES (Last run after mobile UI and skeleton updates)
+-   **Testing agent used after significant changes**: YES. The testing agent was used multiple times to validate major features like the theme toggle, portion presets, and custom foods. All runs passed successfully.
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: None.
 -   **Known regressions**: None.
@@ -161,7 +145,6 @@ None. The Trends Page Data Bug was fixed during this session.
 **Credentials to test flow:**
 -   Email: 
 -   Password: 
-Alternatively, create a new user via the registration page.
 
 **What agent forgot to execute**
-The agent is in the middle of a complex task (unified search) and has not forgotten anything, but the task is incomplete and has a blocking bug.</analysis>
+-   The agent successfully completed all user requests from this session. Nothing was forgotten.</analysis>

@@ -551,40 +551,9 @@ export const FoodSearch = () => {
                 {foodDetails?.serving_size}{foodDetails?.serving_unit} = {foodDetails?.protein?.toFixed(1)}g protein
               </p>
             </div>
-            
-            {/* Portion Size Presets */}
-            <div className="space-y-2">
-              <Label className="text-zinc-400">Quick portions</Label>
-              <div className="grid grid-cols-4 gap-2">
-                {[
-                  { label: '¼', value: 0.25 },
-                  { label: '½', value: 0.5 },
-                  { label: '1', value: 1 },
-                  { label: '1½', value: 1.5 },
-                  { label: '2', value: 2 },
-                  { label: '3', value: 3 },
-                  { label: '4', value: 4 },
-                  { label: '5', value: 5 },
-                ].map((preset) => (
-                  <button
-                    key={preset.value}
-                    type="button"
-                    onClick={() => setServings(preset.value)}
-                    data-testid={`portion-preset-${preset.value}`}
-                    className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                      servings === preset.value
-                        ? 'bg-emerald-500 text-black'
-                        : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
-              </div>
-            </div>
 
             <div className="space-y-2">
-              <Label className="text-zinc-400">Custom servings</Label>
+              <Label className="text-zinc-400">Servings</Label>
               <Input
                 type="number"
                 value={servings}

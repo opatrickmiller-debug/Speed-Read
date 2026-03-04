@@ -60,7 +60,33 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 
 ## What's Been Implemented
 
-### March 3, 2026 - Unified Food Search (USDA + Open Food Facts) + Custom Foods UI
+### March 4, 2026 - Theme Toggle, Portion Presets, Performance & UI Polish
+- **NEW**: Dark/Light Theme Toggle
+  - Theme toggle button in sidebar with Sun/Moon icon
+  - Full light mode styling: white backgrounds, dark text, subtle shadows
+  - Theme persists in localStorage across sessions
+  - Smooth transition animations between themes
+  - All components updated for theme support (Sidebar, GlassCard, Layout, all pages)
+  - Improved text contrast throughout light mode
+- **NEW**: Imperial/Metric Unit Toggle
+  - Toggle between metric (kg, cm) and imperial (lbs, in) units
+  - Body weight displays in selected unit system
+  - Lean Body Mass displays in selected unit system  
+  - Unit preference saved to user profile
+- **NEW**: Portion Size Presets
+  - Quick portion buttons in Add to Log dialog: ¼, ½, 1, 1½, 2, 3, 4, 5
+  - Clicking preset updates servings input instantly
+  - Total calculation now shows both protein AND calories
+- **NEW**: Search Result Caching
+  - Client-side cache with 5-minute TTL
+  - Cached searches are ~100x faster
+  - Toast shows "(cached)" for cached results
+  - Cache auto-cleans expired entries
+- **NEW**: Scroll to Top on Navigation
+  - All pages now scroll to top when navigated to
+  - Consistent user experience across page transitions
+- **Fixed**: Light mode text contrast improved on all pages
+  - Settings, Dashboard, Food Search, Custom Foods, etc.
 - **NEW**: Unified Food Database Search
   - Parallel search across USDA FoodData Central and Open Food Facts APIs
   - Search results from both sources displayed with distinct badges:

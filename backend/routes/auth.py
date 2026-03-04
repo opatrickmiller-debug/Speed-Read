@@ -26,6 +26,7 @@ async def register(user_data: UserCreate):
         "body_weight_kg": 70.0,
         "body_fat_percentage": 20.0,
         "protein_per_kg_lbm": 2.0,
+        "unit_system": "imperial",
         "created_at": now.isoformat()
     }
     
@@ -44,6 +45,7 @@ async def register(user_data: UserCreate):
             body_weight_kg=70.0,
             body_fat_percentage=20.0,
             protein_per_kg_lbm=2.0,
+            unit_system="imperial",
             created_at=now
         )
     )
@@ -73,6 +75,7 @@ async def login(credentials: UserLogin):
             body_weight_kg=user.get("body_weight_kg", 70.0),
             body_fat_percentage=user.get("body_fat_percentage", 20.0),
             protein_per_kg_lbm=user.get("protein_per_kg_lbm", 2.0),
+            unit_system=user.get("unit_system", "metric"),
             created_at=created_at
         )
     )
@@ -94,6 +97,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         body_weight_kg=current_user.get("body_weight_kg", 70.0),
         body_fat_percentage=current_user.get("body_fat_percentage", 20.0),
         protein_per_kg_lbm=current_user.get("protein_per_kg_lbm", 2.0),
+        unit_system=current_user.get("unit_system", "metric"),
         created_at=created_at
     )
 
@@ -111,6 +115,8 @@ async def update_user_settings(data: UserSettingsUpdate, current_user: dict = De
         update_fields["body_fat_percentage"] = data.body_fat_percentage
     if data.protein_per_kg_lbm is not None:
         update_fields["protein_per_kg_lbm"] = data.protein_per_kg_lbm
+    if data.unit_system is not None:
+        update_fields["unit_system"] = data.unit_system
     
     if update_fields:
         await db.users.update_one(
@@ -135,6 +141,7 @@ async def update_user_settings(data: UserSettingsUpdate, current_user: dict = De
         body_weight_kg=updated_user.get("body_weight_kg", 70.0),
         body_fat_percentage=updated_user.get("body_fat_percentage", 20.0),
         protein_per_kg_lbm=updated_user.get("protein_per_kg_lbm", 2.0),
+        unit_system=updated_user.get("unit_system", "metric"),
         created_at=created_at
     )
 
