@@ -60,6 +60,41 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 
 ## What's Been Implemented
 
+### March 4, 2026 - User Engagement Features (Education, Onboarding, Community)
+- **NEW**: Onboarding Flow for New Users
+  - 4-step guided onboarding modal after first login
+  - Step 1: Welcome screen with key features overview
+  - Step 2: Set protein goal with quick presets (100g, 150g, 200g)
+  - Step 3: Choose keto level (Strict/Moderate/Liberal)
+  - Step 4: Education about unique features (amino acids, fatty acids)
+  - Progress saved to user profile (onboarding_completed flag)
+  - Automatically skipped for returning users
+- **NEW**: Education Layer with Info Tooltips
+  - InfoTooltip component shows quick explanations on hover
+  - Added to Dashboard: Keto Score, Nutrition Score
+  - Educational content for: completeProtein, aminoAcids, ketoScore, omegaRatio, nutritionScore, leanBodyMass
+  - LearnMoreLink for expandable detailed articles
+  - EducationCard for inline expandable content
+- **NEW**: Public Meal Library (Community Feature)
+  - Browse meals shared by other users at /meal-library
+  - Search and filter by keto tier (ultra_low, low, moderate)
+  - Sort by: recent, popular (likes), most saved, highest protein
+  - Like and save meals from the community
+  - Copy public meals to your own collection
+  - Publish your custom meals to share with others
+  - Meal cards show: macros, complete protein badge, author, likes/saves count
+  - Full detail modal with ingredients list
+- **Backend**: New API endpoints for meal library
+  - POST /api/meals/publish/{id} - Make meal public
+  - POST /api/meals/unpublish/{id} - Remove from library
+  - GET /api/meals/library - Browse with search/filter/sort
+  - POST /api/meals/library/{id}/like - Toggle like
+  - POST /api/meals/library/{id}/save - Save to collection
+  - DELETE /api/meals/library/{id}/unsave - Remove from saved
+  - GET /api/meals/saved - Get user's saved meals
+  - POST /api/meals/library/{id}/copy - Copy to own collection
+- **Sidebar**: Added "Meal Library" navigation link
+
 ### March 4, 2026 - Theme Toggle, Portion Presets, Performance & UI Polish
 - **NEW**: Dark/Light Theme Toggle
   - Theme toggle button in sidebar with Sun/Moon icon
