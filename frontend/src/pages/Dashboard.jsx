@@ -35,6 +35,11 @@ export const Dashboard = () => {
   const [recentLogs, setRecentLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     loadDashboardData();
   }, []);

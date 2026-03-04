@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { favoritesApi, foodsApi } from '../lib/api';
+import { useTheme } from '../context/ThemeContext';
 import { 
   Heart, 
   Trash2, 
@@ -13,11 +14,18 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '../lib/utils';
 
 export const Favorites = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     loadFavorites();
@@ -53,17 +61,20 @@ export const Favorites = () => {
       <div className="p-6 md:p-8 max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-heading text-3xl md:text-4xl font-bold text-white">
+          <h1 className={cn(
+            "font-heading text-3xl md:text-4xl font-bold",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
             Favorites
           </h1>
-          <p className="text-zinc-500 mt-2">
+          <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>
             Your saved protein-rich foods for quick access
           </p>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
           </div>
         ) : favorites.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -77,7 +88,10 @@ export const Favorites = () => {
                 <GlassCardContent className="p-5">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-medium truncate">{fav.description}</p>
+                      <p className={cn(
+                        "font-medium truncate",
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                      )}>{fav.description}</p>
                       <div className="flex items-center gap-2 mt-2">
                         {fav.is_complete_protein ? (
                           <span className="flex items-center gap-1 text-xs text-emerald-400">

@@ -4,6 +4,7 @@ import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '..
 import { ProteinProgress } from '../components/ProteinProgress';
 import { logsApi, statsApi } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { Calendar } from '../components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { 
@@ -20,11 +21,17 @@ import { cn } from '../lib/utils';
 
 export const FoodLog = () => {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [logs, setLogs] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [calendarOpen, setCalendarOpen] = useState(false);
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -80,10 +87,13 @@ export const FoodLog = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="font-heading text-3xl md:text-4xl font-bold text-white">
+            <h1 className={cn(
+              "font-heading text-3xl md:text-4xl font-bold",
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            )}>
               Food Log
             </h1>
-            <p className="text-zinc-500 mt-2">
+            <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>
               Track your daily protein and amino acid intake
             </p>
           </div>
@@ -92,7 +102,12 @@ export const FoodLog = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={goToPreviousDay}
-              className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all"
+              className={cn(
+                "p-2.5 rounded-xl transition-all",
+                theme === 'dark'
+                  ? 'bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900'
+              )}
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -101,15 +116,23 @@ export const FoodLog = () => {
               <PopoverTrigger asChild>
                 <button
                   data-testid="date-picker-btn"
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white transition-all"
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all",
+                    theme === 'dark'
+                      ? 'bg-white/5 hover:bg-white/10 text-white'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+                  )}
                 >
-                  <CalendarDays className="w-4 h-4 text-emerald-400" />
+                  <CalendarDays className="w-4 h-4 text-emerald-500" />
                   <span className="font-medium">
                     {isToday ? 'Today' : format(selectedDate, 'MMM d, yyyy')}
                   </span>
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-zinc-900 border-white/10" align="center">
+              <PopoverContent className={cn(
+                "w-auto p-0 border",
+                theme === 'dark' ? 'bg-zinc-900 border-white/10' : 'bg-white border-gray-200'
+              )} align="center">
                 <Calendar
                   mode="single"
                   selected={selectedDate}

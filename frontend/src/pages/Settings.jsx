@@ -5,6 +5,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Slider } from '../components/ui/slider';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { authApi } from '../lib/api';
 import { 
   User, 
@@ -21,6 +22,12 @@ import { cn } from '../lib/utils';
 
 export const Settings = () => {
   const { user, updateUser } = useAuth();
+  const { theme } = useTheme();
+  
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   
   // Form states
   const [bodyWeight, setBodyWeight] = useState(user?.body_weight_kg || 70);
@@ -82,10 +89,13 @@ export const Settings = () => {
       <div className="p-6 md:p-8 max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-heading text-3xl md:text-4xl font-bold text-white">
+          <h1 className={cn(
+            "font-heading text-3xl md:text-4xl font-bold",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
             Settings
           </h1>
-          <p className="text-zinc-500 mt-2">
+          <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>
             Configure your keto goals and body composition
           </p>
         </div>
@@ -96,7 +106,7 @@ export const Settings = () => {
             <GlassCardHeader>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                  <User className="w-5 h-5 text-emerald-400" />
+                  <User className="w-5 h-5 text-emerald-500" />
                 </div>
                 <GlassCardTitle>Profile</GlassCardTitle>
               </div>
@@ -104,12 +114,24 @@ export const Settings = () => {
             <GlassCardContent className="pt-0">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-zinc-500 text-xs uppercase tracking-wider">Name</Label>
-                  <p className="text-white font-medium mt-1">{user?.name}</p>
+                  <Label className={cn(
+                    "text-xs uppercase tracking-wider",
+                    theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                  )}>Name</Label>
+                  <p className={cn(
+                    "font-medium mt-1",
+                    theme === 'dark' ? 'text-white' : 'text-gray-900'
+                  )}>{user?.name}</p>
                 </div>
                 <div>
-                  <Label className="text-zinc-500 text-xs uppercase tracking-wider">Email</Label>
-                  <p className="text-white font-medium mt-1">{user?.email}</p>
+                  <Label className={cn(
+                    "text-xs uppercase tracking-wider",
+                    theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                  )}>Email</Label>
+                  <p className={cn(
+                    "font-medium mt-1",
+                    theme === 'dark' ? 'text-white' : 'text-gray-900'
+                  )}>{user?.email}</p>
                 </div>
               </div>
             </GlassCardContent>
@@ -120,11 +142,14 @@ export const Settings = () => {
             <GlassCardHeader>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center">
-                  <Scale className="w-5 h-5 text-cyan-400" />
+                  <Scale className="w-5 h-5 text-cyan-500" />
                 </div>
                 <div>
                   <GlassCardTitle>Body Composition</GlassCardTitle>
-                  <p className="text-xs text-zinc-500 mt-0.5">
+                  <p className={cn(
+                    "text-xs mt-0.5",
+                    theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                  )}>
                     Used to calculate your optimal protein intake
                   </p>
                 </div>
@@ -134,8 +159,11 @@ export const Settings = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-zinc-400">Body Weight</Label>
-                    <span className="text-white font-mono">{bodyWeight} kg</span>
+                    <Label className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}>Body Weight</Label>
+                    <span className={cn(
+                      "font-mono",
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    )}>{bodyWeight} kg</span>
                   </div>
                   <Slider
                     value={[bodyWeight]}
@@ -146,13 +174,19 @@ export const Settings = () => {
                     data-testid="weight-slider"
                     className="py-2"
                   />
-                  <p className="text-xs text-zinc-600">{(bodyWeight * 2.205).toFixed(0)} lbs</p>
+                  <p className={cn(
+                    "text-xs",
+                    theme === 'dark' ? 'text-zinc-600' : 'text-gray-500'
+                  )}>{(bodyWeight * 2.205).toFixed(0)} lbs</p>
                 </div>
                 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-zinc-400">Body Fat %</Label>
-                    <span className="text-white font-mono">{bodyFat}%</span>
+                    <Label className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}>Body Fat %</Label>
+                    <span className={cn(
+                      "font-mono",
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    )}>{bodyFat}%</span>
                   </div>
                   <Slider
                     value={[bodyFat]}
@@ -163,23 +197,37 @@ export const Settings = () => {
                     data-testid="bodyfat-slider"
                     className="py-2"
                   />
-                  <p className="text-xs text-zinc-600">
+                  <p className={cn(
+                    "text-xs",
+                    theme === 'dark' ? 'text-zinc-600' : 'text-gray-500'
+                  )}>
                     Lean Body Mass: {calculatedProtein?.lbm} kg
                   </p>
                 </div>
               </div>
 
               {/* Protein Calculator */}
-              <div className="p-4 rounded-xl bg-violet-500/10 border border-violet-500/20">
+              <div className={cn(
+                "p-4 rounded-xl border",
+                theme === 'dark' 
+                  ? 'bg-violet-500/10 border-violet-500/20' 
+                  : 'bg-violet-50 border-violet-200'
+              )}>
                 <div className="flex items-center gap-2 mb-3">
-                  <Calculator className="w-4 h-4 text-violet-400" />
-                  <span className="text-sm font-semibold text-violet-400">Protein Calculator</span>
+                  <Calculator className="w-4 h-4 text-violet-500" />
+                  <span className="text-sm font-semibold text-violet-600">Protein Calculator</span>
                 </div>
                 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-zinc-400 text-sm">Protein per kg LBM</Label>
-                    <span className="text-white font-mono">{proteinMultiplier}g/kg</span>
+                    <Label className={cn(
+                      "text-sm",
+                      theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+                    )}>Protein per kg LBM</Label>
+                    <span className={cn(
+                      "font-mono",
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    )}>{proteinMultiplier}g/kg</span>
                   </div>
                   <Slider
                     value={[proteinMultiplier]}
@@ -190,26 +238,38 @@ export const Settings = () => {
                     data-testid="protein-multiplier-slider"
                     className="py-2"
                   />
-                  <div className="flex items-center justify-between text-xs text-zinc-500">
+                  <div className={cn(
+                    "flex items-center justify-between text-xs",
+                    theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                  )}>
                     <span>1.2 (sedentary)</span>
                     <span>2.0 (active)</span>
                     <span>3.0 (athlete)</span>
                   </div>
                 </div>
 
-                <div className="mt-4 p-3 rounded-lg bg-black/30 flex items-center justify-between">
+                <div className={cn(
+                  "mt-4 p-3 rounded-lg flex items-center justify-between",
+                  theme === 'dark' ? 'bg-black/30' : 'bg-white'
+                )}>
                   <div>
-                    <p className="text-sm text-zinc-400">Recommended Daily Protein</p>
-                    <p className="text-2xl font-semibold text-violet-400">
+                    <p className={cn(
+                      "text-sm",
+                      theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+                    )}>Recommended Daily Protein</p>
+                    <p className="text-2xl font-semibold text-violet-500">
                       {calculatedProtein?.recommended}g
                     </p>
-                    <p className="text-xs text-zinc-600 mt-1">
+                    <p className={cn(
+                      "text-xs mt-1",
+                      theme === 'dark' ? 'text-zinc-600' : 'text-gray-500'
+                    )}>
                       {calculatedProtein?.lbm} kg LBM × {proteinMultiplier} g/kg
                     </p>
                   </div>
                   <button
                     onClick={applyCalculatedProtein}
-                    className="px-4 py-2 rounded-lg bg-violet-500/20 text-violet-400 hover:bg-violet-500/30 transition-all text-sm font-medium"
+                    className="px-4 py-2 rounded-lg bg-violet-500/20 text-violet-600 hover:bg-violet-500/30 transition-all text-sm font-medium"
                   >
                     Apply
                   </button>
@@ -223,7 +283,7 @@ export const Settings = () => {
             <GlassCardHeader>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
-                  <Target className="w-5 h-5 text-orange-400" />
+                  <Target className="w-5 h-5 text-orange-500" />
                 </div>
                 <GlassCardTitle>Daily Targets</GlassCardTitle>
               </div>
@@ -232,8 +292,8 @@ export const Settings = () => {
               {/* Protein Goal */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-zinc-400">Daily Protein Goal</Label>
-                  <span className="text-emerald-400 font-mono text-lg">{proteinGoal}g</span>
+                  <Label className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}>Daily Protein Goal</Label>
+                  <span className="text-emerald-500 font-mono text-lg">{proteinGoal}g</span>
                 </div>
                 <Input
                   type="number"
@@ -242,22 +302,33 @@ export const Settings = () => {
                   min={50}
                   max={500}
                   data-testid="protein-goal-input"
-                  className="bg-black/50 border-white/10 text-white h-12 text-lg"
+                  className={cn(
+                    "h-12 text-lg",
+                    theme === 'dark' 
+                      ? 'bg-black/50 border-white/10 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  )}
                 />
               </div>
 
               {/* Carb Limit */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-zinc-400">Daily Carb Limit</Label>
+                  <Label className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}>Daily Carb Limit</Label>
                   <div className="flex items-center gap-2">
                     <span className={cn(
                       'px-2 py-0.5 rounded-full text-xs font-medium',
-                      `text-${ketoTier.color}-400 bg-${ketoTier.color}-500/20`
+                      ketoTier.color === 'emerald' && 'text-emerald-600 bg-emerald-500/20',
+                      ketoTier.color === 'cyan' && 'text-cyan-600 bg-cyan-500/20',
+                      ketoTier.color === 'amber' && 'text-amber-600 bg-amber-500/20',
+                      ketoTier.color === 'orange' && 'text-orange-600 bg-orange-500/20'
                     )}>
                       {ketoTier.label}
                     </span>
-                    <span className="text-white font-mono">{carbLimit}g</span>
+                    <span className={cn(
+                      "font-mono",
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    )}>{carbLimit}g</span>
                   </div>
                 </div>
                 <Slider
@@ -269,17 +340,29 @@ export const Settings = () => {
                   data-testid="carb-limit-slider"
                   className="py-2"
                 />
-                <div className="flex items-center justify-between text-xs text-zinc-500">
+                <div className={cn(
+                  "flex items-center justify-between text-xs",
+                  theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                )}>
                   <span>10g (strict)</span>
                   <span>20g (standard)</span>
                   <span>50g (liberal)</span>
                   <span>100g (low carb)</span>
                 </div>
                 
-                <div className="mt-2 p-3 rounded-lg bg-black/30">
+                <div className={cn(
+                  "mt-2 p-3 rounded-lg",
+                  theme === 'dark' ? 'bg-black/30' : 'bg-gray-50'
+                )}>
                   <div className="flex items-center gap-2 text-sm">
-                    <Leaf className={cn('w-4 h-4', `text-${ketoTier.color}-400`)} />
-                    <span className="text-zinc-400">
+                    <Leaf className={cn(
+                      'w-4 h-4',
+                      ketoTier.color === 'emerald' && 'text-emerald-500',
+                      ketoTier.color === 'cyan' && 'text-cyan-500',
+                      ketoTier.color === 'amber' && 'text-amber-500',
+                      ketoTier.color === 'orange' && 'text-orange-500'
+                    )} />
+                    <span className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}>
                       {carbLimit <= 20 
                         ? "Optimal for deep ketosis and fat adaptation"
                         : carbLimit <= 35 
@@ -314,10 +397,13 @@ export const Settings = () => {
           {/* App Info */}
           <GlassCard>
             <GlassCardContent className="py-6 text-center">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-600 mb-2">
+              <p className={cn(
+                "text-xs font-bold uppercase tracking-[0.2em] mb-2",
+                theme === 'dark' ? 'text-zinc-600' : 'text-gray-500'
+              )}>
                 Isotope Protein Tracker
               </p>
-              <p className="text-zinc-500 text-sm">
+              <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>
                 Keto-optimized nutrition tracking with amino acid analysis
               </p>
             </GlassCardContent>

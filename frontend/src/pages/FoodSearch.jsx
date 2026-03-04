@@ -44,6 +44,11 @@ export const FoodSearch = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteId, setFavoriteId] = useState(null);
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const handleSearch = async () => {
     if (!query.trim()) return;
     

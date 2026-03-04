@@ -3,6 +3,7 @@ import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { statsApi } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import {
   BarChart,
   Bar,
@@ -14,16 +15,28 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { Loader2, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { cn } from '../lib/utils';
 
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label, theme }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 shadow-2xl">
-        <p className="text-white font-medium text-sm">{label}</p>
-        <p className="text-emerald-400 text-sm mt-1">
+      <div className={cn(
+        "backdrop-blur-xl border rounded-xl px-4 py-3 shadow-2xl",
+        theme === 'dark' 
+          ? 'bg-zinc-900/95 border-white/10' 
+          : 'bg-white border-gray-200'
+      )}>
+        <p className={cn(
+          "font-medium text-sm",
+          theme === 'dark' ? 'text-white' : 'text-gray-900'
+        )}>{label}</p>
+        <p className="text-emerald-500 text-sm mt-1">
           {payload[0].value.toFixed(1)}g protein
         </p>
-        <p className="text-zinc-500 text-xs mt-1">
+        <p className={cn(
+          "text-xs mt-1",
+          theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+        )}>
           {payload[0].payload.calories?.toFixed(0) || 0} calories
         </p>
       </div>
@@ -34,8 +47,14 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export const Trends = () => {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [weeklyData, setWeeklyData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     loadTrends();
@@ -70,10 +89,13 @@ export const Trends = () => {
       <div className="p-6 md:p-8 max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-heading text-3xl md:text-4xl font-bold text-white">
+          <h1 className={cn(
+            "font-heading text-3xl md:text-4xl font-bold",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
             Trends
           </h1>
-          <p className="text-zinc-500 mt-2">
+          <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>
             Your protein intake over the last 7 days
           </p>
         </div>

@@ -4,6 +4,7 @@ import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '..
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { customFoodsApi } from '../lib/api';
+import { useTheme } from '../context/ThemeContext';
 import { 
   Plus, 
   Pencil, 
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { cn } from '../lib/utils';
 
 const emptyFood = {
   name: '',
@@ -32,6 +34,7 @@ const emptyFood = {
 };
 
 export const CustomFoods = () => {
+  const { theme } = useTheme();
   const [foods, setFoods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,6 +43,11 @@ export const CustomFoods = () => {
   const [formData, setFormData] = useState(emptyFood);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(null);
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     loadFoods();
@@ -153,10 +161,13 @@ export const CustomFoods = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="font-heading text-3xl md:text-4xl font-bold text-white">
+            <h1 className={cn(
+              "font-heading text-3xl md:text-4xl font-bold",
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            )}>
               Custom Foods
             </h1>
-            <p className="text-zinc-500 mt-2">
+            <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>
               Create and manage your own food entries
             </p>
           </div>
@@ -172,13 +183,21 @@ export const CustomFoods = () => {
 
         {/* Search */}
         <div className="relative mb-6">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+          <Search className={cn(
+            "absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5",
+            theme === 'dark' ? 'text-zinc-500' : 'text-gray-400'
+          )} />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search your custom foods..."
             data-testid="custom-foods-search"
-            className="pl-12 bg-black/50 border-white/10 text-white placeholder:text-zinc-600 h-12"
+            className={cn(
+              "pl-12 h-12",
+              theme === 'dark'
+                ? 'bg-black/50 border-white/10 text-white placeholder:text-zinc-600'
+                : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
+            )}
           />
         </div>
 

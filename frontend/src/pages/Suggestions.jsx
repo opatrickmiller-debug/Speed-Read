@@ -4,6 +4,7 @@ import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { OmegaSummary } from '../components/FattyAcidChart';
 import { SuggestionsSkeleton } from '../components/Skeletons';
+import { useTheme } from '../context/ThemeContext';
 import { 
   Sparkles, 
   Loader2, 
@@ -26,6 +27,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 export const Suggestions = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const [suggestions, setSuggestions] = useState(null);
   const [fattySuggestions, setFattySuggestions] = useState(null);
   const [completeProteins, setCompleteProteins] = useState(null);
@@ -35,6 +37,11 @@ export const Suggestions = () => {
   const [activeTab, setActiveTab] = useState('amino'); // 'amino' or 'fatty'
 
   const getToken = () => localStorage.getItem('token');
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -91,23 +98,29 @@ export const Suggestions = () => {
       <div className="p-6 md:p-8 max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-heading text-3xl md:text-4xl font-bold text-white">
+          <h1 className={cn(
+            "font-heading text-3xl md:text-4xl font-bold",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
             Nutrition Suggestions
           </h1>
-          <p className="text-zinc-500 mt-2">
+          <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-600'}>
             Personalized food recommendations to complete your amino acid & fatty acid profile
           </p>
         </div>
 
         {/* Tab Selector */}
-        <div className="flex gap-2 mb-6 p-1 bg-zinc-900/50 rounded-xl w-fit">
+        <div className={cn(
+          "flex gap-2 mb-6 p-1 rounded-xl w-fit",
+          theme === 'dark' ? 'bg-zinc-900/50' : 'bg-gray-100'
+        )}>
           <button
             onClick={() => setActiveTab('amino')}
             className={cn(
               'flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all',
               activeTab === 'amino' 
                 ? 'bg-emerald-500 text-black' 
-                : 'text-zinc-400 hover:text-white'
+                : theme === 'dark' ? 'text-zinc-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
             )}
           >
             <Beaker className="w-4 h-4" />
@@ -119,7 +132,7 @@ export const Suggestions = () => {
               'flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all',
               activeTab === 'fatty' 
                 ? 'bg-cyan-500 text-black' 
-                : 'text-zinc-400 hover:text-white'
+                : theme === 'dark' ? 'text-zinc-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
             )}
           >
             <Droplets className="w-4 h-4" />
