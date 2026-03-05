@@ -29,61 +29,42 @@ export const BarcodeScanner = () => {
   const [servingSize, setServingSize] = useState(100);
   const [mealType, setMealType] = useState('snack');
   const [cameraActive, setCameraActive] = useState(false);
-  const [cameraSupported, setCameraSupported] = useState(null); // null = checking
+  const [cameraSupported, setCameraSupported] = useState(null);
   const [scanning, setScanning] = useState(false);
-  const [useQuagga, setUseQuagga] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const videoRef = useRef(null);
-  const scannerRef = useRef(null);
   const streamRef = useRef(null);
+  const canvasRef = useRef(null);
   const scanIntervalRef = useRef(null);
 
   const getToken = () => localStorage.getItem('token');
 
-  // Check camera support on mount - more robust detection
+  // Check camera support on mount
   useEffect(() => {
     const checkCameraSupport = async () => {
       try {
-        // Check if mediaDevices API is available
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           setCameraSupported(false);
           setCameraError('Camera API not available');
           return;
         }
-
-        // On mobile, assume camera is available (permissions will be requested when needed)
+        // On mobile, assume camera is available
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
         if (isMobile) {
           setCameraSupported(true);
-          // Check if BarcodeDetector is available
-          if (!('BarcodeDetector' in window)) {
-            setUseQuagga(true);
-          }
           return;
         }
-        
-        // On desktop, try to enumerate devices
+        // On desktop, check for camera
         const devices = await navigator.mediaDevices.enumerateDevices();
         const hasCamera = devices.some(device => device.kind === 'videoinput');
         setCameraSupported(hasCamera);
-        
         if (!hasCamera) {
           setCameraError('No camera detected');
         }
-        
-        // Check if BarcodeDetector is available
-        if (!('BarcodeDetector' in window)) {
-          setUseQuagga(true);
-        }
       } catch (err) {
         console.error('Camera check error:', err);
-        // Don't immediately disable - let user try anyway on mobile
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         setCameraSupported(isMobile);
-        if (!isMobile) {
-          setCameraError('Could not detect camera');
-        }
       }
     };
     checkCameraSupport();
@@ -160,166 +141,138 @@ export const BarcodeScanner = () => {
     }
   };
 
-  const scanBarcode = useCallback(async () => {
-    if (!videoRef.current || scanning) return;
+  // Scan for barcode using Quagga on a video frame
+  const scanVideoFrame = useCallback(() => {
+    if (!videoRef.current || !canvasRef.current || scanning) return;
     
-    // Only use native BarcodeDetector if available
-    if (!useQuagga && 'BarcodeDetector' in window) {
-      setScanning(true);
-      try {
-        const barcodeDetector = new window.BarcodeDetector({
-          formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39']
-        });
-        
-        const barcodes = await barcodeDetector.detect(videoRef.current);
-        
-        if (barcodes.length > 0) {
-          const detectedCode = barcodes[0].rawValue;
-          setBarcode(detectedCode);
-          toast.success(`Barcode detected: ${detectedCode}`);
-          lookupBarcode(detectedCode);
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+    
+    // Set canvas size to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw video frame to canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Get image data for Quagga
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    
+    setScanning(true);
+    
+    Quagga.decodeSingle({
+      src: canvas.toDataURL('image/jpeg'),
+      numOfWorkers: 0,
+      decoder: {
+        readers: ['ean_reader', 'ean_8_reader', 'upc_reader', 'upc_e_reader', 'code_128_reader']
+      },
+      locate: true
+    }, (result) => {
+      setScanning(false);
+      if (result && result.codeResult && result.codeResult.code) {
+        const code = result.codeResult.code;
+        if (code.length >= 8) {
+          setBarcode(code);
+          toast.success(`Barcode detected: ${code}`);
+          stopCamera();
+          lookupBarcode(code);
         }
-      } catch (err) {
-        // Silently fail - normal when no barcode in view
-      } finally {
-        setScanning(false);
       }
-    }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scanning, useQuagga]);
+  }, [scanning]);
 
   const startCamera = async () => {
     setCameraError(null);
     
-    if (useQuagga) {
-      // Use Quagga2 for scanning
-      try {
-        // First request camera permission
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' }
-        });
-        // Stop the test stream
-        stream.getTracks().forEach(track => track.stop());
-        
-        // Set camera active first so the container renders
-        setCameraActive(true);
-        
-        // Wait for DOM to update
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        if (!scannerRef.current) {
-          throw new Error('Scanner container not ready');
+    try {
+      // Request camera access with back camera preferred
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
         }
+      });
+      
+      streamRef.current = stream;
+      
+      // Set camera active first so video element renders
+      setCameraActive(true);
+      
+      // Wait for DOM update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
         
-        await Quagga.init({
-          inputStream: {
-            name: 'Live',
-            type: 'LiveStream',
-            target: scannerRef.current,
-            constraints: {
-              width: { min: 320, ideal: 640, max: 1280 },
-              height: { min: 240, ideal: 480, max: 720 },
-              facingMode: 'environment',
-              aspectRatio: { ideal: 1.333 }
+        // Start scanning interval - try native BarcodeDetector first, fallback to Quagga
+        if ('BarcodeDetector' in window) {
+          const detector = new window.BarcodeDetector({
+            formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128']
+          });
+          
+          scanIntervalRef.current = setInterval(async () => {
+            if (!videoRef.current || scanning) return;
+            try {
+              const barcodes = await detector.detect(videoRef.current);
+              if (barcodes.length > 0) {
+                const code = barcodes[0].rawValue;
+                setBarcode(code);
+                toast.success(`Barcode detected: ${code}`);
+                stopCamera();
+                lookupBarcode(code);
+              }
+            } catch (e) {
+              // Ignore detection errors
             }
-          },
-          decoder: {
-            readers: [
-              'ean_reader',
-              'ean_8_reader',
-              'upc_reader',
-              'upc_e_reader',
-              'code_128_reader'
-            ]
-          },
-          locate: true,
-          locator: {
-            patchSize: 'medium',
-            halfSample: true
-          }
-        });
-
-        Quagga.onDetected((result) => {
-          const code = result.codeResult.code;
-          if (code && code.length >= 8) {
-            Quagga.stop();
-            setCameraActive(false);
-            setBarcode(code);
-            toast.success(`Barcode detected: ${code}`);
-            lookupBarcode(code);
-          }
-        });
-
-        Quagga.start();
-        toast.info('Camera active. Position barcode in view.');
-      } catch (err) {
-        console.error('Camera error:', err);
-        setCameraActive(false);
-        const errorMsg = err.name === 'NotAllowedError' 
-          ? 'Camera permission denied. Please allow camera access in your browser settings.'
-          : err.name === 'NotFoundError'
-          ? 'No camera found on this device.'
-          : 'Could not access camera. Please check permissions.';
-        setCameraError(errorMsg);
-        toast.error(errorMsg);
-      }
-    } else {
-      // Use native BarcodeDetector
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: 1280, height: 720 }
-        });
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+          }, 300);
+        } else {
+          // Use Quagga for barcode detection on video frames
+          scanIntervalRef.current = setInterval(scanVideoFrame, 500);
         }
-        setCameraActive(true);
-        toast.info('Camera active. Position barcode in view.');
         
-        // Start scanning interval
-        scanIntervalRef.current = setInterval(scanBarcode, 500);
-      } catch (err) {
-        console.error('Camera error:', err);
-        const errorMsg = err.name === 'NotAllowedError' 
-          ? 'Camera permission denied. Please allow camera access.'
-          : err.name === 'NotFoundError'
-          ? 'No camera found on this device.'
-          : 'Could not access camera. Please check permissions.';
-        setCameraError(errorMsg);
-        toast.error(errorMsg);
+        toast.info('Camera active. Position barcode in view.');
       }
+    } catch (err) {
+      console.error('Camera error:', err);
+      setCameraActive(false);
+      const errorMsg = err.name === 'NotAllowedError' 
+        ? 'Camera permission denied. Please allow camera access in your browser settings.'
+        : err.name === 'NotFoundError'
+        ? 'No camera found on this device.'
+        : `Could not access camera: ${err.message}`;
+      setCameraError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
   const stopCamera = () => {
-    if (useQuagga) {
-      try {
-        Quagga.stop();
-      } catch (err) {
-        // Ignore errors when stopping
-      }
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
     }
     
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-    if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current);
-      scanIntervalRef.current = null;
+    
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
+    
     setCameraActive(false);
+    setScanning(false);
   };
 
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (useQuagga) {
-        try {
-          Quagga.stop();
-        } catch (err) {
-          // Ignore
-        }
-      }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
@@ -327,7 +280,7 @@ export const BarcodeScanner = () => {
         clearInterval(scanIntervalRef.current);
       }
     };
-  }, [useQuagga]);
+  }, []);
 
   return (
     <Layout>
@@ -398,42 +351,17 @@ export const BarcodeScanner = () => {
           <GlassCard className="mb-6" data-testid="camera-active-card">
             <GlassCardContent className="p-2">
               <div className="relative rounded-xl overflow-hidden bg-black aspect-[4/3]">
-                {useQuagga ? (
-                  <div 
-                    ref={scannerRef} 
-                    id="scanner-container"
-                    className="w-full h-full"
-                    style={{ 
-                      position: 'relative',
-                      overflow: 'hidden',
-                      minHeight: '300px'
-                    }}
-                  >
-                    {/* Quagga injects video and canvas here - style them */}
-                    <style>{`
-                      #scanner-container video,
-                      #scanner-container canvas {
-                        width: 100% !important;
-                        height: 100% !important;
-                        object-fit: cover !important;
-                        position: absolute !important;
-                        top: 0 !important;
-                        left: 0 !important;
-                      }
-                      #scanner-container canvas.drawingBuffer {
-                        display: none !important;
-                      }
-                    `}</style>
-                  </div>
-                ) : (
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover"
-                  />
-                )}
+                {/* Native video element for camera feed */}
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                  style={{ transform: 'scaleX(1)' }}
+                />
+                {/* Hidden canvas for Quagga frame analysis */}
+                <canvas ref={canvasRef} className="hidden" />
                 {/* Scan frame overlay */}
                 <div className="absolute inset-0 pointer-events-none z-10">
                   <div className="absolute inset-4 border-2 border-cyan-400/50 rounded-lg" />
