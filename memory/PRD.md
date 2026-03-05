@@ -16,6 +16,7 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - **Backend**: FastAPI + MongoDB (Motor async driver)
 - **External API**: USDA FoodData Central API, Open Food Facts API
 - **Authentication**: JWT tokens with bcrypt password hashing
+- **Mobile**: PWA + Capacitor for native iOS/Android builds
 
 ### Data Flow
 1. User searches food -> Backend queries USDA FDC API -> Returns amino acid & fatty acid data
@@ -59,6 +60,18 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - `favorites`: User favorite foods
 
 ## What's Been Implemented
+
+### March 5, 2026 - Camera Button Fix & Cleanup
+- **FIXED**: Missing Camera Button on Barcode Scanner Page
+  - Redesigned barcode scanner page with prominent camera button
+  - Large circular button (112x112px) with cyan-to-emerald gradient
+  - "Tap to Scan" label clearly visible when camera available
+  - Better mobile device detection - assumes camera available on mobile
+  - Helpful error messages when camera unavailable (permission denied, not found)
+  - Loading state while checking camera availability
+  - Improved accessibility with aria-describedby on dialogs
+- **CLEANUP**: Deleted unused `/app/frontend/src/pages/FoodSearch.jsx` file
+  - FoodSearchNew.jsx is now the only search component
 
 ### March 4, 2026 - PWA & Native App Support
 - **PWA Enhancement**:
@@ -301,9 +314,15 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 ## Prioritized Backlog
 
 ### P0 - Critical
-- All P0 features completed
+- [x] Fix camera button on barcode scanner page (DONE - March 5, 2026)
 
 ### P1 - High Priority
+- [ ] **Create Native App Builds with Capacitor** - Run build process to generate iOS/Android packages
+- [ ] Voice Search - "Add 2 eggs" style voice input
+- [ ] AI-Powered Features:
+  - AI Meal Planner - Generate full day/week of keto-friendly meals
+  - "Snap a Pic" Food Logging - Image recognition to identify food
+  - Conversational AI Coach - Chatbot for nutrition questions
 - [x] Fix weekly stats to include current day (DONE - March 2, 2026)
 - [x] Essential Fatty Acids tracking (DONE - March 2, 2026)
 - [x] Combined Nutrition Score (DONE - March 2, 2026)
@@ -316,16 +335,15 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - [x] Dark/Light theme toggle (DONE - March 4, 2026)
 - [x] Portion size presets (DONE - March 4, 2026)
 - [x] Search result caching for performance (DONE - March 4, 2026)
-- [ ] Re-enable USDA Branded foods with better error handling (backend already supports it)
 
 ### P2 - Medium Priority
-- [ ] Food portion size presets (1 oz, 1 cup, etc.)
+- [ ] Search Performance Optimization - Improve slow Open Food Facts API responses
+- [ ] Historical Trends V2 - Enhanced charting on Trends page
+- [ ] Sharing V2 - Allow users to share custom meals with other users
 - [ ] Duplicate meal from history
-- [ ] Share meal plans
 - [ ] Amino acid RDA customization based on body weight
 
 ### P3 - Low Priority
-- [ ] Dark/Light theme toggle
 - [ ] Data export feature
 - [ ] Recipe builder with combined amino acids
 - [ ] Push notifications for protein goal reminders
@@ -347,8 +365,13 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - `/api/keto-score` - Keto score calculation
 
 ## Test Reports
-- Latest: `/app/test_reports/iteration_9.json`
+- Latest: `/app/test_reports/iteration_13.json`
+- Barcode Scanner: 100% (22 tests passed - camera button, manual input, API, scrolling, themes)
 - Frontend: 100% (Theme toggle, portion presets, caching all working)
-- Theme toggle: All 12 tests passed
-- Portion presets: All 10 tests passed  
-- Caching: 105x performance improvement (12.4s → 0.1s for cached searches)
+
+## Known Issues & Monitoring
+- **Scrolling**: Has been a recurring issue. Current CSS fixes in `index.css` and `Layout.jsx` should be monitored during future layout changes.
+- **Open Food Facts API**: Can be slow (3s timeout currently). Consider caching layer for frequent queries.
+
+## Files Cleanup History
+- March 5, 2026: Deleted `/app/frontend/src/pages/FoodSearch.jsx` (unused, replaced by FoodSearchNew.jsx)

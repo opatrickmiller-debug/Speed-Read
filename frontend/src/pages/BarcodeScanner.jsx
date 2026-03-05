@@ -575,10 +575,13 @@ export const BarcodeScanner = () => {
 
       {/* Add to Log Dialog */}
       <Dialog open={logDialogOpen} onOpenChange={setLogDialogOpen}>
-        <DialogContent className="bg-zinc-900 border-white/10 text-white">
+        <DialogContent className="bg-zinc-900 border-white/10 text-white" aria-describedby="add-to-log-description">
           <DialogHeader>
             <DialogTitle className="font-heading">Add to Food Log</DialogTitle>
           </DialogHeader>
+          <p id="add-to-log-description" className="sr-only">
+            Configure serving size and add this product to your food log
+          </p>
           <div className="space-y-6 pt-4">
             <div>
               <p className="text-white font-medium">{product?.product_name || 'Product'}</p>
