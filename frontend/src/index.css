@@ -36,6 +36,7 @@
 
 html {
     background-color: #050505;
+    height: 100%;
 }
 
 body {
@@ -46,20 +47,13 @@ body {
     color: #FAFAFA;
     min-height: 100vh;
     min-height: 100dvh; /* Dynamic viewport height for mobile */
+    overflow-x: hidden;
+    overflow-y: auto;
     
     /* Safe area padding for notched devices */
     padding-top: var(--safe-area-inset-top);
-    padding-bottom: calc(var(--safe-area-inset-bottom) + var(--keyboard-height));
     padding-left: var(--safe-area-inset-left);
     padding-right: var(--safe-area-inset-right);
-    
-    /* Prevent pull-to-refresh on mobile */
-    overscroll-behavior-y: contain;
-    
-    /* Disable text selection on double tap for native feel */
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
 }
 
 /* Allow text selection in input fields and text areas */
@@ -335,8 +329,13 @@ code {
     overflow-x: hidden;
 }
 
-html, body {
+html {
     overflow-x: hidden;
+    overflow-y: scroll;
     width: 100%;
-    position: relative;
+}
+
+#root {
+    min-height: 100vh;
+    min-height: 100dvh;
 }
