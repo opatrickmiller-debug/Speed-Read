@@ -224,15 +224,13 @@ export const FoodSearch = () => {
   // Render food item with MyFitnessPal-style badges
   const FoodItem = ({ food, showQuickLog = false }) => (
     <div
+      onClick={() => !showQuickLog && handleSelectFood(food)}
       className={cn(
-        "flex items-center gap-3 p-3 border-b last:border-0 active:bg-opacity-50 transition-colors",
+        "flex items-center gap-3 p-3 border-b last:border-0 transition-colors cursor-pointer",
         theme === 'dark' ? 'border-white/5 active:bg-white/5' : 'border-gray-100 active:bg-gray-50'
       )}
     >
-      <button
-        onClick={() => handleSelectFood(food)}
-        className="flex-1 text-left min-w-0"
-      >
+      <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className={cn(
             "font-medium truncate",
@@ -266,10 +264,10 @@ export const FoodSearch = () => {
             </span>
           )}
         </div>
-      </button>
+      </div>
       {showQuickLog && (
         <button
-          onClick={() => handleQuickLog(food)}
+          onClick={(e) => { e.stopPropagation(); handleQuickLog(food); }}
           className={cn(
             "p-2 rounded-full transition-colors",
             theme === 'dark' 

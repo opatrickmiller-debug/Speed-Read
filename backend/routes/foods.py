@@ -169,11 +169,15 @@ async def search_foods(
             if not include_branded and food_data_type == "Branded":
                 continue
             
+            # Extract nutrients
             protein = 0
+            calories = 0
             for nutrient in food.get("foodNutrients", []):
-                if nutrient.get("nutrientId") == 1003:
+                nutrient_id = nutrient.get("nutrientId")
+                if nutrient_id == 1003:  # Protein
                     protein = nutrient.get("value", 0) or 0
-                    break
+                elif nutrient_id == 1008:  # Energy (kcal)
+                    calories = nutrient.get("value", 0) or 0
             
             has_amino = food_data_type in AMINO_ACID_SOURCES
             
@@ -185,6 +189,7 @@ async def search_foods(
                 "data_type": food_data_type,
                 "source": "usda",
                 "protein_per_100g": round(protein, 2),
+                "calories_per_100g": round(calories, 0),
                 "has_amino_acids": has_amino,
                 "has_fatty_acids": has_amino
             })
