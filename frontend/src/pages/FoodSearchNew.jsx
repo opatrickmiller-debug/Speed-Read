@@ -290,7 +290,7 @@ export const FoodSearch = () => {
   return (
     <Layout>
       <div className={cn(
-        "min-h-screen",
+        "min-h-screen overflow-y-auto",
         theme === 'dark' ? 'bg-[#050505]' : 'bg-gray-50'
       )}>
         {/* Header */}

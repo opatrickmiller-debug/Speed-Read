@@ -17,7 +17,7 @@ export const Layout = ({ children }) => {
       <MobileNav />
       
       {/* Main Content */}
-      <main className="md:ml-64 min-h-screen pb-20 md:pb-0">
+      <main className="md:ml-64 min-h-screen pb-20 md:pb-0 overflow-y-auto">
         {theme === 'dark' && (
           <>
             <div className="hero-glow fixed inset-0 pointer-events-none" />
