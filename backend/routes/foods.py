@@ -60,7 +60,7 @@ async def search_open_food_facts(query: str, page_size: int = 20) -> list:
     except httpx.TimeoutException:
         # Silently fail - USDA results are more reliable anyway
         return []
-    except Exception as e:
+    except Exception:
         return []
 
 # Search custom foods in database
@@ -477,7 +477,7 @@ async def get_time_based_suggestions(current_user: dict = Depends(get_current_us
                     "calories_per_100g": food.get("calories", 0),
                     "search_term": search_term
                 })
-        except Exception as e:
+        except Exception:
             # If USDA fails, add a fallback suggestion
             foods.append({
                 "id": None,

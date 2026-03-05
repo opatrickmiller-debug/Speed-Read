@@ -185,6 +185,7 @@ export const BarcodeScanner = () => {
         setScanning(false);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scanning, useQuagga]);
 
   const startCamera = async () => {

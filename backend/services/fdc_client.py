@@ -2,11 +2,16 @@ import httpx
 import asyncio
 import logging
 from typing import Dict, List, Optional
+from functools import lru_cache
 from core.config import settings
 from core.constants import ALL_AMINO_ACIDS, ESSENTIAL_AMINO_ACIDS, ALL_FATTY_ACIDS, ESSENTIAL_FATTY_ACIDS
 from models.food import AminoAcid, FattyAcid, FoodDetail
 
 logger = logging.getLogger(__name__)
+
+# Simple in-memory cache for food details (reduces API calls)
+_food_cache: Dict[str, Dict] = {}
+_cache_max_size = 500
 
 class FDCClient:
     def __init__(self):
@@ -38,17 +43,49 @@ class FDCClient:
                     return {"foods": [], "totalHits": 0}
     
     async def get_food_details(self, fdc_id: str) -> Optional[Dict]:
+        """Get food details using the batch endpoint (more reliable) with caching."""
+        global _food_cache
+        
+        # Check cache first
+        if fdc_id in _food_cache:
+            logger.debug(f"Cache hit for {fdc_id}")
+            return _food_cache[fdc_id]
+        
         async with self.semaphore:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 try:
+                    # First try the single food endpoint
                     response = await client.get(
                         f"{self.base_url}/food/{fdc_id}",
                         params={"api_key": self.api_key}
                     )
+                    if response.status_code == 200:
+                        data = response.json()
+                        # Cache the result
+                        if len(_food_cache) >= _cache_max_size:
+                            # Simple cache eviction: remove oldest entries
+                            keys_to_remove = list(_food_cache.keys())[:100]
+                            for k in keys_to_remove:
+                                del _food_cache[k]
+                        _food_cache[fdc_id] = data
+                        return data
+                    
+                    # If single endpoint fails, try batch endpoint
+                    logger.info(f"Single endpoint failed for {fdc_id}, trying batch endpoint")
+                    response = await client.post(
+                        f"{self.base_url}/foods",
+                        params={"api_key": self.api_key},
+                        json={"fdcIds": [int(fdc_id)], "format": "full"}
+                    )
                     response.raise_for_status()
-                    return response.json()
-                except httpx.HTTPError as e:
-                    logger.error(f"FDC details error: {e}")
+                    data = response.json()
+                    if isinstance(data, list) and len(data) > 0:
+                        result = data[0]
+                        _food_cache[fdc_id] = result
+                        return result
+                    return None
+                except (httpx.HTTPError, ValueError) as e:
+                    logger.error(f"FDC details error for {fdc_id}: {e}")
                     return None
     
     def extract_nutrient(self, food_data: Dict, nutrient_id: int) -> float:
