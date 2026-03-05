@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import { Dashboard } from "./pages/Dashboard";
-import { FoodSearch } from "./pages/FoodSearch";
+import { FoodSearch } from "./pages/FoodSearchNew";
 import { FoodLog } from "./pages/FoodLog";
 import { MealPlans } from "./pages/MealPlans";
 import { Favorites } from "./pages/Favorites";
