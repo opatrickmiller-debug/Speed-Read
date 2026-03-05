@@ -344,3 +344,32 @@ html, body {
     min-height: 100vh;
     min-height: 100dvh;
 }
+
+
+/* Quagga2 barcode scanner styling */
+#scanner-container {
+    position: relative;
+    width: 100%;
+    min-height: 300px;
+}
+
+#scanner-container video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+}
+
+#scanner-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+}
+
+#scanner-container canvas.drawingBuffer {
+    display: none !important;
+}

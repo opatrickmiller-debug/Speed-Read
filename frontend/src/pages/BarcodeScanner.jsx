@@ -201,6 +201,16 @@ export const BarcodeScanner = () => {
         // Stop the test stream
         stream.getTracks().forEach(track => track.stop());
         
+        // Set camera active first so the container renders
+        setCameraActive(true);
+        
+        // Wait for DOM to update
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        if (!scannerRef.current) {
+          throw new Error('Scanner container not ready');
+        }
+        
         await Quagga.init({
           inputStream: {
             name: 'Live',
@@ -209,7 +219,8 @@ export const BarcodeScanner = () => {
             constraints: {
               width: { min: 320, ideal: 640, max: 1280 },
               height: { min: 240, ideal: 480, max: 720 },
-              facingMode: 'environment'
+              facingMode: 'environment',
+              aspectRatio: { ideal: 1.333 }
             }
           },
           decoder: {
@@ -240,10 +251,10 @@ export const BarcodeScanner = () => {
         });
 
         Quagga.start();
-        setCameraActive(true);
         toast.info('Camera active. Position barcode in view.');
       } catch (err) {
         console.error('Camera error:', err);
+        setCameraActive(false);
         const errorMsg = err.name === 'NotAllowedError' 
           ? 'Camera permission denied. Please allow camera access in your browser settings.'
           : err.name === 'NotFoundError'
@@ -391,12 +402,29 @@ export const BarcodeScanner = () => {
                   <div 
                     ref={scannerRef} 
                     id="scanner-container"
-                    className="w-full h-full absolute inset-0"
+                    className="w-full h-full"
                     style={{ 
                       position: 'relative',
-                      overflow: 'hidden'
+                      overflow: 'hidden',
+                      minHeight: '300px'
                     }}
-                  />
+                  >
+                    {/* Quagga injects video and canvas here - style them */}
+                    <style>{`
+                      #scanner-container video,
+                      #scanner-container canvas {
+                        width: 100% !important;
+                        height: 100% !important;
+                        object-fit: cover !important;
+                        position: absolute !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                      }
+                      #scanner-container canvas.drawingBuffer {
+                        display: none !important;
+                      }
+                    `}</style>
+                  </div>
                 ) : (
                   <video
                     ref={videoRef}
