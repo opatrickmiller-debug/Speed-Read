@@ -248,7 +248,10 @@ export const FoodSearch = () => {
             "font-medium truncate",
             theme === 'dark' ? 'text-white' : 'text-gray-900'
           )}>
-            {food.description?.split(',')[0]}
+            {/* Show full description but truncate if too long */}
+            {food.description?.length > 40 
+              ? food.description.substring(0, 40) + '...'
+              : food.description}
           </p>
           {/* Verified checkmark badge (like MyFitnessPal green checkmark) */}
           {food.is_verified && (
