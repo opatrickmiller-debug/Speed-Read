@@ -106,7 +106,7 @@ async def search_foods(
     page_size: int = Query(25, ge=1, le=100),
     page: int = Query(1, ge=1),
     source: Optional[str] = Query(None, description="Filter by source: usda, off, custom, all"),
-    include_branded: bool = Query(True, description="Include USDA branded foods"),
+    include_branded: bool = Query(False, description="Include USDA branded foods (less reliable)"),
     current_user: dict = Depends(get_current_user)
 ):
     """
@@ -116,6 +116,7 @@ async def search_foods(
     - User's custom foods
     
     Results are ranked to prioritize simple whole foods over complex meals.
+    By default, excludes branded products which may have stale/invalid IDs.
     """
     source = source or "all"
     all_results = []

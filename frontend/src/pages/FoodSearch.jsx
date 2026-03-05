@@ -69,6 +69,7 @@ export const FoodSearch = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchProgress, setSearchProgress] = useState(0);
+  const [includeBranded, setIncludeBranded] = useState(false);
   
   // States for categories and suggestions
   const [categories, setCategories] = useState([]);
@@ -215,7 +216,7 @@ export const FoodSearch = () => {
     setShowAutocomplete(false);
     setAutocompleteResults([]);
     
-    const cacheKey = query.toLowerCase().trim();
+    const cacheKey = `${query.toLowerCase().trim()}_${includeBranded}`;
     
     // Check cache first
     const cached = searchCache.get(cacheKey);
@@ -234,7 +235,7 @@ export const FoodSearch = () => {
     }, 1000);
     
     try {
-      const res = await foodsApi.search(query);
+      const res = await foodsApi.search(query, includeBranded);
       setSearchProgress(100);
       const foods = res.data.foods || [];
       setResults(foods);
@@ -251,7 +252,7 @@ export const FoodSearch = () => {
       setLoading(false);
       setSearchProgress(0);
     }
-  }, [query]);
+  }, [query, includeBranded]);
 
   // Navigate to food details page
   const handleSelectFood = useCallback((food) => {
@@ -359,6 +360,30 @@ export const FoodSearch = () => {
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Search'}
           </button>
+        </div>
+        
+        {/* Include Branded Toggle */}
+        <div className="flex items-center gap-3 mb-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={includeBranded}
+              onChange={(e) => setIncludeBranded(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
+            />
+            <span className={cn(
+              "text-sm",
+              theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+            )}>
+              Include branded products
+            </span>
+          </label>
+          <span className={cn(
+            "text-xs px-2 py-0.5 rounded-full",
+            theme === 'dark' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
+          )}>
+            Whole foods only = more reliable
+          </span>
         </div>
 
         {/* Time-Based Suggestions */}
