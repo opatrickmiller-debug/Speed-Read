@@ -11,17 +11,17 @@ router = APIRouter(prefix="/foods", tags=["Foods"])
 
 # Open Food Facts search
 async def search_open_food_facts(query: str, page_size: int = 20) -> list:
-    """Search Open Food Facts database"""
+    """Search Open Food Facts database - with short timeout for fast results"""
     try:
-        async with httpx.AsyncClient(timeout=20.0) as client:
+        async with httpx.AsyncClient(timeout=3.0) as client:  # Short timeout
             url = "https://world.openfoodfacts.org/cgi/search.pl"
             params = {
                 "search_terms": query,
                 "search_simple": 1,
                 "action": "process",
                 "json": 1,
-                "page_size": page_size,
-                "fields": "code,product_name,brands,nutriments,image_small_url"
+                "page_size": min(page_size, 10),  # Limit to speed up
+                "fields": "code,product_name,brands,nutriments"
             }
             headers = {
                 "User-Agent": "IsotopeNutritionTracker/1.0 (https://isotope.app)"
@@ -29,7 +29,6 @@ async def search_open_food_facts(query: str, page_size: int = 20) -> list:
             
             response = await client.get(url, params=params, headers=headers)
             if response.status_code != 200:
-                print(f"Open Food Facts returned status {response.status_code}")
                 return []
             
             data = response.json()
@@ -53,17 +52,15 @@ async def search_open_food_facts(query: str, page_size: int = 20) -> list:
                     "fat_per_100g": nutriments.get("fat_100g", 0) or 0,
                     "carbs_per_100g": nutriments.get("carbohydrates_100g", 0) or 0,
                     "fiber_per_100g": nutriments.get("fiber_100g", 0) or 0,
-                    "image_url": product.get("image_small_url"),
                     "has_amino_acids": False,
                     "has_fatty_acids": False
                 })
             
             return results
     except httpx.TimeoutException:
-        print(f"Open Food Facts search timeout for query: {query}")
+        # Silently fail - USDA results are more reliable anyway
         return []
     except Exception as e:
-        print(f"Open Food Facts search error: {type(e).__name__}: {e}")
         return []
 
 # Search custom foods in database

@@ -5,7 +5,7 @@ export const Layout = ({ children }) => {
   const { theme } = useTheme();
   
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
+    <div className={`min-h-screen h-auto transition-colors duration-300 ${
       theme === 'dark' ? 'bg-[#050505]' : 'bg-gray-50'
     }`}>
       {/* Desktop Sidebar */}
@@ -17,14 +17,14 @@ export const Layout = ({ children }) => {
       <MobileNav />
       
       {/* Main Content */}
-      <main className="md:ml-64 min-h-screen pb-20 md:pb-0 overflow-y-auto">
+      <main className="md:ml-64 pb-20 md:pb-0">
         {theme === 'dark' && (
           <>
-            <div className="hero-glow fixed inset-0 pointer-events-none" />
-            <div className="grid-bg fixed inset-0 pointer-events-none opacity-50" />
+            <div className="hero-glow fixed inset-0 pointer-events-none" style={{ zIndex: -1 }} />
+            <div className="grid-bg fixed inset-0 pointer-events-none opacity-50" style={{ zIndex: -1 }} />
           </>
         )}
-        <div className="relative z-10">
+        <div className="relative">
           {children}
         </div>
       </main>

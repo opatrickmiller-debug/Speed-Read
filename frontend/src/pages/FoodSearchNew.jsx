@@ -289,15 +289,9 @@ export const FoodSearch = () => {
 
   return (
     <Layout>
-      <div className={cn(
-        "min-h-screen overflow-y-auto",
-        theme === 'dark' ? 'bg-[#050505]' : 'bg-gray-50'
-      )}>
+      <div className="px-4 pt-4 pb-24">
         {/* Header */}
-        <div className={cn(
-          "sticky top-0 z-20 px-4 pt-4 pb-2",
-          theme === 'dark' ? 'bg-[#050505]' : 'bg-gray-50'
-        )}>
+        <div className="mb-4">
           <div className="flex items-center gap-3 mb-3">
             <button
               onClick={() => navigate(-1)}
@@ -327,7 +321,6 @@ export const FoodSearch = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search foods..."
-              autoFocus
               className={cn(
                 "pl-10 pr-10 h-12 rounded-xl",
                 theme === 'dark' 
@@ -389,42 +382,40 @@ export const FoodSearch = () => {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="px-4 pb-24">
-          {/* Show search results when typing */}
-          {query.length >= 2 ? (
-            <div className={cn(
-              "rounded-xl overflow-hidden mt-2",
-              theme === 'dark' ? 'bg-zinc-900/50' : 'bg-white'
-            )}>
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+        {/* Content - Search Results or Tabs */}
+        {query.length >= 2 ? (
+          <div className={cn(
+            "rounded-xl overflow-hidden",
+            theme === 'dark' ? 'bg-zinc-900/50' : 'bg-white'
+          )}>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+              </div>
+            ) : results.length > 0 ? (
+              <div>
+                <div className={cn(
+                  "px-3 py-2 text-xs font-semibold uppercase tracking-wider",
+                  theme === 'dark' ? 'text-zinc-500 bg-black/30' : 'text-gray-500 bg-gray-50'
+                )}>
+                  Search Results
                 </div>
-              ) : results.length > 0 ? (
-                <div>
-                  <div className={cn(
-                    "px-3 py-2 text-xs font-semibold uppercase tracking-wider",
-                    theme === 'dark' ? 'text-zinc-500 bg-black/30' : 'text-gray-500 bg-gray-50'
-                  )}>
-                    Search Results
-                  </div>
-                  {results.slice(0, 20).map((food, idx) => (
-                    <FoodItem key={food.fdc_id || idx} food={food} />
-                  ))}
-                </div>
-              ) : (
-                <div className="py-12 text-center">
-                  <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'}>
-                    No results for "{query}"
-                  </p>
-                  <button
-                    onClick={() => navigate('/custom-foods')}
-                    className="mt-2 text-emerald-500 text-sm font-medium"
-                  >
-                    Create custom food
-                  </button>
-                </div>
+                {results.slice(0, 20).map((food, idx) => (
+                  <FoodItem key={food.fdc_id || idx} food={food} />
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center">
+                <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'}>
+                  No results for "{query}"
+                </p>
+                <button
+                  onClick={() => navigate('/custom-foods')}
+                  className="mt-2 text-emerald-500 text-sm font-medium"
+                >
+                  Create custom food
+                </button>
+              </div>
               )}
             </div>
           ) : (
@@ -515,7 +506,7 @@ export const FoodSearch = () => {
             </>
           )}
         </div>
-      </div>
+      
 
       {/* Quick Add Dialog */}
       <Dialog open={quickAddOpen} onOpenChange={setQuickAddOpen}>
