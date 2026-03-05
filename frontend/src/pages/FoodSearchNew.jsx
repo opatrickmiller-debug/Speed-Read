@@ -14,14 +14,25 @@ import {
   Clock,
   Star,
   Barcode,
-  Camera,
-  Mic
+  ChevronDown,
+  Coffee,
+  Sun,
+  Moon,
+  Cookie
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Label } from '../components/ui/label';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+// Meal type icons and labels
+const MEAL_OPTIONS = [
+  { id: 'breakfast', label: 'Breakfast', icon: Coffee },
+  { id: 'lunch', label: 'Lunch', icon: Sun },
+  { id: 'dinner', label: 'Dinner', icon: Moon },
+  { id: 'snack', label: 'Snack', icon: Cookie }
+];
 
 // Debounce hook
 function useDebounce(value, delay) {
@@ -38,9 +49,15 @@ function useDebounce(value, delay) {
 export const FoodSearch = () => {
   const { theme } = useTheme();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const mealType = searchParams.get('meal') || 'snack';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedMeal, setSelectedMeal] = useState(searchParams.get('meal') || 'snack');
   const inputRef = useRef(null);
+  
+  // Update URL when meal changes
+  const handleMealChange = (meal) => {
+    setSelectedMeal(meal);
+    setSearchParams({ meal });
+  };
   
   // Search state
   const [query, setQuery] = useState('');
@@ -153,8 +170,8 @@ export const FoodSearch = () => {
 
   const handleSelectFood = useCallback((food) => {
     const fdcId = food.fdc_id || food.id;
-    navigate(`/food/${encodeURIComponent(fdcId)}?meal=${mealType}`, { state: { from: '/search' } });
-  }, [navigate, mealType]);
+    navigate(`/food/${encodeURIComponent(fdcId)}?meal=${selectedMeal}`, { state: { from: '/search' } });
+  }, [navigate, selectedMeal]);
 
   const handleQuickLog = async (food) => {
     try {
@@ -171,9 +188,9 @@ export const FoodSearch = () => {
         fiber: food.fiber || 0,
         amino_acids: [],
         fatty_acids: [],
-        meal_type: mealType
+        meal_type: selectedMeal
       });
-      toast.success(`Added ${food.description.split(',')[0]} to ${mealType}`);
+      toast.success(`Added ${food.description.split(',')[0]} to ${selectedMeal}`);
     } catch (err) {
       toast.error('Failed to log food');
     }
@@ -200,7 +217,7 @@ export const FoodSearch = () => {
         fiber: 0,
         amino_acids: [],
         fatty_acids: [],
-        meal_type: mealType
+        meal_type: selectedMeal
       });
       toast.success('Quick Add logged!');
       setQuickAddOpen(false);
@@ -214,11 +231,6 @@ export const FoodSearch = () => {
     setQuery('');
     setResults([]);
     inputRef.current?.focus();
-  };
-
-  const getMealLabel = () => {
-    const labels = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' };
-    return labels[mealType] || 'Food';
   };
 
   // Render food item with MyFitnessPal-style badges
@@ -293,6 +305,7 @@ export const FoodSearch = () => {
           <div className="flex items-center gap-3 mb-3">
             <button
               onClick={() => navigate(-1)}
+              data-testid="close-search-btn"
               className={cn(
                 "p-2 -ml-2 rounded-full",
                 theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
@@ -301,11 +314,37 @@ export const FoodSearch = () => {
               <X className="w-6 h-6" />
             </button>
             <h1 className={cn(
-              "text-lg font-semibold",
+              "text-lg font-semibold flex-1",
               theme === 'dark' ? 'text-white' : 'text-gray-900'
             )}>
-              Add to {getMealLabel()}
+              Add Food
             </h1>
+          </div>
+          
+          {/* Meal Type Selector */}
+          <div className="flex gap-2 mb-3 overflow-x-auto pb-1 -mx-4 px-4">
+            {MEAL_OPTIONS.map((meal) => {
+              const Icon = meal.icon;
+              const isSelected = selectedMeal === meal.id;
+              return (
+                <button
+                  key={meal.id}
+                  onClick={() => handleMealChange(meal.id)}
+                  data-testid={`meal-select-${meal.id}`}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                    isSelected
+                      ? 'bg-emerald-500 text-black'
+                      : theme === 'dark'
+                        ? 'bg-zinc-800 text-zinc-300'
+                        : 'bg-white text-gray-700 border border-gray-200'
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                  {meal.label}
+                </button>
+              );
+            })}
           </div>
           
           {/* Search Bar */}
@@ -592,7 +631,7 @@ export const FoodSearch = () => {
               onClick={handleQuickAdd}
               className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-semibold py-3 rounded-xl transition-colors"
             >
-              Add to {getMealLabel()}
+              Add to {MEAL_OPTIONS.find(m => m.id === selectedMeal)?.label || 'Log'}
             </button>
           </div>
         </DialogContent>
