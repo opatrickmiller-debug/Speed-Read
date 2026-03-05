@@ -336,9 +336,35 @@ async def search_foods(
     # Score and sort all results
     for food in all_results:
         food["_relevance_score"] = calculate_relevance_score(food, query)
+        
+        # Add tier and verification status (MyFitnessPal style)
+        source = food.get("source", "")
+        data_type = food.get("data_type", "")
+        
+        if source == "custom":
+            food["tier"] = 1
+            food["is_verified"] = True
+            food["tier_label"] = "Your Food"
+        elif source == "usda":
+            if data_type in {"Foundation", "SR Legacy"}:
+                food["tier"] = 1
+                food["is_verified"] = True
+                food["tier_label"] = "Best Match"
+            elif data_type == "Survey (FNDDS)":
+                food["tier"] = 2
+                food["is_verified"] = True
+                food["tier_label"] = "Verified"
+            else:
+                food["tier"] = 3
+                food["is_verified"] = False
+                food["tier_label"] = "Community"
+        else:
+            food["tier"] = 3
+            food["is_verified"] = False
+            food["tier_label"] = "Community"
     
-    # Sort by relevance score (highest first)
-    all_results.sort(key=lambda x: x.get("_relevance_score", 0), reverse=True)
+    # Sort by tier first, then by relevance score within each tier
+    all_results.sort(key=lambda x: (x.get("tier", 3), -x.get("_relevance_score", 0)))
     
     # Remove internal score field before returning
     final_results = []
@@ -346,12 +372,24 @@ async def search_foods(
         food_copy = {k: v for k, v in food.items() if not k.startswith("_")}
         final_results.append(food_copy)
     
+    # Count tiers for response metadata
+    tier_counts = {"best_match": 0, "verified": 0, "community": 0}
+    for food in all_results:
+        tier = food.get("tier", 3)
+        if tier == 1:
+            tier_counts["best_match"] += 1
+        elif tier == 2:
+            tier_counts["verified"] += 1
+        else:
+            tier_counts["community"] += 1
+    
     return {
         "foods": final_results,
         "total_hits": len(all_results),
         "current_page": page,
         "page_size": page_size,
-        "sources": list(set(f["source"] for f in all_results))
+        "sources": list(set(f["source"] for f in all_results)),
+        "tiers": tier_counts
     }
 
 # ==================== CATEGORY BROWSING & QUICK ACCESS ====================

@@ -221,7 +221,7 @@ export const FoodSearch = () => {
     return labels[mealType] || 'Food';
   };
 
-  // Render food item
+  // Render food item with MyFitnessPal-style badges
   const FoodItem = ({ food, showQuickLog = false }) => (
     <div
       className={cn(
@@ -233,19 +233,39 @@ export const FoodSearch = () => {
         onClick={() => handleSelectFood(food)}
         className="flex-1 text-left min-w-0"
       >
-        <p className={cn(
-          "font-medium truncate",
-          theme === 'dark' ? 'text-white' : 'text-gray-900'
-        )}>
-          {food.description?.split(',')[0]}
-        </p>
-        <p className={cn(
-          "text-xs mt-0.5",
-          theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-        )}>
-          {food.calories?.toFixed(0) || '—'} cal • {food.protein?.toFixed(0) || food.protein_per_100g?.toFixed(0) || '—'}g protein
-          {food.serving_size && ` • ${food.serving_size}${food.serving_unit || 'g'}`}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className={cn(
+            "font-medium truncate",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
+            {food.description?.split(',')[0]}
+          </p>
+          {/* Verified checkmark badge (like MyFitnessPal green checkmark) */}
+          {food.is_verified && (
+            <svg className="w-4 h-4 text-emerald-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+          )}
+        </div>
+        <div className="flex items-center gap-2 mt-0.5">
+          <p className={cn(
+            "text-xs",
+            theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+          )}>
+            {food.calories?.toFixed(0) || food.calories_per_100g?.toFixed(0) || '—'} cal • {food.protein?.toFixed(0) || food.protein_per_100g?.toFixed(0) || '—'}g protein
+          </p>
+          {/* Tier label */}
+          {food.tier_label && food.tier_label !== 'Community' && (
+            <span className={cn(
+              "text-[10px] px-1.5 py-0.5 rounded font-medium",
+              food.tier_label === 'Best Match' || food.tier_label === 'Your Food'
+                ? 'bg-emerald-500/20 text-emerald-600'
+                : 'bg-blue-500/20 text-blue-600'
+            )}>
+              {food.tier_label}
+            </span>
+          )}
+        </div>
       </button>
       {showQuickLog && (
         <button
