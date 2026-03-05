@@ -5,51 +5,73 @@ Initial and subsequent feature requests include:
 - A Keto Meal Builder and the ability to save custom meals.
 - Tracking essential fatty acids (Omega-3, Omega-6).
 - An expanded food database combining USDA, Open Food Facts, and user-created custom foods.
-- UI/UX improvements: dark/light theme, mobile responsiveness, loading skeletons, and debounced/cached search.
-- Imperial/metric unit toggle and portion size presets.
-- Defaulting the app to light mode, imperial units, and ensuring all data inputs are manual (removing sliders).
-- Broadening the app's appeal by adding: an educational layer (tooltips), a public meal library, and a guided onboarding flow.
+- UI/UX improvements: dark/light theme, mobile responsiveness, and debounced/cached search.
 - Changing carb calculations to be based on total carbs instead of net carbs.
 - Significantly improving the speed and ease of finding food through features like category browsing, time-based suggestions, recent foods, autocomplete, and a log again button.
 - Prioritizing search results to show simple, whole foods before complex, branded meals.
+- A request to copy the search execution and result presentation of the MyFitnessPal app.
+- Making the web app available as a mobile phone app (PWA and native).
+- Fixing UI issues like page scrolling and text contrast.
+- Adding a camera button to the barcode scanning page.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A feature-rich full-stack application (FastAPI, React, MongoDB). Key features include JWT authentication, a comprehensive dashboard, unified food search (USDA, Open Food Facts, Custom Foods), full CRUD for custom foods, and a dark/light theme.
+A feature-rich full-stack application (FastAPI, React, MongoDB) with JWT authentication, a comprehensive dashboard, and a dark/light theme.
 
 Recent major additions include:
-- **Onboarding Flow**: A multi-step process for new users to set their initial goals.
-- **Manual Data Entry**: All settings sliders have been replaced with manual text inputs.
-- **Public Meal Library**: Users can browse a public collection of meals.
-- **Enhanced Food Search**: The search page now includes Browse by Category, Recently Logged, time-based Dinner Ideas, and search autocomplete to make finding food faster.
-- **Enhanced Suggestions**: A dedicated page provides personalized food suggestions to fill nutrient gaps.
-- **Code Optimization**: Key frontend components (, ) have been refactored for better performance using memoization and optimized hooks.
-- **Total Carbs Standard**: All calculations and UI labels now refer to total carbs for clarity.
+-   **MyFitnessPal-style Search**: A complete overhaul of the food search experience () featuring instant search-as-you-type and tiered results (Best Match, Verified, Community) to mimic MyFitnessPal's UX.
+-   **Improved Search Backend**: The search ranking algorithm was enhanced to prioritize reliable food sources and the Open Food Facts API timeout was reduced to improve performance.
+-   **Mobile-First UX**: The food details view was moved to a dedicated, mobile-friendly page (), and a persistent bottom navigation bar was added.
+-   **Progressive Web App (PWA)**: The application is now a PWA, meaning it can be installed on a phone's home screen for an app-like experience. This includes a service worker for offline capabilities and a manifest file.
+-   **Capacitor Setup**: The project has been configured with Capacitor, preparing it to be wrapped into native iOS and Android applications for submission to the App Stores.
+-   **UI/UX Bug Fixes**: Several critical bugs reported by the user were fixed, including persistent page scrolling issues and low-contrast text in light mode.
+-   **Reliable Search Toggle**: To combat errors from stale data, the search now defaults to excluding Branded food products, with a user-toggle to include them if needed.
 
 **Last working item**:
--   **Last item agent was working**: Implementing a smart ranking system for search results. The goal is to prioritize simple, whole foods (e.g., chicken breast) over complex or branded meals (e.g., chicken and broccoli casserole) in the search results to improve user experience.
--   **Status**: IN PROGRESS
+-   **Last item agent was working**: The user reported that the barcode scanning page was missing its camera button, preventing users from scanning barcodes. The agent acknowledged the issue and was about to implement the camera scanning feature.
+-   **Status**: NOT STARTED
 -   **Agent Testing Done**: N
--   **Which testing method agent to use?**: backend testing agent
+-   **Which testing method agent to use?**: Frontend testing agent
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Prioritize search results (P0)**: The user wants search results to be ranked, showing simple whole foods first.
+-   **Issue 1: Missing Camera Button on Barcode Page (P0)**
+-   **Issue 2: Search Performance Bottleneck (P2)**
+-   **Issue 3: Monitor for Recurring Scrolling Issues (P2)**
 
 **Issues Detail**:
--   **Issue 1: Prioritize search results**
-    -   **Attempted fixes**: The agent began implementing a scoring function () and sorting logic in  but was interrupted before completion.
+-   **Issue 1: Missing Camera Button on Barcode Page**
+    -   **Attempted fixes**: None.
     -   **Next debug checklist**:
-        1.  Resume work in .
-        2.  Complete the  function. The logic should assign a higher score to items with fewer words and penalize items containing common meal keywords (e.g., stew, casserole, with) or brand names.
-        3.  Apply this score to sort the  list before returning it from the search endpoint.
-        4.  Use  or the backend testing agent to test the  endpoint with queries like chicken, beef, and egg to verify that chicken breast appears before chicken soup.
-        5.  Verify the frontend correctly displays the newly ranked results.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a direct user request that will significantly improve the core food logging workflow by making it much faster to find and select basic ingredients.
-    -   **Status**: IN PROGRESS
+        1.  Examine the barcode scanning page component ().
+        2.  Integrate a camera component using a library like  or leverage the existing  setup more directly to display a camera feed.
+        3.  Add a visible button to initiate the camera scan.
+        4.  Ensure the component correctly captures the barcode and triggers a search.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical feature for quick food logging. Fixing it will complete the barcode scanning functionality.
+    -   **Status**: NOT STARTED
     -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: Frontend
+    -   **Blocked on other issue**: None
+
+-   **Issue 2: Search Performance Bottleneck**
+    -   **Attempted fixes**: The agent reduced the API timeout for Open Food Facts from 20s to 3s in . This is a temporary mitigation, not a complete fix.
+    -   **Next debug checklist**:
+        1.  Investigate asynchronous fetching strategies where USDA/Custom food results are displayed instantly, while Open Food Facts results are streamed in as they become available.
+        2.  Consider implementing a caching layer (e.g., Redis) for frequent Open Food Facts queries.
+    -   **Why fix this issue and what will be achieved with the fix?**: The current search experience can still feel slow if Open Food Facts is unresponsive. A proper fix will make the search feel instantaneous.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: Both
+    -   **Blocked on other issue**: None
+
+-   **Issue 3: Monitor for Recurring Scrolling Issues**
+    -   **Attempted fixes**: The agent fixed scrolling multiple times by adjusting CSS in , , and . Fixes involved removing , , and ensuring parent containers could expand.
+    -   **Next debug checklist**: During any future layout changes, specifically test scrolling on multiple pages (Dashboard, Search, Settings) with a mobile viewport. Pay close attention to , , and  properties.
+    -   **Why fix this issue and what will be achieved with the fix?**: The user is highly sensitive to scrolling problems. Proactive monitoring will prevent a poor user experience.
+    -   **Status**: RESOLVED (but requires monitoring)
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: Frontend
     -   **Blocked on other issue**: None
 
 **In progress Task List**:
@@ -57,108 +79,108 @@ Recent major additions include:
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
-    -   **P0 - Propose AI-Powered Features**: The user explicitly asked about incorporating AI. Present the following options:
+    -   **P0 - Create Native App Builds with Capacitor**: The setup is done. The next step is to run the build process as described in  to generate the actual iOS and Android application packages.
+    -   **P1 - Propose AI-Powered Features**: The user previously expressed interest in AI. Present these options again for prioritization:
         1.  **AI Meal Planner**: Generate a full day/week of keto-friendly meals.
         2.  **Snap a Pic Food Logging**: Use image recognition to identify and log food from a photo.
-        3.  **Conversational AI Coach**: A chatbot to answer nutrition questions and provide encouragement.
+        3.  **Conversational AI Coach**: A chatbot to answer nutrition questions.
     -   **P1 - Voice Search**: Implement a voice search feature (e.g., Add 2 eggs).
 -   **Future Tasks**:
-    -   **P2 - Historical Trends V2**: Enhance the Trends page with advanced charting for longer date ranges.
-    -   **P2 - Sharing V2**: Allow users to share custom meals or food logs with other users directly.
+    -   **P2 - Historical Trends V2**: Enhance the Trends page with advanced charting.
+    -   **P2 - Sharing V2**: Allow users to share custom meals or food logs with other users.
 
 **Completed work in this session**
--   **Default Settings**: Changed app defaults to light mode and imperial units for new users.
--   **Manual Input Conversion**: Replaced all data input sliders on the  with manual text fields and removed portion preset buttons.
--   **Input Bug Fixes**: Fixed bugs related to data type mismatches and leading zeros in number inputs on the .
--   **Code Optimization**: Refactored  and  with , , and optimized  hooks to improve performance.
--   **Onboarding Flow**: Implemented a multi-step onboarding experience for new users, including goal setting ().
--   **Public Meal Library**: Created backend routes () and a frontend page ().
--   **Carb Calculation Change**: Switched the entire app from net carbs to total carbs and added explanatory tooltips.
--   **Enhanced Suggestions Page**: Redesigned the page to show personalized recommendations for nutrient deficiencies.
--   **Advanced Food Finding**:
-    -   Added Browse by Category, time-based suggestions, and Recently Logged sections to .
-    -   Added a Log Again button to the .
-    -   Implemented a debounced search autocomplete feature.
--   **Bug Fixes**:
-    -   Resolved an issue where the search autocomplete dropdown would incorrectly overlay search results.
-    -   Fixed a critical backend routing bug in  by reordering routes.
+-   **MyFitnessPal Search Experience**: Implemented a new search page () with instant search, tabs, and tiered results (Best Match, Verified) to mimic MyFitnessPal.
+-   **Dedicated Food Details Page**: Created a mobile-optimized  page and updated the app to navigate to it from search results.
+-   **PWA and Capacitor Setup**: Made the application an installable PWA and set up Capacitor for future native builds.
+-   **Search Ranking and Reliability**: Improved the backend search algorithm to prioritize reliable food sources and added a frontend toggle to include/exclude branded products.
+-   **Scrolling Bug Fix**: Resolved a recurring and critical page scrolling issue.
+-   **Text Contrast Fix**: Corrected low-contrast text on the  page for better readability in light mode.
+-   **Search Performance Improvement**: Reduced the API timeout for a slow third-party service to make search results appear faster.
 
 **Earlier issues found/mentioned but not fixed**
 -   None.
 
 **Known issue recurrence from previous fork**
--   None.
+-   **Scrolling issues**: This has been a recurring problem. The agent fixed it again in this session by modifying CSS layout properties, but any future layout work should be tested carefully for regressions.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Backend**: FastAPI, MongoDB (via ), Pydantic, JWT.
+-   **Backend**: FastAPI, MongoDB (), Pydantic, JWT.
 -   **Frontend**: React, React Router, Context API, Tailwind CSS, Shadcn UI.
--   **Performance**: , ,  for frontend optimization.
--   **State Management**: Mix of  and local string state for controlled form inputs to prevent UI bugs.
--   **API Design**: Importance of specific route ordering before dynamic routes in FastAPI.
+-   **Search Strategy**: Tiered search results (Best Match, Verified, Community) with aggressive ranking for simple, whole foods.
+-   **Mobile App Conversion**:
+    -   **PWA**: Service Workers, Web App Manifest.
+    -   **Capacitor**: Configuration for wrapping a React app into a native shell.
+-   **UI/UX**: Debounced instant search, mobile-first navigation, responsive design.
 
 **key DB schema**
--   **users**: 
--   **meals**:  (New collection)
--   **custom_foods**: 
+-   No changes made in this session.
 
 **changes in tech stack**
--   None.
+-   **Capacitor**: Added for native app wrapping.
 
 **All files of reference**
--   : **(Crucial)** Contains the search logic currently being modified for ranking.
--   : A large, complex component that orchestrates all food finding features.
--   : Contains the refactored form logic with manual inputs.
--   : Contains the new endpoints for categories/suggestions and the corrected route order.
--   : The new user onboarding flow.
--   : The new public meal library UI.
+-   : The new, primary search component.
+-   : Contains the updated search logic with tiered ranking and API timeouts.
+-   : The mobile-optimized food details page.
+-   : Contains critical CSS fixes for the recurring scrolling issue.
+-   , : Core files for the PWA functionality.
+-   , : Key files for the native app build process.
 
 **Areas that need refactoring**:
--    remains very large and handles many distinct responsibilities (autocomplete, category browsing, recents, search results). It should be broken down into smaller, self-contained components to improve maintainability.
--    uses numerous  hooks for its form. It could be simplified using a  hook or a form library like  to manage form state more cleanly.
+-   The old search component, , is now unused and should be deleted to avoid confusion.
+-   The CSS for the main layout has proven fragile regarding scrolling. A holistic review of  and  could create a more robust structure.
 
 **key api endpoints**
--    (GET): Being updated to return ranked results.
--    (GET): New endpoint for browsing food categories.
--    (GET): New endpoint for meal-time suggestions.
--    (GET): Fetches meals for the public library.
--    (POST): Marks the user's onboarding as finished.
+-   : The  query parameter now defaults to . The response structure was updated to include a  for each food item.
 
 **Critical Info for New Agent**
--   Your first priority is to complete the search ranking feature in .
--   After implementing the search ranking, you must proactively propose the AI features the user inquired about. This is a key interest for the user and should be the next major focus.
--   Be mindful that  is a very complex component. Any changes there should be made carefully. Consider small refactors if you need to modify its logic significantly.
+-   Your first priority is to fix the missing camera button on the barcode scanning page. This is a user-facing bug on a key feature.
+-   The user has been sensitive to scrolling issues. Any layout changes must be thoroughly tested for scrolling on mobile viewports.
+-   After the bug fix, the next major task is to execute the Capacitor build process to provide the user with the native app files they requested.
+-   The Open Food Facts API is a known performance bottleneck. The current 3-second timeout is a temporary fix.
 
 **documents and test reports created in this job**
--    (updated multiple times to reflect new features and priorities)
--   Multiple test reports in  confirming stability of new features like onboarding and manual inputs.
+-   
+-    (updated)
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  ****: User requested the final quick win search features and asked about AI capabilities. (Status: Quick wins done, AI proposal pending).
-2.  ****: User reported a bug with the search autocomplete overlaying results. (Status: **RESOLVED**).
-3.  ****: User's latest request, which is the current . (Status: **IN PROGRESS**).
+1.  ****: User reports the camera is missing from the barcode scan page. (PENDING)
+2.  ****: User confirms scrolling is still broken after a previous fix attempt. (RESOLVED)
+3.  ****: User reports the new search page doesn't scroll. (RESOLVED)
+4.  ****: User clarifies they want MyFitnessPal's backend search logic and result ranking, not just the UI. (RESOLVED)
+5.  ****: User requests a full search experience clone of MyFitnessPal. (RESOLVED)
+6.  ****: User confirms they want to filter out unreliable/stale food search results by default. (RESOLVED)
+7.  ****: User reports an issue where clicking a search result leads to Not Found. (RESOLVED)
+8.  ****: User reports unreadable text in light mode. (RESOLVED)
+9.  ****: User reports scrolling is broken after PWA changes. (RESOLVED)
+10. ****: User confirms they want both PWA enhancements (A) and native app builds via Capacitor (B). (A is DONE, B is IN PROGRESS - setup complete, builds pending).
 
 **Project Health Check:**
--   **Working**: All core application features, including the newly added onboarding, manual inputs, meal library, and enhanced search/suggestion pages.
--   **Broken**: Search result ranking is incomplete. Results are currently unsorted.
+-   **Working**: All core application features, including the new MyFitnessPal-style search, PWA functionality, and mobile-optimized layouts.
+-   **Broken**: The barcode scanning feature is unusable because the camera button is missing.
 -   **Mocked**: None.
 
 **3rd Party Integrations**
 -   **USDA FoodData Central**: For foundational food and nutrient data.
--   **Open Food Facts**: To supplement the database with branded products.
--   **Quagga2**: A frontend library for barcode scanning functionality.
+-   **Open Food Facts**: To supplement the database with branded products. (Known to be slow).
+-   **Quagga2**: For barcode scanning (currently broken on the frontend).
+-   **Capacitor**: For wrapping the React app into native mobile applications.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES, multiple times for onboarding, manual inputs, and other features.
+-   **Testing agent used after significant changes**: YES, for the mobile-optimized food details flow.
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: None.
--   **Known regressions**: None.
+-   **Known regressions**: Page scrolling has been a recurring issue that has required multiple fixes.
 
 **Credentials to test flow:**
 -   Email: 
 -   Password: 
 
 **What agent forgot to execute**
--   The agent was sidetracked by bug fixes and did not get to formally propose the AI features the user asked about. This should be the next action item after completing the current search ranking task.</analysis>
+-   The agent completed the setup for Capacitor (Part B of the user's request) but did not proceed to the final step of actually building the native application files for iOS and Android. This task remains outstanding.
+-   The agent proposed AI features, but the user pivoted to other tasks. This proposal should be re-surfaced once current high-priority tasks are complete.</analysis>

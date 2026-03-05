@@ -9,7 +9,7 @@ import uuid
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL')
 if not BASE_URL:
-    BASE_URL = "https://nutrition-labs-1.preview.emergentagent.com"
+    BASE_URL = "https://macro-logger-6.preview.emergentagent.com"
 
 class TestCustomFoodsCRUD:
     """Test custom foods CRUD endpoints"""
