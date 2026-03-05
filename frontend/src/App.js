@@ -21,6 +21,7 @@ import { MealBuilder } from "./pages/MealBuilder";
 import { CustomFoods } from "./pages/CustomFoods";
 import { MealLibrary } from "./pages/MealLibrary";
 import { FoodDetails } from "./pages/FoodDetails";
+import { InstallPrompt } from "./components/InstallPrompt";
 import { Loader2 } from "lucide-react";
 
 // Components
@@ -117,6 +118,7 @@ function App() {
           <AuthProvider>
             <AppRoutes />
             <ThemedToaster />
+            <InstallPrompt />
           </AuthProvider>
         </BrowserRouter>
       </div>

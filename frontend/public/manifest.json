@@ -1,0 +1,85 @@
+{
+  "short_name": "Isotope",
+  "name": "Isotope - Keto Nutrition Tracker",
+  "description": "Track protein intake with amino acid breakdown, fatty acids, and keto scores",
+  "icons": [
+    {
+      "src": "icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#10B981",
+  "background_color": "#050505",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "categories": ["health", "fitness", "food"],
+  "shortcuts": [
+    {
+      "name": "Search Food",
+      "short_name": "Search",
+      "description": "Search for foods to log",
+      "url": "/search",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Food Log",
+      "short_name": "Log",
+      "description": "View your food log",
+      "url": "/log",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Scan Barcode",
+      "short_name": "Scan",
+      "description": "Scan a barcode",
+      "url": "/barcode",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ]
+}

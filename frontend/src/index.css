@@ -19,6 +19,13 @@
     --info: #38BDF8;
     --border-subtle: rgba(255, 255, 255, 0.08);
     --border-active: rgba(255, 255, 255, 0.2);
+    
+    /* PWA/Native app safe areas */
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-inset-left: env(safe-area-inset-left, 0px);
+    --safe-area-inset-right: env(safe-area-inset-right, 0px);
+    --keyboard-height: 0px;
 }
 
 * {
@@ -38,6 +45,27 @@ body {
     background-color: #050505;
     color: #FAFAFA;
     min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile */
+    
+    /* Safe area padding for notched devices */
+    padding-top: var(--safe-area-inset-top);
+    padding-bottom: calc(var(--safe-area-inset-bottom) + var(--keyboard-height));
+    padding-left: var(--safe-area-inset-left);
+    padding-right: var(--safe-area-inset-right);
+    
+    /* Prevent pull-to-refresh on mobile */
+    overscroll-behavior-y: contain;
+    
+    /* Disable text selection on double tap for native feel */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Allow text selection in input fields and text areas */
+input, textarea, [contenteditable="true"] {
+    -webkit-user-select: auto;
+    user-select: auto;
 }
 
 h1, h2, h3, h4, h5, h6 {

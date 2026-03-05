@@ -60,6 +60,24 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 
 ## What's Been Implemented
 
+### March 4, 2026 - PWA & Native App Support
+- **PWA Enhancement**:
+  - Service worker for offline caching (static assets, API responses)
+  - App manifest with app icons, shortcuts, and proper theme colors
+  - Install prompt component (shows after 30s of use)
+  - iOS-specific "Add to Home Screen" instructions
+  - Safe area handling for notched devices
+- **Capacitor Setup for Native Apps**:
+  - iOS and Android build configuration
+  - Native plugins: StatusBar, Keyboard, Haptics, App lifecycle
+  - Build scripts: `yarn build:mobile`, `yarn cap:open:ios/android`
+  - Native app splash screen and status bar customization
+- **Mobile-First CSS**:
+  - Dynamic viewport height (100dvh) for mobile browsers
+  - Safe area insets for notched phones
+  - Keyboard height handling
+  - Touch-optimized interactions
+
 ### March 4, 2026 - Search Ranking & Mobile Optimization
 - **NEW**: Smart Search Result Ranking
   - Prioritizes simple whole foods over complex meals/branded products
