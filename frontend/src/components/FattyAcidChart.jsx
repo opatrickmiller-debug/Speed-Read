@@ -9,6 +9,8 @@ import {
   Cell,
 } from 'recharts';
 import { Droplets } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import { cn } from '../lib/utils';
 
 const ESSENTIAL_FATTY_ACIDS = [
   { name: 'ALA', fullName: 'Alpha-linolenic acid (ALA)', omega: 3 },
@@ -36,6 +38,8 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export const FattyAcidChart = ({ fattyAcids = [], className = '' }) => {
+  const { theme } = useTheme();
+  
   const chartData = ESSENTIAL_FATTY_ACIDS.map((fa) => {
     const found = fattyAcids.find(
       (f) => f.name?.toLowerCase().includes(fa.name.toLowerCase()) || 
@@ -55,21 +59,25 @@ export const FattyAcidChart = ({ fattyAcids = [], className = '' }) => {
     <div className={`w-full h-full min-h-[200px] ${className}`}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={chartData} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
+          <CartesianGrid 
+            strokeDasharray="3 3" 
+            stroke={theme === 'dark' ? '#27272A' : '#E5E7EB'} 
+            vertical={false} 
+          />
           <XAxis 
             dataKey="name" 
             axisLine={false}
             tickLine={false}
-            tick={{ fill: '#A1A1AA', fontSize: 11 }}
+            tick={{ fill: theme === 'dark' ? '#A1A1AA' : '#4B5563', fontSize: 11 }}
           />
           <YAxis 
             domain={[0, maxValue * 1.2]}
             axisLine={false}
             tickLine={false}
-            tick={{ fill: '#71717A', fontSize: 10 }}
+            tick={{ fill: theme === 'dark' ? '#71717A' : '#6B7280', fontSize: 10 }}
             tickFormatter={(v) => `${v.toFixed(1)}g`}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: theme === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }} />
           <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={40}>
             {chartData.map((entry, index) => (
               <Cell 
@@ -86,6 +94,7 @@ export const FattyAcidChart = ({ fattyAcids = [], className = '' }) => {
 };
 
 export const FattyAcidList = ({ fattyAcids = [], showAll = false }) => {
+  const { theme } = useTheme();
   const essentialFAs = fattyAcids.filter((fa) => fa.is_essential);
   const nonEssentialFAs = fattyAcids.filter((fa) => !fa.is_essential);
   
@@ -93,7 +102,10 @@ export const FattyAcidList = ({ fattyAcids = [], showAll = false }) => {
 
   if (displayFAs.length === 0) {
     return (
-      <div className="text-center py-4 text-zinc-500 text-sm">
+      <div className={cn(
+        "text-center py-4 text-sm",
+        theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+      )}>
         No fatty acid data available
       </div>
     );
@@ -104,30 +116,47 @@ export const FattyAcidList = ({ fattyAcids = [], showAll = false }) => {
       {displayFAs.map((fa, idx) => (
         <div
           key={fa.name || idx}
-          className="flex items-center justify-between py-2 border-b border-white/5 last:border-0"
+          className={cn(
+            "flex items-center justify-between py-2 border-b last:border-0",
+            theme === 'dark' ? 'border-white/5' : 'border-gray-200'
+          )}
         >
           <div className="flex items-center gap-2">
             <div
               className={`w-2 h-2 rounded-full ${
-                fa.omega_type === 3 ? 'bg-cyan-400' : fa.omega_type === 6 ? 'bg-amber-400' : 'bg-zinc-400'
+                fa.omega_type === 3 ? 'bg-cyan-500' : fa.omega_type === 6 ? 'bg-amber-500' : 'bg-gray-400'
               }`}
             />
-            <span className="text-sm text-zinc-300">{fa.name}</span>
+            <span className={cn(
+              "text-sm font-medium",
+              theme === 'dark' ? 'text-zinc-200' : 'text-gray-800'
+            )}>
+              {fa.name}
+            </span>
             {fa.omega_type && (
-              <span className={`text-[10px] uppercase tracking-wider font-bold ${
-                fa.omega_type === 3 ? 'text-cyan-400/70' : 'text-amber-400/70'
-              }`}>
+              <span className={cn(
+                "text-[10px] uppercase tracking-wider font-bold",
+                fa.omega_type === 3 
+                  ? (theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600')
+                  : (theme === 'dark' ? 'text-amber-400' : 'text-amber-600')
+              )}>
                 Omega-{fa.omega_type}
               </span>
             )}
           </div>
-          <span className="text-sm font-mono text-white">
+          <span className={cn(
+            "text-sm font-mono font-semibold",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
             {fa.value?.toFixed(3) || '0.000'}g
           </span>
         </div>
       ))}
       {!showAll && nonEssentialFAs.length > 0 && (
-        <p className="text-xs text-zinc-600 pt-2">
+        <p className={cn(
+          "text-xs pt-2",
+          theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+        )}>
           +{nonEssentialFAs.length} other fatty acids
         </p>
       )}
@@ -136,6 +165,7 @@ export const FattyAcidList = ({ fattyAcids = [], showAll = false }) => {
 };
 
 export const OmegaSummary = ({ omega3Total = 0, omega6Total = 0, omegaRatio }) => {
+  const { theme } = useTheme();
   const hasData = omega3Total > 0 || omega6Total > 0;
   
   // Calculate ratio value for display
@@ -153,37 +183,67 @@ export const OmegaSummary = ({ omega3Total = 0, omega6Total = 0, omegaRatio }) =
     }
   }
 
+  const getBackgroundClass = () => {
+    if (!hasData) {
+      return theme === 'dark' 
+        ? 'bg-zinc-800/50 border border-zinc-700/50' 
+        : 'bg-gray-100 border border-gray-200';
+    }
+    if (ratioStatus === 'good') {
+      return theme === 'dark'
+        ? 'bg-cyan-500/10 border border-cyan-500/20'
+        : 'bg-cyan-50 border border-cyan-200';
+    }
+    if (ratioStatus === 'moderate') {
+      return theme === 'dark'
+        ? 'bg-amber-500/10 border border-amber-500/20'
+        : 'bg-amber-50 border border-amber-200';
+    }
+    return theme === 'dark'
+      ? 'bg-red-500/10 border border-red-500/20'
+      : 'bg-red-50 border border-red-200';
+  };
+
   return (
-    <div className={`p-4 rounded-xl ${
-      !hasData ? 'bg-zinc-800/50 border border-zinc-700/50' :
-      ratioStatus === 'good' ? 'bg-cyan-500/10 border border-cyan-500/20' :
-      ratioStatus === 'moderate' ? 'bg-amber-500/10 border border-amber-500/20' :
-      'bg-red-500/10 border border-red-500/20'
-    }`}>
+    <div className={`p-4 rounded-xl ${getBackgroundClass()}`}>
       <div className="flex items-center gap-3 mb-3">
         <Droplets className={`w-5 h-5 ${
-          !hasData ? 'text-zinc-500' :
-          ratioStatus === 'good' ? 'text-cyan-400' :
-          ratioStatus === 'moderate' ? 'text-amber-400' : 'text-red-400'
+          !hasData ? (theme === 'dark' ? 'text-zinc-500' : 'text-gray-400') :
+          ratioStatus === 'good' ? 'text-cyan-500' :
+          ratioStatus === 'moderate' ? 'text-amber-500' : 'text-red-500'
         }`} />
-        <span className="text-white font-semibold">Essential Fatty Acids</span>
+        <span className={cn(
+          "font-semibold",
+          theme === 'dark' ? 'text-white' : 'text-gray-900'
+        )}>
+          Essential Fatty Acids
+        </span>
       </div>
       
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <p className="text-xs text-zinc-500 mb-1">Omega-3</p>
-          <p className="text-lg font-semibold text-cyan-400">{omega3Total.toFixed(2)}g</p>
+          <p className={cn(
+            "text-xs mb-1",
+            theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+          )}>Omega-3</p>
+          <p className="text-lg font-semibold text-cyan-500">{omega3Total.toFixed(2)}g</p>
         </div>
         <div>
-          <p className="text-xs text-zinc-500 mb-1">Omega-6</p>
-          <p className="text-lg font-semibold text-amber-400">{omega6Total.toFixed(2)}g</p>
+          <p className={cn(
+            "text-xs mb-1",
+            theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+          )}>Omega-6</p>
+          <p className="text-lg font-semibold text-amber-500">{omega6Total.toFixed(2)}g</p>
         </div>
         <div>
-          <p className="text-xs text-zinc-500 mb-1">Ratio (ω3:ω6)</p>
+          <p className={cn(
+            "text-xs mb-1",
+            theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+          )}>Ratio (ω3:ω6)</p>
           <p className={`text-lg font-semibold ${
-            !hasData ? 'text-zinc-500' :
-            ratioStatus === 'good' ? 'text-cyan-400' :
-            ratioStatus === 'moderate' ? 'text-amber-400' : 'text-red-400'
+            !hasData ? (theme === 'dark' ? 'text-zinc-500' : 'text-gray-400') :
+            ratioStatus === 'good' ? 'text-cyan-500' :
+            ratioStatus === 'moderate' ? 'text-amber-500' : 'text-red-500'
           }`}>
             {ratioDisplay}
           </p>
@@ -192,8 +252,8 @@ export const OmegaSummary = ({ omega3Total = 0, omega6Total = 0, omegaRatio }) =
       
       {hasData && (
         <p className={`text-xs mt-3 ${
-          ratioStatus === 'good' ? 'text-cyan-400/70' :
-          ratioStatus === 'moderate' ? 'text-amber-400/70' : 'text-red-400/70'
+          ratioStatus === 'good' ? 'text-cyan-600' :
+          ratioStatus === 'moderate' ? 'text-amber-600' : 'text-red-600'
         }`}>
           {ratioStatus === 'good' ? 'Excellent omega balance! (ideal: 1:4 or lower)' :
            ratioStatus === 'moderate' ? 'Moderate ratio - consider more omega-3' :
