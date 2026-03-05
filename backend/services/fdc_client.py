@@ -79,10 +79,19 @@ class FDCClient:
                     )
                     response.raise_for_status()
                     data = response.json()
+                    
+                    # Batch endpoint can return list or empty dict
                     if isinstance(data, list) and len(data) > 0:
                         result = data[0]
                         _food_cache[fdc_id] = result
                         return result
+                    elif isinstance(data, dict) and data:
+                        # If it returns a dict with data (some API versions)
+                        _food_cache[fdc_id] = data
+                        return data
+                    
+                    # Food ID doesn't exist in USDA database
+                    logger.warning(f"Food {fdc_id} not found in USDA database")
                     return None
                 except (httpx.HTTPError, ValueError) as e:
                     logger.error(f"FDC details error for {fdc_id}: {e}")
