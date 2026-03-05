@@ -61,6 +61,26 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 
 ## What's Been Implemented
 
+### March 5, 2026 - Debug & Optimization Pass
+- **FIXED**: USDA FDC API 404 errors for food details
+  - Added fallback to batch endpoint when single food endpoint returns 404
+  - In-memory caching for food details (500 items max)
+  - Better error handling for API failures
+- **FIXED**: Missing calories in search results
+  - Search now returns `calories_per_100g` along with `protein_per_100g`
+  - Results display "224 cal · 24g protein" format
+- **FIXED**: Food click navigation
+  - Entire food row is now clickable (not just text area)
+  - Improved touch targets for mobile users
+- **NEW**: Meal Type Selector on Search Page
+  - Breakfast, Lunch, Dinner, Snack buttons at top of search
+  - Selected meal highlighted in green
+  - URL param updates for meal persistence
+- **CODE CLEANUP**: 
+  - Fixed unused exception variables in Python
+  - Added eslint-disable for intentional hook dependency omissions
+  - Linting passes for both backend and frontend
+
 ### March 5, 2026 - Camera Button Fix & Cleanup
 - **FIXED**: Missing Camera Button on Barcode Scanner Page
   - Redesigned barcode scanner page with prominent camera button
@@ -365,9 +385,10 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - `/api/keto-score` - Keto score calculation
 
 ## Test Reports
-- Latest: `/app/test_reports/iteration_13.json`
-- Barcode Scanner: 100% (22 tests passed - camera button, manual input, API, scrolling, themes)
-- Frontend: 100% (Theme toggle, portion presets, caching all working)
+- Latest: `/app/test_reports/iteration_14.json`
+- Backend: 100% (15/15 pytest tests passed)
+- Frontend: 100% (all Playwright tests passed)
+- Food Search/Details: All tests passing with caching verified
 
 ## Known Issues & Monitoring
 - **Scrolling**: Has been a recurring issue. Current CSS fixes in `index.css` and `Layout.jsx` should be monitored during future layout changes.
