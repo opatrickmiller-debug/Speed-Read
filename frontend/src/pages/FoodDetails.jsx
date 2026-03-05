@@ -35,6 +35,8 @@ export const FoodDetails = () => {
   const [servings, setServings] = useState(1);
   const [mealType, setMealType] = useState('snack');
 
+  const [notFoundError, setNotFoundError] = useState(false);
+
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -46,6 +48,7 @@ export const FoodDetails = () => {
       if (!fdcId) return;
       
       setLoading(true);
+      setNotFoundError(false);
       try {
         const [detailsRes, favRes] = await Promise.all([
           foodsApi.getDetails(fdcId),
@@ -56,7 +59,8 @@ export const FoodDetails = () => {
         setFavoriteId(favRes.data.favorite_id);
       } catch (err) {
         if (err.response?.status === 404) {
-          toast.error('Food not found. It may have been removed.');
+          setNotFoundError(true);
+          toast.error('Food not found. It may have been removed from the database.');
         } else {
           toast.error('Failed to load food details. Please try again.');
         }
@@ -401,6 +405,34 @@ export const FoodDetails = () => {
                 </div>
               )}
             </GlassCardContent>
+          </GlassCard>
+        ) : notFoundError ? (
+          <GlassCard className="min-h-[300px] flex items-center justify-center">
+            <div className="text-center px-6">
+              <AlertTriangle className={cn(
+                "w-12 h-12 mx-auto mb-4",
+                theme === 'dark' ? 'text-amber-500' : 'text-amber-500'
+              )} />
+              <p className={cn(
+                "text-lg font-semibold mb-2",
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              )}>
+                Food Not Found
+              </p>
+              <p className={cn(
+                "text-sm mb-4",
+                theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+              )}>
+                This item may have been removed from the USDA database. 
+                Please search for a similar food.
+              </p>
+              <button
+                onClick={handleBack}
+                className="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-6 py-2.5 rounded-xl transition-colors"
+              >
+                Search Again
+              </button>
+            </div>
           </GlassCard>
         ) : (
           <GlassCard className="min-h-[300px] flex items-center justify-center">

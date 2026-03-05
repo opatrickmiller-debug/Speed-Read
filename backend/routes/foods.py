@@ -579,7 +579,11 @@ async def get_food_details(fdc_id: str, current_user: dict = Depends(get_current
     # Handle USDA foods
     food_data = await fdc_client.get_food_details(fdc_id)
     if not food_data:
-        raise HTTPException(status_code=404, detail="Food not found in USDA database")
+        # Try to provide a helpful error message
+        raise HTTPException(
+            status_code=404, 
+            detail="Food not found. This item may have been removed from the USDA database. Please search again for similar foods."
+        )
     
     food_detail = fdc_client.parse_food_detail(food_data)
     
