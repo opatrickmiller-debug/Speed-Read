@@ -226,44 +226,77 @@ async def search_foods(
         all_results.extend(custom_results)
     
     # ==================== SMART RANKING ====================
-    # Prioritize: simple whole foods > complex meals > obscure products
+    # Prioritize: exact matches > simple whole foods > complex meals > obscure products
     
     def calculate_relevance_score(food, search_query):
         """
-        Score foods to prioritize simple, whole foods over complex/obscure meals.
+        Score foods to prioritize relevant matches over unrelated foods.
         Higher score = more relevant = appears first.
         
         Scoring breakdown:
-        - Exact/prefix match: +100-80 points
+        - Exact/phrase match: +200-100 points (HIGHEST PRIORITY)
+        - All query words present: +80-50 points
         - Simplicity (word count): +60 to 0 points  
         - Data source quality: +70 to +5 points
         - Amino acid data: +30 points
         - High protein: +15 points
-        - Complex/branded penalty: -15 to -20 points
+        - Complex/branded penalty: -15 to -40 points
+        - UNRELATED penalty: -100 points
         """
         score = 0
         description = food.get("description", "").lower()
         query_lower = search_query.lower().strip()
-        query_words = query_lower.split()
+        query_words = [w for w in query_lower.split() if len(w) > 1]  # Ignore single chars
         
         # Clean description for matching (remove parentheses content)
         desc_clean = description.split(',')[0].strip()
+        desc_words = description.replace(',', ' ').lower().split()
         
-        # 1. EXACT MATCH BONUS (highest priority)
-        if desc_clean == query_lower:
-            score += 150  # Perfect exact match
+        # ===== 1. MATCH QUALITY (HIGHEST PRIORITY) =====
+        
+        # Check if ALL query words are present in description
+        words_found = sum(1 for word in query_words if word in description)
+        words_ratio = words_found / len(query_words) if query_words else 0
+        
+        # CRITICAL: If less than half of query words match, heavily penalize
+        if words_ratio < 0.5:
+            score -= 150  # Strong penalty for unrelated foods
+        elif words_ratio < 1.0:
+            score -= 50   # Moderate penalty for partial matches
+        
+        # Exact phrase matching
+        if query_lower in description:
+            score += 200  # Exact phrase found
+        elif desc_clean == query_lower:
+            score += 180  # Perfect exact match on first part
         elif description.startswith(query_lower):
-            score += 100  # Starts with query
-        elif desc_clean.startswith(query_lower):
-            score += 90   # First part starts with query
-        elif query_lower in desc_clean:
-            score += 70   # Query in first part of description
-        elif all(word in description for word in query_words):
-            score += 50   # All query words present
+            score += 150  # Starts with query
+        elif desc_clean.startswith(query_words[0] if query_words else ""):
+            score += 100  # First word matches start
         
-        # 2. SIMPLICITY SCORE - fewer words = simpler food (more aggressive)
-        # Count words excluding common qualifiers
-        word_count = len(description.replace(',', ' ').split())
+        # Check for reordered match (e.g., "scrambled eggs" matches "Eggs, scrambled")
+        if len(query_words) >= 2:
+            # Check if all words appear in either order
+            if all(word in description for word in query_words):
+                # Bonus if words appear close together
+                first_word_pos = description.find(query_words[0])
+                last_word_pos = description.find(query_words[-1])
+                if first_word_pos >= 0 and last_word_pos >= 0:
+                    distance = abs(last_word_pos - first_word_pos)
+                    if distance < 30:  # Words are close together
+                        score += 120
+                    else:
+                        score += 60
+        
+        # Single word query bonus for exact start match
+        if len(query_words) == 1:
+            if desc_clean.startswith(query_words[0]):
+                score += 100
+            elif any(word.startswith(query_words[0]) for word in desc_words[:3]):
+                score += 70  # First 3 words start with query
+        
+        # 2. SIMPLICITY SCORE - fewer words = simpler food
+        word_count = len(desc_words)
         if word_count <= 2:
             score += 60  # Very simple: "Chicken breast", "Eggs"
         elif word_count <= 3:
@@ -274,7 +307,7 @@ async def search_foods(
             score += 15  # Acceptable complexity
         # 7+ words = complex, no bonus
         
-        # 3. DATA SOURCE QUALITY (rebalanced for better whole food ranking)
+        # 3. DATA SOURCE QUALITY
         source = food.get("source", "")
         data_type = food.get("data_type", "")
         
