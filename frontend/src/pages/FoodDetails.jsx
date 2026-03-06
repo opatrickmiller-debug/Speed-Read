@@ -33,7 +33,10 @@ export const FoodDetails = () => {
   const [favoriteId, setFavoriteId] = useState(null);
   const [logDialogOpen, setLogDialogOpen] = useState(false);
   const [servings, setServings] = useState(1);
-  const [mealType, setMealType] = useState('snack');
+  
+  // Get meal type from URL params
+  const urlParams = new URLSearchParams(location.search);
+  const [mealType, setMealType] = useState(urlParams.get('meal') || 'snack');
 
   const [notFoundError, setNotFoundError] = useState(false);
 
@@ -72,13 +75,21 @@ export const FoodDetails = () => {
     loadFoodDetails();
   }, [fdcId]);
 
+  // Get search query from URL params to pass back
+  const searchParams = new URLSearchParams(location.search);
+  const searchQuery = searchParams.get('q');
+  const mealParam = searchParams.get('meal') || 'snack';
+
   const handleBack = () => {
-    // Check if we came from search or another page
-    if (location.state?.from) {
-      navigate(location.state.from);
-    } else {
-      navigate('/search');
+    // Build the return URL with preserved search query and meal
+    let returnUrl = '/search';
+    const params = new URLSearchParams();
+    params.set('meal', mealParam);
+    if (searchQuery) {
+      params.set('q', searchQuery);
     }
+    returnUrl += '?' + params.toString();
+    navigate(returnUrl);
   };
 
   const handleAddToLog = async () => {

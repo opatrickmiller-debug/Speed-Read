@@ -53,19 +53,24 @@ export const FoodSearch = () => {
   const [selectedMeal, setSelectedMeal] = useState(searchParams.get('meal') || 'snack');
   const inputRef = useRef(null);
   
-  // Update URL when meal changes
+  // Get initial query from URL params (for back navigation)
+  const initialQuery = searchParams.get('q') || '';
+  
+  // Update URL when meal changes (preserve query)
   const handleMealChange = (meal) => {
     setSelectedMeal(meal);
-    setSearchParams({ meal });
+    const newParams = { meal };
+    if (query) newParams.q = query;
+    setSearchParams(newParams);
   };
   
-  // Search state
-  const [query, setQuery] = useState('');
+  // Search state - initialize from URL
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   
   // Tabs: recent, frequent, all
-  const [activeTab, setActiveTab] = useState('recent');
+  const [activeTab, setActiveTab] = useState(initialQuery ? 'all' : 'recent');
   const [recentFoods, setRecentFoods] = useState([]);
   const [frequentFoods, setFrequentFoods] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -147,13 +152,21 @@ export const FoodSearch = () => {
     loadHistory();
   }, []);
 
-  // Auto-search when query changes
+  // Auto-search when query changes and update URL
   useEffect(() => {
     if (debouncedQuery.length >= 2) {
       performSearch(debouncedQuery);
+      // Update URL with search query (preserve meal)
+      setSearchParams({ meal: selectedMeal, q: debouncedQuery });
+      setActiveTab('all');
     } else {
       setResults([]);
+      // Clear query from URL when empty
+      if (searchParams.get('q')) {
+        setSearchParams({ meal: selectedMeal });
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQuery]);
 
   const performSearch = async (searchQuery) => {
@@ -170,8 +183,12 @@ export const FoodSearch = () => {
 
   const handleSelectFood = useCallback((food) => {
     const fdcId = food.fdc_id || food.id;
-    navigate(`/food/${encodeURIComponent(fdcId)}?meal=${selectedMeal}`, { state: { from: '/search' } });
-  }, [navigate, selectedMeal]);
+    // Include search query in URL so we can return to it
+    const returnQuery = query ? `&q=${encodeURIComponent(query)}` : '';
+    navigate(`/food/${encodeURIComponent(fdcId)}?meal=${selectedMeal}${returnQuery}`, { 
+      state: { from: '/search', searchQuery: query } 
+    });
+  }, [navigate, selectedMeal, query]);
 
   const handleQuickLog = async (food) => {
     try {
