@@ -6,6 +6,7 @@ import asyncio
 from core.database import db
 from core.security import get_current_user
 from services.fdc_client import fdc_client
+from routes.popularity import get_popular_foods, track_food_selection
 
 router = APIRouter(prefix="/foods", tags=["Foods"])
 
@@ -117,6 +118,9 @@ async def search_foods(
     """
     source = source or "all"
     all_results = []
+    
+    # Get popularity scores for ranking boost
+    popularity_scores = await get_popular_foods(200)
     
     # Build tasks for parallel execution
     async def safe_search(name, coro):
@@ -365,6 +369,11 @@ async def search_foods(
             if indicator in description:
                 score += 10
                 break
+        
+        # 9. POPULARITY BONUS - boost foods that users frequently select/log
+        food_id = str(food.get("fdc_id") or food.get("id", ""))
+        popularity_boost = popularity_scores.get(food_id, 0)
+        score += popularity_boost  # Up to +50 for very popular foods
         
         return score
     

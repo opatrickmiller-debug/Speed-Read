@@ -114,4 +114,11 @@ export const customFoodsApi = {
   delete: (foodId) => api.delete(`/custom-foods/${foodId}`),
 };
 
+// Popularity tracking
+export const popularityApi = {
+  trackSelection: (foodId, description, source = 'usda') => 
+    api.post(`/popularity/track-selection?food_id=${foodId}&description=${encodeURIComponent(description)}&source=${source}`),
+  getTopFoods: (limit = 20) => api.get(`/popularity/top-foods?limit=${limit}`),
+};
+
 export default api;

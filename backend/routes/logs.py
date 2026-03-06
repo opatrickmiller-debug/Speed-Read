@@ -5,6 +5,7 @@ import uuid
 from core.database import db
 from core.security import get_current_user
 from models.food import FoodLogCreate, FoodLogResponse
+from routes.popularity import track_food_log
 
 router = APIRouter(prefix="/logs", tags=["Food Logs"])
 
@@ -35,6 +36,9 @@ async def create_food_log(log_data: FoodLogCreate, current_user: dict = Depends(
     }
     
     await db.food_logs.insert_one(log_doc)
+    
+    # Track food popularity for search ranking
+    await track_food_log(log_data.fdc_id, log_data.description, "usda")
     
     return FoodLogResponse(
         id=log_id,

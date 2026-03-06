@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { Input } from '../components/ui/input';
-import { foodsApi, logsApi } from '../lib/api';
+import { foodsApi, logsApi, popularityApi } from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { cn } from '../lib/utils';
 import { 
@@ -183,6 +183,10 @@ export const FoodSearch = () => {
 
   const handleSelectFood = useCallback((food) => {
     const fdcId = food.fdc_id || food.id;
+    
+    // Track food selection for popularity ranking (fire and forget)
+    popularityApi.trackSelection(fdcId, food.description, food.source || 'usda').catch(() => {});
+    
     // Include search query in URL so we can return to it
     const returnQuery = query ? `&q=${encodeURIComponent(query)}` : '';
     navigate(`/food/${encodeURIComponent(fdcId)}?meal=${selectedMeal}${returnQuery}`, { 
