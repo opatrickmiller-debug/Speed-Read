@@ -64,20 +64,29 @@ async def get_daily_stats(
 async def get_weekly_stats(current_user: dict = Depends(get_current_user)):
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     week_start = today - timedelta(days=6)
+    week_end = today + timedelta(days=1)
     
+    # Single query for all week's data (optimized from N+1 pattern)
+    all_logs = await db.food_logs.find({
+        "user_id": current_user["id"],
+        "logged_at": {"$gte": week_start.isoformat(), "$lt": week_end.isoformat()}
+    }, {"_id": 0}).to_list(1000)
+    
+    # Group logs by date in application code
+    logs_by_date = {}
+    for log in all_logs:
+        log_date = log.get("logged_at", "")[:10]  # Extract YYYY-MM-DD
+        if log_date not in logs_by_date:
+            logs_by_date[log_date] = []
+        logs_by_date[log_date].append(log)
+    
+    # Build daily stats
     daily_stats = []
     for i in range(7):
         day = week_start + timedelta(days=i)
         date_str = day.strftime("%Y-%m-%d")
         
-        start = day
-        end = day + timedelta(days=1)
-        
-        logs = await db.food_logs.find({
-            "user_id": current_user["id"],
-            "logged_at": {"$gte": start.isoformat(), "$lt": end.isoformat()}
-        }, {"_id": 0}).to_list(500)
-        
+        logs = logs_by_date.get(date_str, [])
         total_protein = sum(log.get("protein", 0) * log.get("servings", 1) for log in logs)
         total_calories = sum(log.get("calories", 0) * log.get("servings", 1) for log in logs)
         
