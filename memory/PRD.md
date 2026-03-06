@@ -61,6 +61,15 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 
 ## What's Been Implemented
 
+### March 6, 2026 - Native App Build Setup Complete
+- **COMPLETED**: Capacitor native app setup for iOS and Android
+  - Added iOS platform (`/app/frontend/ios/`)
+  - Added Android platform (`/app/frontend/android/`)
+  - All 4 Capacitor plugins synced (app, haptics, keyboard, status-bar)
+  - Created `README-NATIVE.md` with complete build instructions
+  - NPM scripts added: `cap:sync`, `cap:open:ios`, `cap:open:android`, `build:mobile`
+- **Search State Persistence**: Users now return to their search results when navigating back from food details
+
 ### March 5, 2026 - Debug & Optimization Pass
 - **FIXED**: USDA FDC API 404 errors for food details
   - Added fallback to batch endpoint when single food endpoint returns 404
@@ -335,11 +344,11 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 
 ### P0 - Critical
 - [x] Fix camera button on barcode scanner page (DONE - March 5, 2026)
+- [x] Native App Builds via Capacitor (DONE - March 6, 2026)
 
 ### P1 - High Priority
-- [ ] **Create Native App Builds with Capacitor** - Run build process to generate iOS/Android packages
-- [ ] Voice Search - "Add 2 eggs" style voice input
-- [ ] AI-Powered Features:
+- [ ] **Voice Search** - "Add 2 eggs" style voice input
+- [ ] **AI-Powered Features**:
   - AI Meal Planner - Generate full day/week of keto-friendly meals
   - "Snap a Pic" Food Logging - Image recognition to identify food
   - Conversational AI Coach - Chatbot for nutrition questions
