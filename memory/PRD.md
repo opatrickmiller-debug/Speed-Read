@@ -61,6 +61,37 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 
 ## What's Been Implemented
 
+### March 7, 2026 - MyFitnessPal-Style Portion Selection UI
+- **REDESIGNED**: FoodDetails page with MyFitnessPal-style interface
+  - Clean "Add Food" header with back arrow and checkmark confirm button
+  - Food title with source badge (USDA, Open Food Facts, Custom)
+  - Settings-style row layout: Meal, Number of Servings, Serving Size, Nutrition Details
+  - Each row is tappable to open its respective modal
+  - Favorite button (heart icon) next to food title
+- **NEW**: "How Much?" Portion Modal
+  - Quantity input with "Serving(s) of" label
+  - Scrollable list of portion options: default serving, gram, ounce, pound, kilogram, teaspoon, tablespoon, cup
+  - Default serving highlighted with "Default serving" label
+  - Selected option highlighted in green
+  - Cancel/Save buttons at bottom
+- **NEW**: Circular Macro Display (MyFitnessPal style)
+  - Donut chart with calories in center
+  - Color-coded segments: Cyan (Carbs), Fuchsia (Fat), Amber (Protein)
+  - Percentage breakdown next to chart showing actual grams
+- **NEW**: Meal Selection Modal
+  - Clean list with Breakfast, Lunch, Dinner, Snack options
+  - Checkmark indicator for selected meal
+  - Instant selection (no save button needed)
+- **NEW**: Nutrition Details Modal
+  - Full macro grid (Protein, Calories, Fat, Carbs)
+  - Protein quality status (complete/incomplete)
+  - Amino acid radar chart and breakdown (when available)
+  - Fatty acid profile and omega ratio (when available)
+- **IMPROVED**: Dynamic portion calculation
+  - Nutrition recalculates live as portion changes
+  - "Add to [Meal]" button shows selected meal type
+  - Checkmark in header confirms and navigates back to search
+
 ### March 6, 2026 - Native App Build Setup Complete
 - **COMPLETED**: Capacitor native app setup for iOS and Android
   - Added iOS platform (`/app/frontend/ios/`)
