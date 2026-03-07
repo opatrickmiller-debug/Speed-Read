@@ -623,6 +623,145 @@ export const FoodDetails = () => {
           </DialogHeader>
           
           <div className="px-6 py-4">
+            {/* Quick Presets */}
+            <div className="mb-4">
+              <p className={cn(
+                "text-xs uppercase tracking-wider mb-2",
+                theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+              )}>Quick Select</p>
+              <div className="flex flex-wrap gap-2">
+                {/* Dynamic presets based on selected portion type */}
+                {tempSelectedPortion?.id === 'serving' && [0.5, 1, 1.5, 2, 3].map(val => (
+                  <button
+                    key={val}
+                    onClick={() => setTempPortionAmount(val)}
+                    className={cn(
+                      "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      tempPortionAmount === val
+                        ? 'bg-emerald-500 text-black'
+                        : theme === 'dark'
+                          ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    )}
+                  >
+                    {val === 0.5 ? '½' : val === 1.5 ? '1½' : val} srv
+                  </button>
+                ))}
+                {tempSelectedPortion?.id === 'gram' && [50, 100, 150, 200, 250].map(val => (
+                  <button
+                    key={val}
+                    onClick={() => setTempPortionAmount(val)}
+                    className={cn(
+                      "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      tempPortionAmount === val
+                        ? 'bg-emerald-500 text-black'
+                        : theme === 'dark'
+                          ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    )}
+                  >
+                    {val}g
+                  </button>
+                ))}
+                {tempSelectedPortion?.id === 'ounce' && [1, 2, 3, 4, 6, 8].map(val => (
+                  <button
+                    key={val}
+                    onClick={() => setTempPortionAmount(val)}
+                    className={cn(
+                      "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      tempPortionAmount === val
+                        ? 'bg-emerald-500 text-black'
+                        : theme === 'dark'
+                          ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    )}
+                  >
+                    {val} oz
+                  </button>
+                ))}
+                {tempSelectedPortion?.id === 'cup' && [0.25, 0.5, 0.75, 1, 1.5, 2].map(val => (
+                  <button
+                    key={val}
+                    onClick={() => setTempPortionAmount(val)}
+                    className={cn(
+                      "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      tempPortionAmount === val
+                        ? 'bg-emerald-500 text-black'
+                        : theme === 'dark'
+                          ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    )}
+                  >
+                    {val === 0.25 ? '¼' : val === 0.5 ? '½' : val === 0.75 ? '¾' : val === 1.5 ? '1½' : val} cup
+                  </button>
+                ))}
+                {tempSelectedPortion?.id === 'tablespoon' && [1, 2, 3, 4].map(val => (
+                  <button
+                    key={val}
+                    onClick={() => setTempPortionAmount(val)}
+                    className={cn(
+                      "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      tempPortionAmount === val
+                        ? 'bg-emerald-500 text-black'
+                        : theme === 'dark'
+                          ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    )}
+                  >
+                    {val} tbsp
+                  </button>
+                ))}
+                {tempSelectedPortion?.id === 'teaspoon' && [1, 2, 3, 4].map(val => (
+                  <button
+                    key={val}
+                    onClick={() => setTempPortionAmount(val)}
+                    className={cn(
+                      "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      tempPortionAmount === val
+                        ? 'bg-emerald-500 text-black'
+                        : theme === 'dark'
+                          ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    )}
+                  >
+                    {val} tsp
+                  </button>
+                ))}
+                {tempSelectedPortion?.id === 'pound' && [0.25, 0.5, 1, 1.5, 2].map(val => (
+                  <button
+                    key={val}
+                    onClick={() => setTempPortionAmount(val)}
+                    className={cn(
+                      "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      tempPortionAmount === val
+                        ? 'bg-emerald-500 text-black'
+                        : theme === 'dark'
+                          ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    )}
+                  >
+                    {val === 0.25 ? '¼' : val === 0.5 ? '½' : val === 1.5 ? '1½' : val} lb
+                  </button>
+                ))}
+                {tempSelectedPortion?.id === 'kilogram' && [0.25, 0.5, 1, 1.5, 2].map(val => (
+                  <button
+                    key={val}
+                    onClick={() => setTempPortionAmount(val)}
+                    className={cn(
+                      "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      tempPortionAmount === val
+                        ? 'bg-emerald-500 text-black'
+                        : theme === 'dark'
+                          ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    )}
+                  >
+                    {val === 0.25 ? '¼' : val === 0.5 ? '½' : val === 1.5 ? '1½' : val} kg
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Amount input with unit selector */}
             <div className="flex items-center gap-3 mb-4">
               <Input

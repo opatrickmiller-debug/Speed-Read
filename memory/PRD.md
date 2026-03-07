@@ -68,7 +68,16 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
   - Settings-style row layout: Meal, Number of Servings, Serving Size, Nutrition Details
   - Each row is tappable to open its respective modal
   - Favorite button (heart icon) next to food title
-- **NEW**: "How Much?" Portion Modal
+- **NEW**: "How Much?" Portion Modal with Quick Presets
+  - **Quick Select buttons** at top for fast portion selection:
+    - Serving: ½ srv, 1 srv, 1½ srv, 2 srv, 3 srv
+    - Gram: 50g, 100g, 150g, 200g, 250g
+    - Ounce: 1 oz, 2 oz, 3 oz, 4 oz, 6 oz, 8 oz
+    - Cup: ¼, ½, ¾, 1, 1½, 2 cup
+    - Tablespoon: 1, 2, 3, 4 tbsp
+    - Teaspoon: 1, 2, 3, 4 tsp
+    - Pound: ¼, ½, 1, 1½, 2 lb
+    - Kilogram: ¼, ½, 1, 1½, 2 kg
   - Quantity input with "Serving(s) of" label
   - Scrollable list of portion options: default serving, gram, ounce, pound, kilogram, teaspoon, tablespoon, cup
   - Default serving highlighted with "Default serving" label
