@@ -21,112 +21,133 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import {
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts';
 
-// Circular Macro Display Component (MyFitnessPal style)
-const MacroCircle = ({ calories, carbs, fat, protein, theme }) => {
-  const totalMacroCalories = (carbs * 4) + (fat * 9) + (protein * 4);
-  const carbPercent = totalMacroCalories > 0 ? Math.round((carbs * 4 / totalMacroCalories) * 100) : 0;
-  const fatPercent = totalMacroCalories > 0 ? Math.round((fat * 9 / totalMacroCalories) * 100) : 0;
-  const proteinPercent = totalMacroCalories > 0 ? Math.round((protein * 4 / totalMacroCalories) * 100) : 0;
+// Custom Tooltip for Macro Radar
+const MacroTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 shadow-2xl">
+        <p className="text-white font-medium text-sm">{data.fullName}</p>
+        <p className="text-emerald-400 text-sm mt-1">
+          {data.displayValue}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
+// Macro Radar Chart Component (matches Amino Acid visual style)
+const MacroRadar = ({ calories, carbs, fat, protein, theme }) => {
+  // Normalize values to percentages for visual balance
+  // Using typical daily values as reference for scaling
+  const maxCal = 500;  // Reference max for display
+  const maxCarbs = 50;
+  const maxFat = 40;
+  const maxProtein = 50;
   
-  // SVG circle calculations
-  const radius = 45;
-  const circumference = 2 * Math.PI * radius;
-  
-  // Calculate stroke lengths for each segment
-  const carbStroke = (carbPercent / 100) * circumference;
-  const fatStroke = (fatPercent / 100) * circumference;
-  const proteinStroke = (proteinPercent / 100) * circumference;
-  
-  // Offsets to position segments sequentially
-  const carbOffset = circumference * 0.25; // Start at 12 o'clock
-  const fatOffset = carbOffset - carbStroke;
-  const proteinOffset = fatOffset - fatStroke;
+  const radarData = [
+    { 
+      name: 'Cal', 
+      fullName: 'Calories',
+      value: Math.min((calories / maxCal) * 100, 100),
+      displayValue: `${Math.round(calories)} kcal`
+    },
+    { 
+      name: 'Pro', 
+      fullName: 'Protein',
+      value: Math.min((protein / maxProtein) * 100, 100),
+      displayValue: `${protein.toFixed(1)}g`
+    },
+    { 
+      name: 'Fat', 
+      fullName: 'Fat',
+      value: Math.min((fat / maxFat) * 100, 100),
+      displayValue: `${fat.toFixed(1)}g`
+    },
+    { 
+      name: 'Carb', 
+      fullName: 'Carbs',
+      value: Math.min((carbs / maxCarbs) * 100, 100),
+      displayValue: `${carbs.toFixed(1)}g`
+    },
+  ];
 
   return (
-    <div className="flex items-center justify-center gap-6 py-4">
-      {/* Circular Chart */}
-      <div className="relative w-28 h-28">
-        <svg className="w-28 h-28 transform -rotate-90" viewBox="0 0 120 120">
-          {/* Background circle */}
-          <circle
-            cx="60"
-            cy="60"
-            r={radius}
-            fill="none"
-            stroke={theme === 'dark' ? '#27272a' : '#e5e7eb'}
-            strokeWidth="12"
-          />
-          {/* Carbs segment - cyan */}
-          {carbPercent > 0 && (
-            <circle
-              cx="60"
-              cy="60"
-              r={radius}
-              fill="none"
-              stroke="#06b6d4"
-              strokeWidth="12"
-              strokeDasharray={`${carbStroke} ${circumference}`}
-              strokeDashoffset={carbOffset}
+    <div className="py-2">
+      {/* Radar Chart */}
+      <div className="w-full h-[200px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <RadarChart data={radarData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
+            <PolarGrid 
+              stroke={theme === 'dark' ? '#27272A' : '#E5E7EB'} 
+              strokeWidth={1}
+              gridType="polygon"
             />
-          )}
-          {/* Fat segment - fuchsia */}
-          {fatPercent > 0 && (
-            <circle
-              cx="60"
-              cy="60"
-              r={radius}
-              fill="none"
-              stroke="#d946ef"
-              strokeWidth="12"
-              strokeDasharray={`${fatStroke} ${circumference}`}
-              strokeDashoffset={fatOffset}
+            <PolarAngleAxis
+              dataKey="name"
+              tick={{ fill: theme === 'dark' ? '#A1A1AA' : '#4B5563', fontSize: 12, fontWeight: 600 }}
+              tickLine={false}
             />
-          )}
-          {/* Protein segment - amber */}
-          {proteinPercent > 0 && (
-            <circle
-              cx="60"
-              cy="60"
-              r={radius}
-              fill="none"
-              stroke="#f59e0b"
-              strokeWidth="12"
-              strokeDasharray={`${proteinStroke} ${circumference}`}
-              strokeDashoffset={proteinOffset}
+            <PolarRadiusAxis
+              angle={90}
+              domain={[0, 100]}
+              tick={false}
+              axisLine={false}
             />
-          )}
-        </svg>
-        {/* Center text */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={cn(
-            "text-2xl font-bold",
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>{Math.round(calories)}</span>
-          <span className={cn(
-            "text-xs",
-            theme === 'dark' ? 'text-zinc-400' : 'text-gray-500'
-          )}>Cal</span>
-        </div>
+            <Radar
+              name="Macros"
+              dataKey="value"
+              stroke="#10B981"
+              fill="#10B981"
+              fillOpacity={0.3}
+              strokeWidth={2}
+              dot={{
+                r: 4,
+                fill: '#10B981',
+                stroke: theme === 'dark' ? '#050505' : '#FFFFFF',
+                strokeWidth: 2,
+              }}
+            />
+            <Tooltip content={<MacroTooltip />} />
+          </RadarChart>
+        </ResponsiveContainer>
       </div>
       
-      {/* Macro breakdown */}
-      <div className="flex gap-5">
+      {/* Macro values below chart */}
+      <div className="flex justify-center gap-6 mt-2">
         <div className="text-center">
-          <p className="text-cyan-400 text-sm font-medium">{carbPercent}%</p>
           <p className={cn(
-            "text-lg font-bold",
+            "text-xl font-bold",
             theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>{carbs.toFixed(1)}g</p>
+          )}>{Math.round(calories)}</p>
           <p className={cn(
             "text-xs",
             theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-          )}>Carbs</p>
+          )}>Cal</p>
         </div>
         <div className="text-center">
-          <p className="text-fuchsia-400 text-sm font-medium">{fatPercent}%</p>
           <p className={cn(
-            "text-lg font-bold",
+            "text-xl font-bold text-emerald-500"
+          )}>{protein.toFixed(1)}g</p>
+          <p className={cn(
+            "text-xs",
+            theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+          )}>Protein</p>
+        </div>
+        <div className="text-center">
+          <p className={cn(
+            "text-xl font-bold",
             theme === 'dark' ? 'text-white' : 'text-gray-900'
           )}>{fat.toFixed(1)}g</p>
           <p className={cn(
@@ -135,15 +156,14 @@ const MacroCircle = ({ calories, carbs, fat, protein, theme }) => {
           )}>Fat</p>
         </div>
         <div className="text-center">
-          <p className="text-amber-400 text-sm font-medium">{proteinPercent}%</p>
           <p className={cn(
-            "text-lg font-bold",
+            "text-xl font-bold",
             theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>{protein.toFixed(1)}g</p>
+          )}>{carbs.toFixed(1)}g</p>
           <p className={cn(
             "text-xs",
             theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-          )}>Protein</p>
+          )}>Carbs</p>
         </div>
       </div>
     </div>
@@ -582,12 +602,12 @@ export const FoodDetails = () => {
             </div>
           </div>
 
-          {/* Macro Circle Display */}
+          {/* Macro Radar Display */}
           <div className={cn(
             "rounded-xl p-4 mb-6",
             theme === 'dark' ? 'bg-zinc-900/50' : 'bg-white'
           )}>
-            <MacroCircle 
+            <MacroRadar 
               calories={totalCalories}
               carbs={totalCarbs}
               fat={totalFat}

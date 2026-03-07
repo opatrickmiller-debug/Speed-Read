@@ -83,10 +83,13 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
   - Default serving highlighted with "Default serving" label
   - Selected option highlighted in green
   - Cancel/Save buttons at bottom
-- **NEW**: Circular Macro Display (MyFitnessPal style)
-  - Donut chart with calories in center
-  - Color-coded segments: Cyan (Carbs), Fuchsia (Fat), Amber (Protein)
-  - Percentage breakdown next to chart showing actual grams
+- **CHANGED**: Macro Display from Circle to Radar Chart
+  - Replaced donut/circle chart with polygon/spider radar chart
+  - Matches visual style of Amino Acid Profile chart
+  - 4-point radar: Cal, Pro (Protein), Fat, Carb
+  - Green fill with transparency, dots at data points
+  - Hover tooltip shows exact values
+  - Macro values displayed below chart (Protein highlighted in emerald)
 - **NEW**: Meal Selection Modal
   - Clean list with Breakfast, Lunch, Dinner, Snack options
   - Checkmark indicator for selected meal
