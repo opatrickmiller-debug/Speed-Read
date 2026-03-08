@@ -74,37 +74,37 @@ export const FoodDetails = () => {
     
     setLogging(true);
     try {
-      await logsApi.create({
-        fdc_id: food.fdc_id,
-        description: food.description,
-        serving_size: servingSize,
-        serving_unit: 'g',
-        servings: 1,
-        calories: calculateValue(food.calories),
-        protein: calculateValue(food.protein),
-        fat: calculateValue(food.fat),
-        carbs: calculateValue(food.carbs),
-        fiber: calculateValue(food.fiber),
-        amino_acids: food.amino_acids?.map(aa => ({
-          name: aa.name,
-          value: parseFloat((aa.value * servingSize / 100).toFixed(3)),
-          is_essential: aa.is_essential
-        })) || [],
-        fatty_acids: food.fatty_acids?.map(fa => ({
-          name: fa.name,
-          value: parseFloat((fa.value * servingSize / 100).toFixed(3)),
-          is_essential: fa.is_essential,
-          omega_type: fa.omega_type
-        })) || [],
-        meal_type: mealType
+      // Use simplified quick log endpoint
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/logs/quick`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          food_id: fdcId,
+          amount: servingSize,
+          meal: mealType
+        })
       });
       
-      toast.success(`Added ${food.description.split(',')[0]} to ${mealType}`);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to log food');
+      }
+      
+      // Show success toast
+      toast.success(data.message || `Added to ${mealType}`);
+      
+      // Close modal
       setLogModalOpen(false);
-      navigate('/search');
+      
+      // Redirect to food log page
+      navigate('/log');
     } catch (err) {
       console.error('Failed to log food:', err);
-      toast.error('Failed to log food');
+      toast.error(err.message || 'Failed to log food');
     } finally {
       setLogging(false);
     }

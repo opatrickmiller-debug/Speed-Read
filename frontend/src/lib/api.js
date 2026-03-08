@@ -71,6 +71,7 @@ export const customMealsApi = {
 // Food Logs
 export const logsApi = {
   create: (data) => api.post('/logs', data),
+  quickLog: (foodId, amount, meal) => api.post('/logs/quick', { food_id: foodId, amount, meal }),
   getAll: (date) => api.get('/logs', { params: date ? { date } : {} }),
   delete: (logId) => api.delete(`/logs/${logId}`),
 };

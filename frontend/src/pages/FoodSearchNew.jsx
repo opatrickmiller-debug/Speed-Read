@@ -199,63 +199,30 @@ export const FoodSearch = () => {
 
   const handleQuickLog = async (food) => {
     try {
-      // Fetch full food details to get amino acids
-      let aminoAcids = [];
-      let fattyAcids = [];
+      // Use simplified quick log endpoint
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/logs/quick`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          food_id: food.fdc_id,
+          amount: 100, // Default 100g serving
+          meal: selectedMeal
+        })
+      });
       
-      try {
-        const detailsRes = await foodsApi.getDetails(food.fdc_id);
-        const details = detailsRes.data;
-        const servingSize = food.serving_size || 100;
-        
-        // Calculate amino acids for the serving size
-        if (details.amino_acids?.length > 0) {
-          aminoAcids = details.amino_acids.map(aa => ({
-            name: aa.name,
-            value: parseFloat((aa.value * servingSize / 100).toFixed(3)),
-            is_essential: aa.is_essential
-          }));
-        }
-        
-        // Calculate fatty acids for the serving size
-        if (details.fatty_acids?.length > 0) {
-          fattyAcids = details.fatty_acids.map(fa => ({
-            name: fa.name,
-            value: parseFloat((fa.value * servingSize / 100).toFixed(3)),
-            is_essential: fa.is_essential,
-            omega_type: fa.omega_type
-          }));
-        }
-      } catch (detailErr) {
-        // Continue without amino acids if fetch fails
-        console.warn('Could not fetch food details for amino acids:', detailErr);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to log food');
       }
       
-      // Handle both old format (calories_per_100g) and new format (calories)
-      const calories = food.calories ?? food.calories_per_100g ?? 0;
-      const protein = food.protein ?? food.protein_per_100g ?? 0;
-      const fat = food.fat ?? food.fat_per_100g ?? 0;
-      const carbs = food.carbs ?? food.carbs_per_100g ?? 0;
-      const fiber = food.fiber ?? food.fiber_per_100g ?? 0;
-      
-      await logsApi.create({
-        fdc_id: food.fdc_id,
-        description: food.description,
-        serving_size: food.serving_size || 100,
-        serving_unit: food.serving_unit || 'g',
-        servings: 1,
-        calories: calories,
-        protein: protein,
-        fat: fat,
-        carbs: carbs,
-        fiber: fiber,
-        amino_acids: aminoAcids,
-        fatty_acids: fattyAcids,
-        meal_type: selectedMeal
-      });
-      toast.success(`Added ${food.description.split(',')[0]} to ${selectedMeal}`);
+      toast.success(data.message || `Added ${food.description.split(',')[0]} to ${selectedMeal}`);
     } catch (err) {
-      toast.error('Failed to log food');
+      console.error('Quick log failed:', err);
+      toast.error(err.message || 'Failed to log food');
     }
   };
 
