@@ -257,7 +257,7 @@ export const FoodSearch = () => {
   // Render food item with MyFitnessPal-style badges
   const FoodItem = ({ food, showQuickLog = false }) => (
     <div
-      onClick={() => !showQuickLog && handleSelectFood(food)}
+      onClick={() => handleSelectFood(food)}
       className={cn(
         "flex items-center gap-3 p-3 border-b last:border-0 transition-colors cursor-pointer",
         theme === 'dark' ? 'border-white/5 active:bg-white/5' : 'border-gray-100 active:bg-gray-50'
