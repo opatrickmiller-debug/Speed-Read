@@ -327,16 +327,13 @@ code {
     }
 }
 
-/* Ensure proper overflow handling */
-.overflow-x-hidden {
-    overflow-x: hidden;
-}
-
+/* Ensure proper overflow handling - IMPORTANT: These override earlier rules */
 html, body {
     height: auto !important;
     min-height: 100% !important;
+    max-height: none !important;
     overflow-x: hidden !important;
-    overflow-y: scroll !important;
+    overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
 }
 
@@ -344,7 +341,16 @@ html, body {
     height: auto !important;
     min-height: 100vh;
     min-height: 100dvh;
-    overflow-y: auto;
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+.App {
+    height: auto !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+    max-height: none !important;
+    overflow: visible !important;
 }
 
 
