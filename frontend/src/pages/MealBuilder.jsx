@@ -1,96 +1,50 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
-import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
-import { AminoAcidRadar } from '../components/AminoAcidRadar';
 import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { useTheme } from '../context/ThemeContext';
+import { cn } from '../lib/utils';
 import { 
   ChefHat, 
   Loader2, 
-  CheckCircle2,
-  AlertTriangle,
   Plus,
   X,
   Search,
-  Leaf,
   Flame,
   Beef,
-  ArrowRight,
-  Sparkles,
+  Droplets,
+  Wheat,
   Save,
-  BookmarkPlus
+  Trash2,
+  Minus
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '../lib/utils';
-import { customMealsApi } from '../lib/api';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 export const MealBuilder = () => {
   const navigate = useNavigate();
-  const [selectedFoods, setSelectedFoods] = useState([]);
+  const { theme } = useTheme();
+  
+  // State
+  const [foods, setFoods] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
-  const [analysis, setAnalysis] = useState(null);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [ketoMeals, setKetoMeals] = useState([]);
-  const [customMeals, setCustomMeals] = useState([]);
-  const [loadingMeals, setLoadingMeals] = useState(true);
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const [mealName, setMealName] = useState('');
-  const [mealDescription, setMealDescription] = useState('');
-  const [savingMeal, setSavingMeal] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const getToken = () => localStorage.getItem('token');
 
-  useEffect(() => {
-    loadKetoMeals();
-    loadCustomMeals();
-  }, []);
-
-  useEffect(() => {
-    if (selectedFoods.length > 0) {
-      analyzeMeal();
-    } else {
-      setAnalysis(null);
-    }
-  }, [selectedFoods]);
-
-  const loadCustomMeals = async () => {
-    try {
-      const res = await customMealsApi.getAll();
-      setCustomMeals(res.data || []);
-    } catch (err) {
-      console.error('Failed to load custom meals:', err);
-    }
-  };
-
-  const loadKetoMeals = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/suggestions/keto-meals`, {
-        headers: { 'Authorization': `Bearer ${getToken()}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setKetoMeals(data.meal_combos || []);
-      }
-    } catch (err) {
-      console.error('Failed to load keto meals:', err);
-    } finally {
-      setLoadingMeals(false);
-    }
-  };
-
+  // Search foods
   const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-    setSearching(true);
+    if (!searchQuery.trim() || searchQuery.length < 2) return;
     
+    setSearching(true);
     try {
       const res = await fetch(
-        `${API_URL}/api/foods/search?query=${encodeURIComponent(searchQuery)}&page_size=8`,
+        `${API_URL}/api/foods/search?query=${encodeURIComponent(searchQuery)}&page_size=10`,
         { headers: { 'Authorization': `Bearer ${getToken()}` } }
       );
       if (res.ok) {
@@ -98,556 +52,549 @@ export const MealBuilder = () => {
         setSearchResults(data.foods || []);
       }
     } catch (err) {
-      toast.error('Search failed');
+      console.error('Search failed:', err);
     } finally {
       setSearching(false);
     }
   };
 
-  const addFood = (food) => {
-    if (selectedFoods.find(f => f.fdc_id === food.fdc_id)) {
-      toast.error('Food already added');
-      return;
-    }
-    if (selectedFoods.length >= 10) {
-      toast.error('Maximum 10 foods per meal');
-      return;
-    }
-    setSelectedFoods([...selectedFoods, food]);
-    setSearchResults([]);
-    setSearchQuery('');
-  };
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.length >= 2) {
+        handleSearch();
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  const removeFood = (fdcId) => {
-    setSelectedFoods(selectedFoods.filter(f => f.fdc_id !== fdcId));
-  };
-
-  const analyzeMeal = async () => {
-    if (selectedFoods.length === 0) return;
-    setAnalyzing(true);
-    
+  // Add food to meal
+  const addFood = async (food) => {
+    // Fetch full details to get accurate macros
     try {
-      const fdcIds = selectedFoods.map(f => f.fdc_id);
-      const queryString = fdcIds.map(id => `food_ids=${id}`).join('&');
-      
       const res = await fetch(
-        `${API_URL}/api/meal-builder/analyze?${queryString}`,
-        { 
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${getToken()}` } 
-        }
+        `${API_URL}/api/foods/${food.fdc_id}`,
+        { headers: { 'Authorization': `Bearer ${getToken()}` } }
       );
       
+      let foodDetails = food;
       if (res.ok) {
         const data = await res.json();
-        setAnalysis(data);
+        foodDetails = {
+          fdc_id: food.fdc_id,
+          description: data.description || food.description,
+          calories: data.calories || food.calories || 0,
+          protein: data.protein || food.protein || 0,
+          fat: data.fat || food.fat || 0,
+          carbs: data.carbs || food.carbs || 0,
+          portion: 100, // Default portion in grams
+        };
+      } else {
+        foodDetails = {
+          ...food,
+          portion: 100
+        };
       }
+      
+      setFoods([...foods, foodDetails]);
+      setSearchQuery('');
+      setSearchResults([]);
+      setShowSearch(false);
+      toast.success(`Added ${foodDetails.description.split(',')[0]}`);
     } catch (err) {
-      console.error('Analysis failed:', err);
-    } finally {
-      setAnalyzing(false);
+      // Use search result data as fallback
+      setFoods([...foods, { ...food, portion: 100 }]);
+      setSearchQuery('');
+      setShowSearch(false);
     }
   };
 
-  const getKetoTierColor = (tier) => {
-    switch (tier) {
-      case 'ultra_low': return 'text-emerald-400 bg-emerald-500/20 border-emerald-500/30';
-      case 'low': return 'text-cyan-400 bg-cyan-500/20 border-cyan-500/30';
-      case 'moderate': return 'text-amber-400 bg-amber-500/20 border-amber-500/30';
-      default: return 'text-red-400 bg-red-500/20 border-red-500/30';
-    }
+  // Remove food from meal
+  const removeFood = (index) => {
+    setFoods(foods.filter((_, i) => i !== index));
   };
 
-  const handleSaveCustomMeal = async () => {
-    if (!mealName.trim() || selectedFoods.length === 0) {
-      toast.error('Please add a name and at least one food');
+  // Update portion
+  const updatePortion = (index, newPortion) => {
+    const updated = [...foods];
+    updated[index].portion = Math.max(1, parseFloat(newPortion) || 100);
+    setFoods(updated);
+  };
+
+  // Calculate totals
+  const totals = foods.reduce((acc, food) => {
+    const multiplier = (food.portion || 100) / 100;
+    return {
+      calories: acc.calories + (food.calories || 0) * multiplier,
+      protein: acc.protein + (food.protein || 0) * multiplier,
+      fat: acc.fat + (food.fat || 0) * multiplier,
+      carbs: acc.carbs + (food.carbs || 0) * multiplier,
+    };
+  }, { calories: 0, protein: 0, fat: 0, carbs: 0 });
+
+  // Save meal
+  const saveMeal = async () => {
+    if (!mealName.trim()) {
+      toast.error('Please enter a meal name');
+      return;
+    }
+    if (foods.length === 0) {
+      toast.error('Add at least one food to the meal');
       return;
     }
 
-    setSavingMeal(true);
+    setSaving(true);
     try {
-      // Prepare foods data with analysis info
-      const foodsData = analysis?.foods || selectedFoods.map(f => ({
-        fdc_id: f.fdc_id,
-        description: f.description,
-        protein: f.protein_per_100g || 0,
-        carbs: 0,
-        fat: 0,
-        calories: 0,
+      const mealFoods = foods.map(food => ({
+        fdc_id: food.fdc_id,
+        description: food.description,
+        name: food.description,
+        serving_size: food.portion,
         servings: 1,
-        serving_size: 100,
-        serving_unit: 'g',
-        amino_acids: []
+        calories: (food.calories || 0) * (food.portion / 100),
+        protein: (food.protein || 0) * (food.portion / 100),
+        fat: (food.fat || 0) * (food.portion / 100),
+        carbs: (food.carbs || 0) * (food.portion / 100),
       }));
 
-      await customMealsApi.create({
-        name: mealName,
-        description: mealDescription,
-        foods: foodsData
+      const res = await fetch(`${API_URL}/api/custom-meals`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({
+          name: mealName,
+          description: `${foods.length} foods, ${Math.round(totals.protein)}g protein`,
+          foods: mealFoods
+        })
       });
 
-      toast.success('Custom meal saved!');
-      setSaveDialogOpen(false);
-      setMealName('');
-      setMealDescription('');
-      loadCustomMeals();
+      if (!res.ok) throw new Error('Failed to save');
+
+      toast.success('Meal saved!');
+      navigate('/meals');
     } catch (err) {
       toast.error('Failed to save meal');
     } finally {
-      setSavingMeal(false);
+      setSaving(false);
     }
   };
-
-  const handleLogCustomMeal = async (mealId) => {
-    try {
-      await customMealsApi.log(mealId, 'snack');
-      toast.success('Meal added to today\'s log!');
-    } catch (err) {
-      toast.error('Failed to log meal');
-    }
-  };
-
-  const handleDeleteCustomMeal = async (mealId) => {
-    try {
-      await customMealsApi.delete(mealId);
-      toast.success('Custom meal deleted');
-      loadCustomMeals();
-    } catch (err) {
-      toast.error('Failed to delete meal');
-    }
-  };
-
-  // Convert analysis amino acids to array for radar
-  const aminoAcidsArray = analysis?.combined_amino_acids 
-    ? Object.entries(analysis.combined_amino_acids).map(([name, value]) => ({
-        name,
-        value,
-        is_essential: ['Histidine', 'Isoleucine', 'Leucine', 'Lysine', 'Methionine', 
-                       'Phenylalanine', 'Threonine', 'Tryptophan', 'Valine'].includes(name)
-      }))
-    : [];
 
   return (
     <Layout>
-      <div className="p-6 md:p-8 max-w-6xl mx-auto">
+      <div className={cn(
+        "min-h-screen pb-24",
+        theme === 'dark' ? 'bg-zinc-950' : 'bg-gray-50'
+      )}>
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-2xl bg-orange-500/20 flex items-center justify-center">
-              <ChefHat className="w-6 h-6 text-orange-400" />
+        <div className={cn(
+          "sticky top-0 z-10 px-4 py-4 border-b",
+          theme === 'dark' ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-gray-200'
+        )}>
+          <div className="max-w-2xl mx-auto flex items-center gap-3">
+            <div className={cn(
+              "w-10 h-10 rounded-xl flex items-center justify-center",
+              theme === 'dark' ? 'bg-violet-500/20' : 'bg-violet-100'
+            )}>
+              <ChefHat className="w-5 h-5 text-violet-500" />
             </div>
             <div>
-              <h1 className="font-heading text-3xl md:text-4xl font-bold text-white">
-                Keto Meal Builder
+              <h1 className={cn(
+                "text-xl font-bold",
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              )}>
+                Meal Builder
               </h1>
-              <p className="text-zinc-500 text-sm">
-                Combine foods to create complete protein meals • Low carb focus
+              <p className={cn(
+                "text-xs",
+                theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+              )}>
+                Combine foods and save as a meal
               </p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left: Food Selection */}
-          <div className="lg:col-span-5 space-y-6">
-            {/* Search */}
-            <GlassCard data-testid="food-search-card">
-              <GlassCardHeader>
-                <GlassCardTitle>Add Foods to Meal</GlassCardTitle>
-              </GlassCardHeader>
-              <GlassCardContent className="pt-0 space-y-4">
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                    <Input
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                      placeholder="Search keto foods..."
-                      data-testid="meal-food-search"
-                      className="pl-10 bg-black/50 border-white/10 text-white h-11"
-                    />
-                  </div>
-                  <button
-                    onClick={handleSearch}
-                    disabled={searching}
-                    className="px-4 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-lg transition-all"
-                  >
-                    {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
-                  </button>
-                </div>
-
-                {searchResults.length > 0 && (
-                  <div className="bg-black/30 rounded-xl border border-white/5 max-h-64 overflow-y-auto">
-                    {searchResults.map((food) => (
-                      <button
-                        key={food.fdc_id}
-                        onClick={() => addFood(food)}
-                        className="w-full flex items-center justify-between p-3 hover:bg-white/5 transition-all border-b border-white/5 last:border-0"
-                      >
-                        <div className="text-left">
-                          <p className="text-sm text-white truncate">{food.description}</p>
-                          <p className="text-xs text-emerald-400">{food.protein_per_100g}g protein</p>
-                        </div>
-                        <Plus className="w-4 h-4 text-emerald-400" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </GlassCardContent>
-            </GlassCard>
-
-            {/* Selected Foods */}
-            <GlassCard data-testid="selected-foods-card">
-              <GlassCardHeader>
-                <div className="flex items-center justify-between">
-                  <GlassCardTitle>Your Meal ({selectedFoods.length}/10)</GlassCardTitle>
-                  {selectedFoods.length > 0 && (
-                    <button
-                      onClick={() => setSelectedFoods([])}
-                      className="text-xs text-zinc-500 hover:text-white transition-colors"
-                    >
-                      Clear all
-                    </button>
-                  )}
-                </div>
-              </GlassCardHeader>
-              <GlassCardContent className="pt-0">
-                {selectedFoods.length > 0 ? (
-                  <div className="space-y-2">
-                    {selectedFoods.map((food) => (
-                      <div
-                        key={food.fdc_id}
-                        className="flex items-center justify-between p-3 rounded-xl bg-black/30 border border-white/5 group"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white truncate">{food.description}</p>
-                          <p className="text-xs text-zinc-500">{food.protein_per_100g}g protein per 100g</p>
-                        </div>
-                        <button
-                          onClick={() => removeFood(food.fdc_id)}
-                          className="p-1.5 text-zinc-500 hover:text-red-400 transition-colors ml-2"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-8 text-center">
-                    <ChefHat className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
-                    <p className="text-zinc-500 text-sm">Search and add foods to build your meal</p>
-                  </div>
-                )}
-              </GlassCardContent>
-            </GlassCard>
-
-            {/* Pre-built Keto Meals */}
-            <GlassCard data-testid="keto-meals-card">
-              <GlassCardHeader>
-                <div className="flex items-center gap-2">
-                  <Leaf className="w-4 h-4 text-emerald-400" />
-                  <GlassCardTitle>Quick Keto Combos</GlassCardTitle>
-                </div>
-              </GlassCardHeader>
-              <GlassCardContent className="pt-0">
-                {loadingMeals ? (
-                  <div className="py-4 text-center">
-                    <Loader2 className="w-6 h-6 text-emerald-400 animate-spin mx-auto" />
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {ketoMeals.slice(0, 4).map((meal, idx) => (
-                      <div
-                        key={idx}
-                        className="p-3 rounded-xl bg-black/30 border border-white/5 hover:border-emerald-500/30 transition-all cursor-pointer"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-white font-medium text-sm">{meal.name}</p>
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
-                            {meal.total_carbs}g carbs
-                          </span>
-                        </div>
-                        <p className="text-xs text-zinc-500">{meal.foods.join(' + ')}</p>
-                        <p className="text-xs text-emerald-400 mt-1">{meal.total_protein}g protein</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </GlassCardContent>
-            </GlassCard>
+        <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+          {/* Meal Name Input */}
+          <div className={cn(
+            "rounded-xl p-4",
+            theme === 'dark' ? 'bg-zinc-900' : 'bg-white'
+          )}>
+            <label className={cn(
+              "block text-sm font-medium mb-2",
+              theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+            )}>
+              Meal Name
+            </label>
+            <Input
+              value={mealName}
+              onChange={(e) => setMealName(e.target.value)}
+              placeholder="e.g., Protein Breakfast"
+              data-testid="meal-name-input"
+              className={cn(
+                "h-12",
+                theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-gray-50 border-gray-200'
+              )}
+            />
           </div>
 
-          {/* Right: Analysis Results */}
-          <div className="lg:col-span-7">
-            <GlassCard className="h-full" data-testid="meal-analysis-card">
-              <GlassCardHeader>
-                <GlassCardTitle>Meal Analysis</GlassCardTitle>
-              </GlassCardHeader>
-              <GlassCardContent className="pt-0">
-                {analyzing ? (
-                  <div className="py-20 text-center">
-                    <Loader2 className="w-8 h-8 text-emerald-400 animate-spin mx-auto mb-4" />
-                    <p className="text-zinc-500">Analyzing your meal...</p>
-                  </div>
-                ) : analysis ? (
-                  <div className="space-y-6">
-                    {/* Keto Status */}
-                    <div className={cn(
-                      'flex items-center gap-4 p-4 rounded-xl border',
-                      getKetoTierColor(analysis.keto_analysis?.tier)
-                    )}>
-                      <Leaf className="w-8 h-8" />
-                      <div>
-                        <p className="font-semibold">{analysis.keto_analysis?.label}</p>
-                        <p className="text-sm opacity-80">
-                          {analysis.keto_analysis?.net_carbs}g net carbs
-                          {analysis.keto_analysis?.is_keto_friendly 
-                            ? ' • Keto approved!' 
-                            : ' • Consider reducing carbs'}
-                        </p>
-                      </div>
-                    </div>
+          {/* Total Macros Card */}
+          <div className={cn(
+            "rounded-xl p-4",
+            theme === 'dark' ? 'bg-zinc-900' : 'bg-white'
+          )}>
+            <h3 className={cn(
+              "text-xs font-bold uppercase tracking-wider mb-4",
+              theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+            )}>
+              Total Macros
+            </h3>
+            <div className="grid grid-cols-4 gap-3">
+              <div className="text-center">
+                <div className={cn(
+                  "w-10 h-10 rounded-lg mx-auto mb-2 flex items-center justify-center",
+                  theme === 'dark' ? 'bg-orange-500/20' : 'bg-orange-100'
+                )}>
+                  <Flame className="w-5 h-5 text-orange-500" />
+                </div>
+                <p className={cn(
+                  "text-xl font-bold",
+                  theme === 'dark' ? 'text-orange-400' : 'text-orange-600'
+                )} data-testid="total-calories">
+                  {Math.round(totals.calories)}
+                </p>
+                <p className={cn("text-xs", theme === 'dark' ? 'text-zinc-600' : 'text-gray-500')}>cal</p>
+              </div>
+              <div className="text-center">
+                <div className={cn(
+                  "w-10 h-10 rounded-lg mx-auto mb-2 flex items-center justify-center",
+                  theme === 'dark' ? 'bg-red-500/20' : 'bg-red-100'
+                )}>
+                  <Beef className="w-5 h-5 text-red-500" />
+                </div>
+                <p className={cn(
+                  "text-xl font-bold",
+                  theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                )} data-testid="total-protein">
+                  {totals.protein.toFixed(1)}
+                </p>
+                <p className={cn("text-xs", theme === 'dark' ? 'text-zinc-600' : 'text-gray-500')}>protein</p>
+              </div>
+              <div className="text-center">
+                <div className={cn(
+                  "w-10 h-10 rounded-lg mx-auto mb-2 flex items-center justify-center",
+                  theme === 'dark' ? 'bg-yellow-500/20' : 'bg-yellow-100'
+                )}>
+                  <Droplets className="w-5 h-5 text-yellow-500" />
+                </div>
+                <p className={cn(
+                  "text-xl font-bold",
+                  theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600'
+                )} data-testid="total-fat">
+                  {totals.fat.toFixed(1)}
+                </p>
+                <p className={cn("text-xs", theme === 'dark' ? 'text-zinc-600' : 'text-gray-500')}>fat</p>
+              </div>
+              <div className="text-center">
+                <div className={cn(
+                  "w-10 h-10 rounded-lg mx-auto mb-2 flex items-center justify-center",
+                  theme === 'dark' ? 'bg-blue-500/20' : 'bg-blue-100'
+                )}>
+                  <Wheat className="w-5 h-5 text-blue-500" />
+                </div>
+                <p className={cn(
+                  "text-xl font-bold",
+                  theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                )} data-testid="total-carbs">
+                  {totals.carbs.toFixed(1)}
+                </p>
+                <p className={cn("text-xs", theme === 'dark' ? 'text-zinc-600' : 'text-gray-500')}>carbs</p>
+              </div>
+            </div>
+          </div>
 
-                    {/* Protein Status */}
-                    <div className={cn(
-                      'flex items-center gap-4 p-4 rounded-xl border',
-                      analysis.amino_acid_analysis?.is_complete_protein
-                        ? 'bg-emerald-500/10 border-emerald-500/20'
-                        : 'bg-amber-500/10 border-amber-500/20'
-                    )}>
-                      {analysis.amino_acid_analysis?.is_complete_protein ? (
-                        <>
-                          <CheckCircle2 className="w-8 h-8 text-emerald-400" />
-                          <div>
-                            <p className="text-emerald-400 font-semibold">Complete Protein!</p>
-                            <p className="text-sm text-emerald-400/70">
-                              All 9 essential amino acids present
-                            </p>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <AlertTriangle className="w-8 h-8 text-amber-400" />
-                          <div>
-                            <p className="text-amber-400 font-semibold">
-                              {analysis.amino_acid_analysis?.completeness_score}% Complete
-                            </p>
-                            <p className="text-sm text-amber-400/70">
-                              Missing: {analysis.amino_acid_analysis?.essential_missing?.join(', ')}
-                            </p>
-                          </div>
-                        </>
-                      )}
-                    </div>
+          {/* Foods List */}
+          <div className={cn(
+            "rounded-xl overflow-hidden",
+            theme === 'dark' ? 'bg-zinc-900' : 'bg-white'
+          )}>
+            <div className={cn(
+              "px-4 py-3 border-b flex items-center justify-between",
+              theme === 'dark' ? 'border-zinc-800' : 'border-gray-100'
+            )}>
+              <h3 className={cn(
+                "text-sm font-bold uppercase tracking-wider",
+                theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+              )}>
+                Foods ({foods.length})
+              </h3>
+              <button
+                onClick={() => setShowSearch(true)}
+                data-testid="add-food-btn"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold rounded-lg transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Add Food
+              </button>
+            </div>
 
-                    {/* Macros */}
-                    <div className="grid grid-cols-4 gap-3">
-                      <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-                        <Beef className="w-5 h-5 text-emerald-400 mx-auto mb-1" />
-                        <p className="text-2xl font-semibold text-emerald-400">
-                          {analysis.combined_macros?.protein}g
-                        </p>
-                        <p className="text-xs text-zinc-500">Protein</p>
-                      </div>
-                      <div className="p-3 rounded-xl bg-violet-500/10 border border-violet-500/20 text-center">
-                        <p className="text-2xl font-semibold text-violet-400">
-                          {analysis.combined_macros?.carbs}g
-                        </p>
-                        <p className="text-xs text-zinc-500">Carbs</p>
-                      </div>
-                      <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-center">
-                        <p className="text-2xl font-semibold text-cyan-400">
-                          {analysis.combined_macros?.fat}g
-                        </p>
-                        <p className="text-xs text-zinc-500">Fat</p>
-                      </div>
-                      <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-center">
-                        <Flame className="w-5 h-5 text-orange-400 mx-auto mb-1" />
-                        <p className="text-2xl font-semibold text-orange-400">
-                          {analysis.combined_macros?.calories}
-                        </p>
-                        <p className="text-xs text-zinc-500">Calories</p>
-                      </div>
-                    </div>
-
-                    {/* Amino Acid Radar */}
-                    {aminoAcidsArray.length > 0 && (
-                      <div>
-                        <h3 className="text-sm font-bold uppercase tracking-[0.15em] text-zinc-500 mb-2">
-                          Combined Amino Acid Profile
-                        </h3>
-                        <div className="h-[280px]">
-                          <AminoAcidRadar aminoAcids={aminoAcidsArray} />
-                        </div>
-                      </div>
+            {foods.length === 0 ? (
+              <div className="py-12 text-center">
+                <ChefHat className={cn(
+                  "w-12 h-12 mx-auto mb-3",
+                  theme === 'dark' ? 'text-zinc-700' : 'text-gray-300'
+                )} />
+                <p className={cn(
+                  "font-medium mb-1",
+                  theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+                )}>
+                  No foods added yet
+                </p>
+                <p className={cn(
+                  "text-sm",
+                  theme === 'dark' ? 'text-zinc-600' : 'text-gray-400'
+                )}>
+                  Start building your meal
+                </p>
+              </div>
+            ) : (
+              <div>
+                {foods.map((food, index) => (
+                  <div
+                    key={`${food.fdc_id}-${index}`}
+                    data-testid={`meal-food-${index}`}
+                    className={cn(
+                      "px-4 py-3 border-b last:border-0",
+                      theme === 'dark' ? 'border-zinc-800' : 'border-gray-100'
                     )}
-
-                    {/* Suggestion */}
-                    {!analysis.amino_acid_analysis?.is_complete_protein && (
-                      <button
-                        onClick={() => navigate('/suggestions')}
-                        className="w-full flex items-center justify-center gap-2 p-4 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400 hover:bg-violet-500/20 transition-all"
-                      >
-                        <Sparkles className="w-5 h-5" />
-                        Get suggestions to complete your amino acids
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
-                    )}
-
-                    {/* Save Custom Meal Button */}
-                    <button
-                      onClick={() => setSaveDialogOpen(true)}
-                      data-testid="save-custom-meal-btn"
-                      className="w-full flex items-center justify-center gap-2 p-4 rounded-xl bg-orange-500 hover:bg-orange-400 text-black font-bold transition-all"
-                    >
-                      <BookmarkPlus className="w-5 h-5" />
-                      Save as Custom Meal
-                    </button>
-                  </div>
-                ) : (
-                  <div className="py-20 text-center">
-                    <ChefHat className="w-16 h-16 text-zinc-800 mx-auto mb-4" />
-                    <p className="text-zinc-500">Add foods to see combined nutrition analysis</p>
-                    <p className="text-xs text-zinc-600 mt-2">
-                      Build keto meals with complete amino acid profiles
-                    </p>
-                  </div>
-                )}
-              </GlassCardContent>
-            </GlassCard>
-
-            {/* Custom Meals */}
-            {customMeals.length > 0 && (
-              <GlassCard className="mt-6" data-testid="custom-meals-card">
-                <GlassCardHeader>
-                  <div className="flex items-center gap-2">
-                    <BookmarkPlus className="w-4 h-4 text-orange-400" />
-                    <GlassCardTitle>Your Custom Meals</GlassCardTitle>
-                  </div>
-                </GlassCardHeader>
-                <GlassCardContent className="pt-0">
-                  <div className="space-y-3">
-                    {customMeals.map((meal) => (
-                      <div
-                        key={meal.id}
-                        className="p-4 rounded-xl bg-black/30 border border-white/5"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <p className="text-white font-medium">{meal.name}</p>
-                            {meal.description && (
-                              <p className="text-xs text-zinc-500 mt-0.5">{meal.description}</p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={cn(
-                              'text-xs px-2 py-0.5 rounded-full',
-                              meal.keto_tier === 'ultra_low' && 'bg-emerald-500/20 text-emerald-400',
-                              meal.keto_tier === 'low' && 'bg-cyan-500/20 text-cyan-400',
-                              meal.keto_tier === 'moderate' && 'bg-amber-500/20 text-amber-400',
-                              meal.keto_tier === 'high' && 'bg-red-500/20 text-red-400'
-                            )}>
-                              {meal.total_carbs}g carbs
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm mb-3">
-                          <span className="text-emerald-400">{meal.total_protein}g protein</span>
-                          <span className="text-cyan-400">{meal.total_fat}g fat</span>
-                          <span className="text-orange-400">{meal.total_calories} cal</span>
-                        </div>
-                        <div className="flex gap-2">
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className={cn(
+                          "font-medium truncate mb-2",
+                          theme === 'dark' ? 'text-white' : 'text-gray-900'
+                        )}>
+                          {food.description?.length > 35 
+                            ? food.description.substring(0, 35) + '...'
+                            : food.description}
+                        </p>
+                        
+                        {/* Portion Controls */}
+                        <div className="flex items-center gap-2">
                           <button
-                            onClick={() => handleLogCustomMeal(meal.id)}
-                            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-all text-sm"
+                            onClick={() => updatePortion(index, food.portion - 25)}
+                            className={cn(
+                              "p-1 rounded-lg transition-colors",
+                              theme === 'dark' 
+                                ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' 
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            )}
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              value={food.portion}
+                              onChange={(e) => updatePortion(index, e.target.value)}
+                              data-testid={`portion-input-${index}`}
+                              className={cn(
+                                "w-16 text-center text-sm font-medium py-1 rounded-lg border",
+                                theme === 'dark' 
+                                  ? 'bg-zinc-800 border-zinc-700 text-white' 
+                                  : 'bg-gray-50 border-gray-200 text-gray-900'
+                              )}
+                            />
+                            <span className={cn(
+                              "text-sm",
+                              theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                            )}>g</span>
+                          </div>
+                          <button
+                            onClick={() => updatePortion(index, food.portion + 25)}
+                            className={cn(
+                              "p-1 rounded-lg transition-colors",
+                              theme === 'dark' 
+                                ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' 
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            )}
                           >
                             <Plus className="w-4 h-4" />
-                            Log Meal
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCustomMeal(meal.id)}
-                            className="px-3 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all text-sm"
-                          >
-                            <X className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
-                    ))}
+
+                      {/* Macros for this food */}
+                      <div className="text-right flex-shrink-0">
+                        <p className={cn(
+                          "text-sm font-semibold",
+                          theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'
+                        )}>
+                          {((food.protein || 0) * food.portion / 100).toFixed(1)}g
+                        </p>
+                        <p className={cn(
+                          "text-xs",
+                          theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                        )}>
+                          {Math.round((food.calories || 0) * food.portion / 100)} cal
+                        </p>
+                      </div>
+
+                      {/* Remove Button */}
+                      <button
+                        onClick={() => removeFood(index)}
+                        data-testid={`remove-food-${index}`}
+                        className={cn(
+                          "p-2 rounded-lg transition-colors",
+                          theme === 'dark' 
+                            ? 'text-zinc-600 hover:text-red-400 hover:bg-red-500/10' 
+                            : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                        )}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                </GlassCardContent>
-              </GlassCard>
+                ))}
+              </div>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Save Custom Meal Dialog */}
-      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-        <DialogContent className="bg-zinc-900 border-white/10 text-white">
-          <DialogHeader>
-            <DialogTitle className="font-heading">Save Custom Meal</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-6 pt-4">
-            {analysis && (
-              <div className="p-3 rounded-xl bg-black/30 border border-white/5">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-zinc-400 text-sm">{selectedFoods.length} foods</span>
-                  <span className={cn(
-                    'text-xs px-2 py-0.5 rounded-full',
-                    getKetoTierColor(analysis.keto_analysis?.tier)
-                  )}>
-                    {analysis.combined_macros?.carbs}g carbs
-                  </span>
-                </div>
-                <div className="flex gap-4 text-sm">
-                  <span className="text-emerald-400">{analysis.combined_macros?.protein}g protein</span>
-                  <span className="text-cyan-400">{analysis.combined_macros?.fat}g fat</span>
-                  <span className="text-orange-400">{analysis.combined_macros?.calories} cal</span>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label className="text-zinc-400">Meal Name</Label>
-              <Input
-                value={mealName}
-                onChange={(e) => setMealName(e.target.value)}
-                placeholder="e.g., Morning Protein Bomb"
-                data-testid="custom-meal-name-input"
-                className="bg-black/50 border-white/10 text-white h-12"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-zinc-400">Description (optional)</Label>
-              <Input
-                value={mealDescription}
-                onChange={(e) => setMealDescription(e.target.value)}
-                placeholder="Brief description"
-                data-testid="custom-meal-desc-input"
-                className="bg-black/50 border-white/10 text-white h-12"
-              />
-            </div>
-
+        {/* Fixed Save Button */}
+        <div className={cn(
+          "fixed bottom-0 left-0 right-0 p-4 border-t",
+          theme === 'dark' ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-gray-200'
+        )}>
+          <div className="max-w-2xl mx-auto">
             <button
-              onClick={handleSaveCustomMeal}
-              disabled={savingMeal || !mealName.trim()}
-              data-testid="confirm-save-meal-btn"
-              className="w-full bg-orange-500 hover:bg-orange-400 text-black font-bold px-8 py-3.5 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              onClick={saveMeal}
+              disabled={saving || foods.length === 0 || !mealName.trim()}
+              data-testid="save-meal-btn"
+              className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold py-4 rounded-xl transition-colors"
             >
-              {savingMeal ? (
+              {saving ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
-                <>
-                  <Save className="w-5 h-5" />
-                  Save Meal
-                </>
+                <Save className="w-5 h-5" />
               )}
+              Save Meal
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+
+        {/* Search Modal */}
+        {showSearch && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center">
+            <div className={cn(
+              "w-full max-w-lg max-h-[80vh] rounded-t-2xl sm:rounded-2xl overflow-hidden",
+              theme === 'dark' ? 'bg-zinc-900' : 'bg-white'
+            )}>
+              {/* Search Header */}
+              <div className={cn(
+                "sticky top-0 p-4 border-b",
+                theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200'
+              )}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={cn(
+                    "text-lg font-bold",
+                    theme === 'dark' ? 'text-white' : 'text-gray-900'
+                  )}>
+                    Add Food
+                  </h3>
+                  <button
+                    onClick={() => setShowSearch(false)}
+                    className={cn(
+                      "p-2 rounded-lg",
+                      theme === 'dark' ? 'text-zinc-400 hover:bg-zinc-800' : 'text-gray-500 hover:bg-gray-100'
+                    )}
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="relative">
+                  <Search className={cn(
+                    "absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5",
+                    theme === 'dark' ? 'text-zinc-500' : 'text-gray-400'
+                  )} />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search foods..."
+                    autoFocus
+                    data-testid="search-food-input"
+                    className={cn(
+                      "pl-10 h-12",
+                      theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-gray-50 border-gray-200'
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Search Results */}
+              <div className="overflow-y-auto max-h-[60vh]">
+                {searching ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div>
+                    {searchResults.map((food, idx) => (
+                      <button
+                        key={food.fdc_id || idx}
+                        onClick={() => addFood(food)}
+                        data-testid={`search-result-${idx}`}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-4 py-3 text-left border-b transition-colors",
+                          theme === 'dark' 
+                            ? 'border-zinc-800 hover:bg-zinc-800' 
+                            : 'border-gray-100 hover:bg-gray-50'
+                        )}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className={cn(
+                            "font-medium truncate",
+                            theme === 'dark' ? 'text-white' : 'text-gray-900'
+                          )}>
+                            {food.description}
+                          </p>
+                          <p className={cn(
+                            "text-sm",
+                            theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                          )}>
+                            {food.calories || 0} cal • {food.protein || 0}g protein
+                          </p>
+                        </div>
+                        <Plus className="w-5 h-5 text-emerald-500" />
+                      </button>
+                    ))}
+                  </div>
+                ) : searchQuery.length >= 2 ? (
+                  <div className="py-12 text-center">
+                    <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'}>
+                      No results for "{searchQuery}"
+                    </p>
+                  </div>
+                ) : (
+                  <div className="py-12 text-center">
+                    <Search className={cn(
+                      "w-10 h-10 mx-auto mb-2",
+                      theme === 'dark' ? 'text-zinc-700' : 'text-gray-300'
+                    )} />
+                    <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'}>
+                      Type to search foods
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </Layout>
   );
 };
