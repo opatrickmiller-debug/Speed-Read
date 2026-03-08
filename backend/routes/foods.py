@@ -289,102 +289,125 @@ async def search_foods(
 @router.get("/autocomplete")
 async def autocomplete_foods(
     q: str = Query(..., min_length=1, max_length=50),
-    limit: int = Query(8, ge=1, le=15),
+    limit: int = Query(10, ge=1, le=20),
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Fast autocomplete for food search suggestions.
+    Fast autocomplete for food search - Redis cached.
     
-    Returns lightweight results optimized for speed:
-    - Only essential fields (id, description, protein, tier)
-    - Prioritizes exact prefix matches
-    - Limited to 8 results by default
-    - Searches USDA Foundation/SR Legacy only (fastest, highest quality)
+    Returns top 10 most common food descriptions matching the prefix.
+    Results are cached in Redis for fast retrieval.
     
-    Example: /api/foods/autocomplete?q=chi
-    Returns: chicken, chia seeds, chips, etc.
+    Priority order:
+    1. User's recent foods (personalized)
+    2. Popular foods from global usage data
+    3. USDA Foundation/SR Legacy foods (if cache miss)
+    
+    Example: GET /api/foods/autocomplete?q=chi
     """
+    from core.cache import cache, CacheTTL
+    
     query = q.strip().lower()
+    cache_key = f"autocomplete:{query}"
+    
+    # Try Redis cache first
+    cached_results = await cache.get(cache_key)
+    if cached_results is not None:
+        return {
+            "query": q,
+            "suggestions": cached_results[:limit],
+            "count": len(cached_results[:limit]),
+            "cached": True
+        }
+    
     suggestions = []
-    seen_names = set()
+    seen_descriptions = set()
     
-    # 1. Search user's recent foods first (instant, personalized)
-    recent_logs = await db.food_logs.find(
+    # 1. Get user's recent foods matching prefix (personalized, top priority)
+    recent_pipeline = [
         {
-            "user_id": current_user["id"],
-            "description": {"$regex": f"^{query}", "$options": "i"}
+            "$match": {
+                "user_id": current_user["id"],
+                "description": {"$regex": f"^{query}", "$options": "i"}
+            }
         },
-        {"_id": 0, "fdc_id": 1, "description": 1, "protein": 1}
-    ).sort("logged_at", -1).limit(3).to_list(3)
+        {"$sort": {"logged_at": -1}},
+        {"$limit": 20},
+        {
+            "$group": {
+                "_id": {"$toLower": "$description"},
+                "fdc_id": {"$first": "$fdc_id"},
+                "description": {"$first": "$description"},
+                "protein": {"$first": "$protein"},
+                "count": {"$sum": 1}
+            }
+        },
+        {"$sort": {"count": -1}},
+        {"$limit": 3}
+    ]
     
-    for log in recent_logs:
-        name_lower = log.get("description", "").lower()
-        if name_lower not in seen_names:
-            seen_names.add(name_lower)
+    recent_cursor = db.food_logs.aggregate(recent_pipeline)
+    async for doc in recent_cursor:
+        desc = doc.get("description", "")
+        desc_lower = desc.lower()
+        if desc_lower not in seen_descriptions:
+            seen_descriptions.add(desc_lower)
             suggestions.append({
-                "fdc_id": log.get("fdc_id"),
-                "description": log.get("description", ""),
-                "protein": round(log.get("protein", 0), 1),
-                "tier": 1,
-                "tier_label": "Recent",
+                "fdc_id": doc.get("fdc_id"),
+                "description": desc,
+                "protein": round(doc.get("protein", 0) or 0, 1),
                 "source": "recent"
             })
     
-    # 2. Search user's custom foods
-    custom_foods = await db.custom_foods.find(
-        {
-            "user_id": current_user["id"],
-            "name": {"$regex": f"^{query}", "$options": "i"}
-        },
-        {"_id": 0, "id": 1, "name": 1, "protein": 1}
-    ).limit(2).to_list(2)
+    # 2. Get popular foods matching prefix from global popularity data
+    popular_cursor = db.food_popularity.find(
+        {"description": {"$regex": f"^{query}", "$options": "i"}},
+        {"_id": 0, "food_id": 1, "description": 1, "log_count": 1, "selection_count": 1}
+    ).sort([("log_count", -1), ("selection_count", -1)]).limit(15)
     
-    for food in custom_foods:
-        name_lower = food.get("name", "").lower()
-        if name_lower not in seen_names:
-            seen_names.add(name_lower)
+    async for doc in popular_cursor:
+        if len(suggestions) >= 10:
+            break
+        desc = doc.get("description", "")
+        desc_lower = desc.lower()
+        if desc_lower not in seen_descriptions:
+            seen_descriptions.add(desc_lower)
             suggestions.append({
-                "fdc_id": f"custom:{food.get('id')}",
-                "description": food.get("name", ""),
-                "protein": round(food.get("protein", 0), 1),
-                "tier": 1,
-                "tier_label": "Your Food",
-                "source": "custom"
+                "fdc_id": doc.get("food_id"),
+                "description": desc,
+                "protein": 0,  # Not stored in popularity collection
+                "source": "popular"
             })
     
-    # 3. Search USDA (Foundation + SR Legacy only for speed)
-    remaining = limit - len(suggestions)
-    if remaining > 0:
+    # 3. If still need more, fetch from USDA (Foundation foods)
+    if len(suggestions) < 10:
         try:
-            # Search high-quality USDA sources
             usda_results = await fdc_client.search_foods(
-                query, 
-                page_size=remaining + 5,  # Get extra to filter dupes
-                page=1, 
+                query,
+                page_size=15,
+                page=1,
                 data_type="Foundation"
             )
             
             for food in usda_results.get("foods", []):
-                if len(suggestions) >= limit:
+                if len(suggestions) >= 10:
                     break
-                    
+                
                 desc = food.get("description", "")
                 desc_lower = desc.lower()
                 
-                # Skip if already seen
-                if desc_lower in seen_names:
+                if desc_lower in seen_descriptions:
                     continue
                 
-                # Prioritize prefix matches
+                # Only include if starts with query or word starts with query
                 if not desc_lower.startswith(query):
-                    # Check if any word starts with query
                     words = desc_lower.split()
-                    if not any(w.startswith(query) for w in words):
+                    if not any(w.startswith(query) for w in words[:3]):
                         continue
                 
-                seen_names.add(desc_lower)
+                seen_descriptions.add(desc_lower)
                 
-                # Extract protein from nutrients
+                # Extract protein
                 protein = 0
                 for nutrient in food.get("foodNutrients", []):
                     if nutrient.get("nutrientId") == 1003:
@@ -395,62 +418,19 @@ async def autocomplete_foods(
                     "fdc_id": str(food.get("fdcId", "")),
                     "description": desc,
                     "protein": round(protein, 1),
-                    "tier": 1,
-                    "tier_label": "Best Match",
                     "source": "usda"
                 })
         except Exception as e:
             print(f"USDA autocomplete error: {e}")
     
-    # 4. If still need more, try SR Legacy
-    remaining = limit - len(suggestions)
-    if remaining > 0:
-        try:
-            sr_results = await fdc_client.search_foods(
-                query,
-                page_size=remaining + 3,
-                page=1,
-                data_type="SR Legacy"
-            )
-            
-            for food in sr_results.get("foods", []):
-                if len(suggestions) >= limit:
-                    break
-                    
-                desc = food.get("description", "")
-                desc_lower = desc.lower()
-                
-                if desc_lower in seen_names:
-                    continue
-                
-                # Word-start matching
-                words = desc_lower.split()
-                if not desc_lower.startswith(query) and not any(w.startswith(query) for w in words):
-                    continue
-                
-                seen_names.add(desc_lower)
-                
-                protein = 0
-                for nutrient in food.get("foodNutrients", []):
-                    if nutrient.get("nutrientId") == 1003:
-                        protein = nutrient.get("value", 0) or 0
-                        break
-                
-                suggestions.append({
-                    "fdc_id": str(food.get("fdcId", "")),
-                    "description": desc,
-                    "protein": round(protein, 1),
-                    "tier": 1,
-                    "tier_label": "Verified",
-                    "source": "usda"
-                })
-        except Exception as e:
-            print(f"SR Legacy autocomplete error: {e}")
+    # Cache results in Redis (1 hour TTL)
+    await cache.set(cache_key, suggestions, ttl=3600)
     
     return {
         "query": q,
         "suggestions": suggestions[:limit],
-        "count": len(suggestions[:limit])
+        "count": len(suggestions[:limit]),
+        "cached": False
     }
 
 # ==================== CATEGORY BROWSING & QUICK ACCESS ====================

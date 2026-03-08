@@ -35,6 +35,7 @@ class CacheTTL:
     FOOD_DETAILS = 604800       # 7 days
     USER_LOGGED_FOODS = 3600    # 1 hour
     POPULARITY_SCORES = 1800    # 30 minutes
+    AUTOCOMPLETE = 3600         # 1 hour
 
 
 class CacheKeys:
@@ -74,6 +75,12 @@ class CacheKeys:
     def popularity_scores() -> str:
         """Cache key for global popularity scores"""
         return "popularity_scores"
+    
+    @staticmethod
+    def autocomplete(prefix: str) -> str:
+        """Cache key for autocomplete results"""
+        safe_prefix = prefix.replace(" ", "_").replace(":", "_")
+        return f"autocomplete:{safe_prefix}"
 
 
 class RedisCache:
