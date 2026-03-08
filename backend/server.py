@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from pathlib import Path
@@ -12,8 +13,31 @@ load_dotenv(ROOT_DIR / '.env')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Create the main app
-app = FastAPI(title="Keto Nutrition Tracker API")
+# Import cache module
+from core.cache import init_cache, close_cache, cache
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan events - startup and shutdown"""
+    # Startup
+    logger.info("Starting up application...")
+    redis_connected = await init_cache()
+    if redis_connected:
+        logger.info("Redis cache initialized successfully")
+    else:
+        logger.warning("Redis not available - running without caching")
+    
+    yield
+    
+    # Shutdown
+    logger.info("Shutting down application...")
+    await close_cache()
+
+# Create the main app with lifespan
+app = FastAPI(
+    title="Keto Nutrition Tracker API",
+    lifespan=lifespan
+)
 
 # Create main API router with /api prefix
 api_router = APIRouter(prefix="/api")
@@ -51,6 +75,12 @@ async def root():
 @api_router.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@api_router.get("/cache/stats")
+async def cache_stats():
+    """Get Redis cache statistics"""
+    stats = await cache.get_stats()
+    return stats
 
 # Include main router
 app.include_router(api_router)

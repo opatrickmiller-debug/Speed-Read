@@ -5,11 +5,13 @@ from typing import Dict, List, Optional
 from functools import lru_cache
 from core.config import settings
 from core.constants import ALL_AMINO_ACIDS, ESSENTIAL_AMINO_ACIDS, ALL_FATTY_ACIDS, ESSENTIAL_FATTY_ACIDS
+from core.cache import cache
 from models.food import AminoAcid, FattyAcid, FoodDetail
 
 logger = logging.getLogger(__name__)
 
 # Simple in-memory cache for food details (reduces API calls)
+# This is a fallback when Redis is not available
 _food_cache: Dict[str, Dict] = {}
 _cache_max_size = 500
 
@@ -43,12 +45,18 @@ class FDCClient:
                     return {"foods": [], "totalHits": 0}
     
     async def get_food_details(self, fdc_id: str) -> Optional[Dict]:
-        """Get food details using the batch endpoint (more reliable) with caching."""
+        """Get food details using the batch endpoint (more reliable) with Redis + in-memory caching."""
         global _food_cache
         
-        # Check cache first
+        # Check Redis cache first (7 day TTL)
+        cached = await cache.get_food_detail("usda", fdc_id)
+        if cached:
+            logger.debug(f"Redis cache hit for {fdc_id}")
+            return cached
+        
+        # Fallback to in-memory cache
         if fdc_id in _food_cache:
-            logger.debug(f"Cache hit for {fdc_id}")
+            logger.debug(f"Memory cache hit for {fdc_id}")
             return _food_cache[fdc_id]
         
         async with self.semaphore:
@@ -61,13 +69,17 @@ class FDCClient:
                     )
                     if response.status_code == 200:
                         data = response.json()
-                        # Cache the result
+                        
+                        # Cache in Redis (7 day TTL)
+                        await cache.set_food_detail("usda", fdc_id, data)
+                        
+                        # Also cache in memory (fallback)
                         if len(_food_cache) >= _cache_max_size:
-                            # Simple cache eviction: remove oldest entries
                             keys_to_remove = list(_food_cache.keys())[:100]
                             for k in keys_to_remove:
                                 del _food_cache[k]
                         _food_cache[fdc_id] = data
+                        
                         return data
                     
                     # If single endpoint fails, try batch endpoint
@@ -83,10 +95,11 @@ class FDCClient:
                     # Batch endpoint can return list or empty dict
                     if isinstance(data, list) and len(data) > 0:
                         result = data[0]
+                        await cache.set_food_detail("usda", fdc_id, result)
                         _food_cache[fdc_id] = result
                         return result
                     elif isinstance(data, dict) and data:
-                        # If it returns a dict with data (some API versions)
+                        await cache.set_food_detail("usda", fdc_id, data)
                         _food_cache[fdc_id] = data
                         return data
                     

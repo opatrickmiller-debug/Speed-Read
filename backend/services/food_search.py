@@ -1,10 +1,16 @@
 """
-Advanced Food Search Service with Smart Ranking Algorithm
+Advanced Food Search Service with Smart Ranking Algorithm + Redis Caching
 
 This service provides intelligent food search across multiple sources:
 - USDA FoodData Central (Foundation, SR Legacy, Survey)
 - Open Food Facts (2M+ products)
 - User's custom foods
+
+Features:
+- Redis caching for search results (24h TTL) and food details (7d TTL)
+- RapidFuzz fuzzy matching for relevance scoring
+- Deduplication by name + brand
+- Popularity and user history boosting
 
 Ranking is based on:
 - Exact/fuzzy name matching (RapidFuzz)
@@ -19,6 +25,8 @@ import logging
 from typing import Dict, List, Optional, Set, Tuple
 from dataclasses import dataclass
 from rapidfuzz import fuzz, process
+
+from core.cache import cache, CacheKeys, CacheTTL
 
 logger = logging.getLogger(__name__)
 
@@ -339,15 +347,79 @@ class FoodSearchService:
         return final_results
     
     # ========================
-    # 6. UTILITY METHODS
+    # 6. CACHING METHODS
+    # ========================
+    
+    async def get_cached_search_results(self, query: str) -> Optional[List[Dict]]:
+        """
+        Get cached search results for a query.
+        
+        Returns cached results if available, None otherwise.
+        """
+        normalized_query = self.normalize_query(query)
+        cached = await cache.get_search_results(normalized_query)
+        
+        if cached:
+            logger.info(f"Cache HIT for search query: '{query}'")
+            return cached
+        
+        logger.debug(f"Cache MISS for search query: '{query}'")
+        return None
+    
+    async def cache_search_results(self, query: str, results: List[Dict]) -> bool:
+        """
+        Cache search results for a query (24 hour TTL).
+        
+        Note: We cache the final ranked results, not raw API responses.
+        """
+        normalized_query = self.normalize_query(query)
+        success = await cache.set_search_results(normalized_query, results)
+        
+        if success:
+            logger.debug(f"Cached {len(results)} results for query: '{query}'")
+        return success
+    
+    async def get_cached_food_detail(self, source: str, food_id: str) -> Optional[Dict]:
+        """
+        Get cached food details.
+        
+        Returns cached food data if available, None otherwise.
+        """
+        cached = await cache.get_food_detail(source, food_id)
+        
+        if cached:
+            logger.debug(f"Cache HIT for food: {source}:{food_id}")
+            return cached
+        
+        return None
+    
+    async def cache_food_detail(self, source: str, food_id: str, food_data: Dict) -> bool:
+        """
+        Cache food details (7 day TTL).
+        """
+        success = await cache.set_food_detail(source, food_id, food_data)
+        
+        if success:
+            logger.debug(f"Cached food detail: {source}:{food_id}")
+        return success
+    
+    # ========================
+    # 7. UTILITY METHODS (with caching)
     # ========================
     
     async def get_user_logged_foods(self, db, user_id: str) -> Set[str]:
         """
         Get set of food IDs that user has previously logged.
+        Uses Redis cache with 1 hour TTL.
         
         This is used to boost frequently-used foods in search results.
         """
+        # Check cache first
+        cached = await cache.get_user_logged_foods(user_id)
+        if cached is not None:
+            logger.debug(f"Cache HIT for user logged foods: {user_id}")
+            return set(cached)
+        
         try:
             # Get distinct fdc_ids from user's logs
             pipeline = [
@@ -357,13 +429,17 @@ class FoodSearchService:
             ]
             
             cursor = db.food_logs.aggregate(pipeline)
-            logged_ids = set()
+            logged_ids = []
             
             async for doc in cursor:
                 if doc.get("_id"):
-                    logged_ids.add(str(doc["_id"]))
+                    logged_ids.append(str(doc["_id"]))
             
-            return logged_ids
+            # Cache the result
+            await cache.set_user_logged_foods(user_id, logged_ids)
+            logger.debug(f"Cached {len(logged_ids)} logged foods for user: {user_id}")
+            
+            return set(logged_ids)
         except Exception as e:
             logger.error(f"Error fetching user logged foods: {e}")
             return set()
@@ -371,9 +447,16 @@ class FoodSearchService:
     async def get_popularity_scores(self, db, limit: int = 200) -> Dict[str, float]:
         """
         Get popularity scores for foods based on selection count.
+        Uses Redis cache with 30 minute TTL.
         
         Returns dict mapping food_id -> normalized score (0-5 scale)
         """
+        # Check cache first
+        cached = await cache.get_popularity_scores()
+        if cached is not None:
+            logger.debug("Cache HIT for popularity scores")
+            return cached
+        
         try:
             # Get top foods by selection count
             cursor = db.food_popularity.find(
@@ -397,10 +480,19 @@ class FoodSearchService:
                 normalized = (count / max_count) * 5 if max_count > 0 else 0
                 scores[food_id] = round(normalized, 2)
             
+            # Cache the result
+            await cache.set_popularity_scores(scores)
+            logger.debug(f"Cached {len(scores)} popularity scores")
+            
             return scores
         except Exception as e:
             logger.error(f"Error fetching popularity scores: {e}")
             return {}
+    
+    async def invalidate_user_cache(self, user_id: str):
+        """Invalidate user's logged foods cache when they log new food"""
+        await cache.invalidate_user_logged_foods(user_id)
+        logger.debug(f"Invalidated cache for user: {user_id}")
 
 
 # Singleton instance
