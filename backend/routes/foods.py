@@ -284,6 +284,175 @@ async def search_foods(
         "tiers": tier_counts
     }
 
+# ==================== AUTOCOMPLETE ====================
+
+@router.get("/autocomplete")
+async def autocomplete_foods(
+    q: str = Query(..., min_length=1, max_length=50),
+    limit: int = Query(8, ge=1, le=15),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Fast autocomplete for food search suggestions.
+    
+    Returns lightweight results optimized for speed:
+    - Only essential fields (id, description, protein, tier)
+    - Prioritizes exact prefix matches
+    - Limited to 8 results by default
+    - Searches USDA Foundation/SR Legacy only (fastest, highest quality)
+    
+    Example: /api/foods/autocomplete?q=chi
+    Returns: chicken, chia seeds, chips, etc.
+    """
+    query = q.strip().lower()
+    suggestions = []
+    seen_names = set()
+    
+    # 1. Search user's recent foods first (instant, personalized)
+    recent_logs = await db.food_logs.find(
+        {
+            "user_id": current_user["id"],
+            "description": {"$regex": f"^{query}", "$options": "i"}
+        },
+        {"_id": 0, "fdc_id": 1, "description": 1, "protein": 1}
+    ).sort("logged_at", -1).limit(3).to_list(3)
+    
+    for log in recent_logs:
+        name_lower = log.get("description", "").lower()
+        if name_lower not in seen_names:
+            seen_names.add(name_lower)
+            suggestions.append({
+                "fdc_id": log.get("fdc_id"),
+                "description": log.get("description", ""),
+                "protein": round(log.get("protein", 0), 1),
+                "tier": 1,
+                "tier_label": "Recent",
+                "source": "recent"
+            })
+    
+    # 2. Search user's custom foods
+    custom_foods = await db.custom_foods.find(
+        {
+            "user_id": current_user["id"],
+            "name": {"$regex": f"^{query}", "$options": "i"}
+        },
+        {"_id": 0, "id": 1, "name": 1, "protein": 1}
+    ).limit(2).to_list(2)
+    
+    for food in custom_foods:
+        name_lower = food.get("name", "").lower()
+        if name_lower not in seen_names:
+            seen_names.add(name_lower)
+            suggestions.append({
+                "fdc_id": f"custom:{food.get('id')}",
+                "description": food.get("name", ""),
+                "protein": round(food.get("protein", 0), 1),
+                "tier": 1,
+                "tier_label": "Your Food",
+                "source": "custom"
+            })
+    
+    # 3. Search USDA (Foundation + SR Legacy only for speed)
+    remaining = limit - len(suggestions)
+    if remaining > 0:
+        try:
+            # Search high-quality USDA sources
+            usda_results = await fdc_client.search_foods(
+                query, 
+                page_size=remaining + 5,  # Get extra to filter dupes
+                page=1, 
+                data_type="Foundation"
+            )
+            
+            for food in usda_results.get("foods", []):
+                if len(suggestions) >= limit:
+                    break
+                    
+                desc = food.get("description", "")
+                desc_lower = desc.lower()
+                
+                # Skip if already seen
+                if desc_lower in seen_names:
+                    continue
+                
+                # Prioritize prefix matches
+                if not desc_lower.startswith(query):
+                    # Check if any word starts with query
+                    words = desc_lower.split()
+                    if not any(w.startswith(query) for w in words):
+                        continue
+                
+                seen_names.add(desc_lower)
+                
+                # Extract protein from nutrients
+                protein = 0
+                for nutrient in food.get("foodNutrients", []):
+                    if nutrient.get("nutrientId") == 1003:
+                        protein = nutrient.get("value", 0) or 0
+                        break
+                
+                suggestions.append({
+                    "fdc_id": str(food.get("fdcId", "")),
+                    "description": desc,
+                    "protein": round(protein, 1),
+                    "tier": 1,
+                    "tier_label": "Best Match",
+                    "source": "usda"
+                })
+        except Exception as e:
+            print(f"USDA autocomplete error: {e}")
+    
+    # 4. If still need more, try SR Legacy
+    remaining = limit - len(suggestions)
+    if remaining > 0:
+        try:
+            sr_results = await fdc_client.search_foods(
+                query,
+                page_size=remaining + 3,
+                page=1,
+                data_type="SR Legacy"
+            )
+            
+            for food in sr_results.get("foods", []):
+                if len(suggestions) >= limit:
+                    break
+                    
+                desc = food.get("description", "")
+                desc_lower = desc.lower()
+                
+                if desc_lower in seen_names:
+                    continue
+                
+                # Word-start matching
+                words = desc_lower.split()
+                if not desc_lower.startswith(query) and not any(w.startswith(query) for w in words):
+                    continue
+                
+                seen_names.add(desc_lower)
+                
+                protein = 0
+                for nutrient in food.get("foodNutrients", []):
+                    if nutrient.get("nutrientId") == 1003:
+                        protein = nutrient.get("value", 0) or 0
+                        break
+                
+                suggestions.append({
+                    "fdc_id": str(food.get("fdcId", "")),
+                    "description": desc,
+                    "protein": round(protein, 1),
+                    "tier": 1,
+                    "tier_label": "Verified",
+                    "source": "usda"
+                })
+        except Exception as e:
+            print(f"SR Legacy autocomplete error: {e}")
+    
+    return {
+        "query": q,
+        "suggestions": suggestions[:limit],
+        "count": len(suggestions[:limit])
+    }
+
 # ==================== CATEGORY BROWSING & QUICK ACCESS ====================
 # These routes MUST be before /{fdc_id} to avoid path conflicts
 
