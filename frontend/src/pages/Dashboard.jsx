@@ -47,9 +47,10 @@ export const Dashboard = () => {
 
   const loadDashboardData = async () => {
     try {
+      const today = format(new Date(), 'yyyy-MM-dd');
       const [statsRes, logsRes, ketoRes] = await Promise.all([
-        statsApi.getDaily(),
-        logsApi.getAll(format(new Date(), 'yyyy-MM-dd')),
+        statsApi.getDaily(today),
+        logsApi.getAll(today),
         ketoApi.getScore()
       ]);
       setStats(statsRes.data);
@@ -295,7 +296,9 @@ export const Dashboard = () => {
             </GlassCardHeader>
             <GlassCardContent className="pt-0">
               {aminoAcidsArray.length > 0 ? (
-                <AminoAcidRadar aminoAcids={aminoAcidsArray} />
+                <div className="h-[320px]">
+                  <AminoAcidRadar aminoAcids={aminoAcidsArray} />
+                </div>
               ) : (
                 <div className="h-[280px] flex flex-col items-center justify-center text-zinc-500">
                   <AlertTriangle className="w-8 h-8 mb-3 text-zinc-600" />

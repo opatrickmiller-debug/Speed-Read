@@ -196,6 +196,38 @@ export const FoodSearch = () => {
 
   const handleQuickLog = async (food) => {
     try {
+      // Fetch full food details to get amino acids
+      let aminoAcids = [];
+      let fattyAcids = [];
+      
+      try {
+        const detailsRes = await foodsApi.getDetails(food.fdc_id);
+        const details = detailsRes.data;
+        const servingSize = food.serving_size || 100;
+        
+        // Calculate amino acids for the serving size
+        if (details.amino_acids?.length > 0) {
+          aminoAcids = details.amino_acids.map(aa => ({
+            name: aa.name,
+            value: parseFloat((aa.value * servingSize / 100).toFixed(3)),
+            is_essential: aa.is_essential
+          }));
+        }
+        
+        // Calculate fatty acids for the serving size
+        if (details.fatty_acids?.length > 0) {
+          fattyAcids = details.fatty_acids.map(fa => ({
+            name: fa.name,
+            value: parseFloat((fa.value * servingSize / 100).toFixed(3)),
+            is_essential: fa.is_essential,
+            omega_type: fa.omega_type
+          }));
+        }
+      } catch (detailErr) {
+        // Continue without amino acids if fetch fails
+        console.warn('Could not fetch food details for amino acids:', detailErr);
+      }
+      
       await logsApi.create({
         fdc_id: food.fdc_id,
         description: food.description,
@@ -207,8 +239,8 @@ export const FoodSearch = () => {
         fat: food.fat || 0,
         carbs: food.carbs || 0,
         fiber: food.fiber || 0,
-        amino_acids: [],
-        fatty_acids: [],
+        amino_acids: aminoAcids,
+        fatty_acids: fattyAcids,
         meal_type: selectedMeal
       });
       toast.success(`Added ${food.description.split(',')[0]} to ${selectedMeal}`);
