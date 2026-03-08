@@ -37,11 +37,24 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-export const FattyAcidChart = ({ fattyAcids = [], className = '' }) => {
+export const FattyAcidChart = ({ fattyAcids = [], data = null, className = '' }) => {
   const { theme } = useTheme();
   
+  // Support both array format (from food details) and dict format (from calculator)
+  let processedFattyAcids = fattyAcids;
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    // Convert dict format to array format
+    processedFattyAcids = Object.entries(data).map(([name, value]) => ({
+      name,
+      value,
+      omega_type: name.toLowerCase().includes('omega3') || name.toLowerCase().includes('ala') || 
+                  name.toLowerCase().includes('epa') || name.toLowerCase().includes('dha') ? 3 : 
+                  name.toLowerCase().includes('omega6') || name.toLowerCase().includes('linoleic') ? 6 : null
+    }));
+  }
+  
   const chartData = ESSENTIAL_FATTY_ACIDS.map((fa) => {
-    const found = fattyAcids.find(
+    const found = processedFattyAcids.find(
       (f) => f.name?.toLowerCase().includes(fa.name.toLowerCase()) || 
              f.name?.toLowerCase().includes(fa.fullName.toLowerCase())
     );

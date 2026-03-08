@@ -40,12 +40,25 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-export const AminoAcidRadar = ({ aminoAcids = [], className = '' }) => {
+export const AminoAcidRadar = ({ aminoAcids = [], data = null, className = '' }) => {
   const { theme } = useTheme();
+  
+  // Support both array format (from food details) and dict format (from calculator)
+  let processedAminoAcids = aminoAcids;
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    // Convert dict format to array format
+    processedAminoAcids = Object.entries(data).map(([name, value]) => ({
+      name,
+      value,
+      is_essential: ESSENTIAL_AMINO_ACIDS.some(ea => 
+        ea.toLowerCase() === name.toLowerCase()
+      )
+    }));
+  }
   
   // Process amino acids data for radar chart
   const radarData = ESSENTIAL_AMINO_ACIDS.map((name) => {
-    const aa = aminoAcids.find(
+    const aa = processedAminoAcids.find(
       (a) => a.name?.toLowerCase() === name.toLowerCase()
     );
     return {
