@@ -6,6 +6,7 @@ import asyncio
 from core.database import db
 from core.security import get_current_user
 from services.fdc_client import fdc_client
+from services.food_search import food_search_service
 from routes.popularity import get_popular_foods, track_food_selection
 
 router = APIRouter(prefix="/foods", tags=["Foods"])
@@ -176,12 +177,21 @@ async def search_foods(
             # Extract nutrients
             protein = 0
             calories = 0
+            fat = 0
+            carbs = 0
+            fiber = 0
             for nutrient in food.get("foodNutrients", []):
                 nutrient_id = nutrient.get("nutrientId")
                 if nutrient_id == 1003:  # Protein
                     protein = nutrient.get("value", 0) or 0
                 elif nutrient_id == 1008:  # Energy (kcal)
                     calories = nutrient.get("value", 0) or 0
+                elif nutrient_id == 1004:  # Fat
+                    fat = nutrient.get("value", 0) or 0
+                elif nutrient_id == 1005:  # Carbs
+                    carbs = nutrient.get("value", 0) or 0
+                elif nutrient_id == 1079:  # Fiber
+                    fiber = nutrient.get("value", 0) or 0
             
             has_amino = food_data_type in AMINO_ACID_SOURCES
             
@@ -194,231 +204,61 @@ async def search_foods(
                 "source": "usda",
                 "protein_per_100g": round(protein, 2),
                 "calories_per_100g": round(calories, 0),
+                "fat_per_100g": round(fat, 2),
+                "carbs_per_100g": round(carbs, 2),
+                "fiber_per_100g": round(fiber, 2),
                 "has_amino_acids": has_amino,
                 "has_fatty_acids": has_amino
             })
         return foods_to_add
     
+    # Collect USDA results
+    usda_results = []
+    
     # Process Foundation foods first (highest quality)
     if "usda_foundation" in results_by_source:
-        all_results.extend(process_usda_foods(results_by_source["usda_foundation"], "Foundation"))
+        usda_results.extend(process_usda_foods(results_by_source["usda_foundation"], "Foundation"))
     
     # Then SR Legacy (whole foods reference)
     if "usda_sr_legacy" in results_by_source:
-        all_results.extend(process_usda_foods(results_by_source["usda_sr_legacy"], "SR Legacy"))
+        usda_results.extend(process_usda_foods(results_by_source["usda_sr_legacy"], "SR Legacy"))
     
     # Then Survey foods (common foods)
     if "usda_survey" in results_by_source:
-        all_results.extend(process_usda_foods(results_by_source["usda_survey"], "Survey (FNDDS)"))
+        usda_results.extend(process_usda_foods(results_by_source["usda_survey"], "Survey (FNDDS)"))
     
     # Finally branded (if enabled)
     if "usda_branded" in results_by_source:
-        all_results.extend(process_usda_foods(results_by_source["usda_branded"], "Branded"))
+        usda_results.extend(process_usda_foods(results_by_source["usda_branded"], "Branded"))
     
     # Legacy support for old "usda" key (single search)
     if "usda" in results_by_source:
-        all_results.extend(process_usda_foods(results_by_source["usda"]))
+        usda_results.extend(process_usda_foods(results_by_source["usda"]))
     
-    # Add Open Food Facts results
-    if "off" in results_by_source:
-        off_results = results_by_source["off"]
-        all_results.extend(off_results)
+    # Get Open Food Facts results
+    off_results = results_by_source.get("off", [])
     
-    # Add custom foods results
-    if "custom" in results_by_source:
-        custom_results = results_by_source["custom"]
-        all_results.extend(custom_results)
+    # Get custom foods results
+    custom_results = results_by_source.get("custom", [])
     
-    # ==================== SMART RANKING ====================
-    # Prioritize: exact matches > simple whole foods > complex meals > obscure products
+    # ==================== ADVANCED RANKING (using food_search_service) ====================
+    # Get user's previously logged foods for ranking boost
+    user_logged_foods = await food_search_service.get_user_logged_foods(db, current_user["id"])
     
-    def calculate_relevance_score(food, search_query):
-        """
-        Score foods to prioritize relevant matches over unrelated foods.
-        Higher score = more relevant = appears first.
-        
-        Scoring breakdown:
-        - Exact/phrase match: +200-100 points (HIGHEST PRIORITY)
-        - All query words present: +80-50 points
-        - Simplicity (word count): +60 to 0 points  
-        - Data source quality: +70 to +5 points
-        - Amino acid data: +30 points
-        - High protein: +15 points
-        - Complex/branded penalty: -15 to -40 points
-        - UNRELATED penalty: -100 points
-        """
-        score = 0
-        description = food.get("description", "").lower()
-        query_lower = search_query.lower().strip()
-        query_words = [w for w in query_lower.split() if len(w) > 1]  # Ignore single chars
-        
-        # Clean description for matching (remove parentheses content)
-        desc_clean = description.split(',')[0].strip()
-        desc_words = description.replace(',', ' ').lower().split()
-        
-        # ===== 1. MATCH QUALITY (HIGHEST PRIORITY) =====
-        
-        # Check if ALL query words are present in description
-        words_found = sum(1 for word in query_words if word in description)
-        words_ratio = words_found / len(query_words) if query_words else 0
-        
-        # CRITICAL: If less than half of query words match, heavily penalize
-        if words_ratio < 0.5:
-            score -= 150  # Strong penalty for unrelated foods
-        elif words_ratio < 1.0:
-            score -= 50   # Moderate penalty for partial matches
-        
-        # Exact phrase matching
-        if query_lower in description:
-            score += 200  # Exact phrase found
-        elif desc_clean == query_lower:
-            score += 180  # Perfect exact match on first part
-        elif description.startswith(query_lower):
-            score += 150  # Starts with query
-        elif desc_clean.startswith(query_words[0] if query_words else ""):
-            score += 100  # First word matches start
-        
-        # Check for reordered match (e.g., "scrambled eggs" matches "Eggs, scrambled")
-        if len(query_words) >= 2:
-            # Check if all words appear in either order
-            if all(word in description for word in query_words):
-                # Bonus if words appear close together
-                first_word_pos = description.find(query_words[0])
-                last_word_pos = description.find(query_words[-1])
-                if first_word_pos >= 0 and last_word_pos >= 0:
-                    distance = abs(last_word_pos - first_word_pos)
-                    if distance < 30:  # Words are close together
-                        score += 120
-                    else:
-                        score += 60
-        
-        # Single word query bonus for exact start match
-        if len(query_words) == 1:
-            if desc_clean.startswith(query_words[0]):
-                score += 100
-            elif any(word.startswith(query_words[0]) for word in desc_words[:3]):
-                score += 70  # First 3 words start with query
-        
-        # 2. SIMPLICITY SCORE - fewer words = simpler food
-        word_count = len(desc_words)
-        if word_count <= 2:
-            score += 60  # Very simple: "Chicken breast", "Eggs"
-        elif word_count <= 3:
-            score += 45  # Simple: "Chicken breast raw"
-        elif word_count <= 4:
-            score += 30  # Moderate: "Chicken breast grilled skinless"
-        elif word_count <= 6:
-            score += 15  # Acceptable complexity
-        # 7+ words = complex, no bonus
-        
-        # 3. DATA SOURCE QUALITY
-        source = food.get("source", "")
-        data_type = food.get("data_type", "")
-        
-        if source == "custom":
-            score += 80  # User's own foods first
-        elif source == "usda":
-            if data_type == "Foundation":
-                score += 70  # Foundation foods (highest quality data)
-            elif data_type == "SR Legacy":
-                score += 65  # Standard reference (whole foods)
-            elif data_type == "Survey (FNDDS)":
-                score += 40  # Survey foods (common meals)
-            elif data_type == "Branded":
-                score += 5   # Branded products (lowest priority)
-            else:
-                score += 20
-        elif source == "off":
-            score += 10  # Open Food Facts (usually branded)
-        
-        # 4. AMINO ACID DATA AVAILABILITY (important for this app)
-        if food.get("has_amino_acids"):
-            score += 30
-        
-        # 5. PROTEIN CONTENT (keto relevance)
-        protein = food.get("protein_per_100g", 0) or 0
-        if protein >= 25:
-            score += 15  # Very high protein
-        elif protein >= 15:
-            score += 10  # High protein
-        elif protein >= 8:
-            score += 5   # Moderate protein
-        
-        # 6. PENALTY for complex/prepared foods (more aggressive)
-        complex_indicators = [
-            'with', 'and', 'style', 'flavored', 'flavour', 'recipe',
-            'prepared', 'meal', 'dinner', 'lunch', 'breakfast',
-            'frozen', 'instant', 'mix', 'sauce', 'soup', 'stew', 
-            'casserole', 'sandwich', 'pizza', 'noodles', 'pasta', 
-            'cereal', 'pie', 'cake', 'restaurant', 'homemade',
-            'cooked in', 'made with', 'fast food'
-        ]
-        penalty_count = 0
-        for indicator in complex_indicators:
-            if indicator in description:
-                penalty_count += 1
-        score -= min(penalty_count * 8, 40)  # Cap penalty at -40
-        
-        # 7. PENALTY for brand names (usually processed)
-        if food.get("brand_owner"):
-            score -= 20
-        
-        # 8. BONUS for raw/unprocessed indicators
-        raw_indicators = ['raw', 'fresh', 'plain', 'unseasoned', 'natural']
-        for indicator in raw_indicators:
-            if indicator in description:
-                score += 10
-                break
-        
-        # 9. POPULARITY BONUS - boost foods that users frequently select/log
-        food_id = str(food.get("fdc_id") or food.get("id", ""))
-        popularity_boost = popularity_scores.get(food_id, 0)
-        score += popularity_boost  # Up to +50 for very popular foods
-        
-        return score
-    
-    # Score and sort all results
-    for food in all_results:
-        food["_relevance_score"] = calculate_relevance_score(food, query)
-        
-        # Add tier and verification status (MyFitnessPal style)
-        source = food.get("source", "")
-        data_type = food.get("data_type", "")
-        
-        if source == "custom":
-            food["tier"] = 1
-            food["is_verified"] = True
-            food["tier_label"] = "Your Food"
-        elif source == "usda":
-            if data_type in {"Foundation", "SR Legacy"}:
-                food["tier"] = 1
-                food["is_verified"] = True
-                food["tier_label"] = "Best Match"
-            elif data_type == "Survey (FNDDS)":
-                food["tier"] = 2
-                food["is_verified"] = True
-                food["tier_label"] = "Verified"
-            else:
-                food["tier"] = 3
-                food["is_verified"] = False
-                food["tier_label"] = "Community"
-        else:
-            food["tier"] = 3
-            food["is_verified"] = False
-            food["tier_label"] = "Community"
-    
-    # Sort by tier first, then by relevance score within each tier
-    all_results.sort(key=lambda x: (x.get("tier", 3), -x.get("_relevance_score", 0)))
-    
-    # Remove internal score field before returning
-    final_results = []
-    for food in all_results[:page_size]:
-        food_copy = {k: v for k, v in food.items() if not k.startswith("_")}
-        final_results.append(food_copy)
+    # Use the advanced ranking algorithm
+    ranked_results = await food_search_service.search_and_rank(
+        query=query,
+        usda_results=usda_results,
+        off_results=off_results,
+        custom_results=custom_results,
+        user_logged_foods=user_logged_foods,
+        popularity_scores=popularity_scores,
+        limit=page_size
+    )
     
     # Count tiers for response metadata
     tier_counts = {"best_match": 0, "verified": 0, "community": 0}
-    for food in all_results:
+    for food in ranked_results:
         tier = food.get("tier", 3)
         if tier == 1:
             tier_counts["best_match"] += 1
@@ -428,11 +268,11 @@ async def search_foods(
             tier_counts["community"] += 1
     
     return {
-        "foods": final_results,
-        "total_hits": len(all_results),
+        "foods": ranked_results,
+        "total_hits": len(usda_results) + len(off_results) + len(custom_results),
         "current_page": page,
         "page_size": page_size,
-        "sources": list(set(f["source"] for f in all_results)),
+        "sources": list(set(f["source"] for f in ranked_results)) if ranked_results else [],
         "tiers": tier_counts
     }
 
