@@ -513,7 +513,7 @@ async def calculate_nutrition(req: NutritionRequest, current_user: dict = Depend
         "fat": food_detail.fat,
         "carbs": food_detail.carbs,
         "fiber": food_detail.fiber,
-        "servings": [{"label": s.label, "grams": s.grams, "modifier": s.modifier} for s in food_detail.servings]
+        "servings": [{"unit": s.unit, "description": s.description, "grams": s.grams} for s in food_detail.servings]
     })
     
     try:

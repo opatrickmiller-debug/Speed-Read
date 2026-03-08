@@ -38,6 +38,10 @@ export const FoodDetails = () => {
   const [mealType, setMealType] = useState('lunch');
   const [logging, setLogging] = useState(false);
   const [quickLogging, setQuickLogging] = useState(false);
+  
+  // Live nutrition calculation from server
+  const [calculatedNutrition, setCalculatedNutrition] = useState(null);
+  const [calculating, setCalculating] = useState(false);
 
   // Get last logged meal from localStorage or default to time-based meal
   const getSmartDefaultMeal = () => {
@@ -109,6 +113,49 @@ export const FoodDetails = () => {
   const getMultiplier = () => {
     return getGrams() / 100;
   };
+
+  // Calculate nutrition from server when amount or unit changes
+  useEffect(() => {
+    const calculateFromServer = async () => {
+      if (!food || !logModalOpen || portionAmount <= 0) return;
+      
+      // Get the unit key for the API
+      let unitKey = portionUnit;
+      if (portionUnit === 'usda_serving' && selectedServing) {
+        // Find the unit key from serving index
+        const idx = food.servings?.findIndex(s => s.grams === selectedServing.grams);
+        if (idx >= 0) {
+          // Use the modifier or generate a key
+          const s = food.servings[idx];
+          const modifier = s.modifier?.toLowerCase().replace(/\s+/g, '_') || `serving_${idx}`;
+          const item = food.description?.split(',')[0].toLowerCase().replace(/\s+/g, '_') || '';
+          unitKey = modifier.includes('cup') ? 'cup' : 
+                    modifier.includes('tbsp') ? 'tbsp' : 
+                    `${modifier}_${item}`;
+        }
+      }
+      
+      setCalculating(true);
+      try {
+        const result = await foodsApi.calculate({
+          food_id: fdcId,
+          amount: portionAmount,
+          unit: unitKey
+        });
+        setCalculatedNutrition(result);
+      } catch (err) {
+        // Fallback to client-side calculation
+        console.log('Server calculation failed, using client-side:', err);
+        setCalculatedNutrition(null);
+      } finally {
+        setCalculating(false);
+      }
+    };
+    
+    // Debounce the calculation
+    const timer = setTimeout(calculateFromServer, 300);
+    return () => clearTimeout(timer);
+  }, [fdcId, portionAmount, portionUnit, selectedServing, logModalOpen, food]);
 
   // Fetch food details on mount
   useEffect(() => {
@@ -789,16 +836,21 @@ export const FoodDetails = () => {
                 "p-4 rounded-xl",
                 theme === 'dark' ? 'bg-zinc-800' : 'bg-gray-50'
               )}>
-                <p className={cn(
-                  "text-xs font-medium uppercase tracking-wider mb-3",
-                  theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-                )}>
-                  Nutrition for {getGrams().toFixed(0)}g
-                </p>
+                <div className="flex items-center justify-between mb-3">
+                  <p className={cn(
+                    "text-xs font-medium uppercase tracking-wider",
+                    theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                  )}>
+                    Nutrition for {calculatedNutrition?.grams?.toFixed(0) || getGrams().toFixed(0)}g
+                  </p>
+                  {calculating && (
+                    <Loader2 className="w-3 h-3 animate-spin text-emerald-500" />
+                  )}
+                </div>
                 <div className="grid grid-cols-4 gap-2 text-center">
                   <div>
                     <p className="text-lg font-bold text-orange-500">
-                      {Math.round(calculateValue(food.calories))}
+                      {Math.round(calculatedNutrition?.nutrition?.calories ?? calculateValue(food.calories))}
                     </p>
                     <p className={cn(
                       "text-xs",
@@ -807,7 +859,7 @@ export const FoodDetails = () => {
                   </div>
                   <div>
                     <p className="text-lg font-bold text-red-500">
-                      {calculateValue(food.protein).toFixed(1)}g
+                      {(calculatedNutrition?.nutrition?.protein ?? calculateValue(food.protein)).toFixed(1)}g
                     </p>
                     <p className={cn(
                       "text-xs",
@@ -816,7 +868,7 @@ export const FoodDetails = () => {
                   </div>
                   <div>
                     <p className="text-lg font-bold text-yellow-500">
-                      {calculateValue(food.fat).toFixed(1)}g
+                      {(calculatedNutrition?.nutrition?.fat ?? calculateValue(food.fat)).toFixed(1)}g
                     </p>
                     <p className={cn(
                       "text-xs",
@@ -825,7 +877,7 @@ export const FoodDetails = () => {
                   </div>
                   <div>
                     <p className="text-lg font-bold text-blue-500">
-                      {calculateValue(food.carbs).toFixed(1)}g
+                      {(calculatedNutrition?.nutrition?.carbs ?? calculateValue(food.carbs)).toFixed(1)}g
                     </p>
                     <p className={cn(
                       "text-xs",

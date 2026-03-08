@@ -225,13 +225,14 @@ class FDCClient:
                 continue
             seen_grams.add(gram_weight)
             
-            # Build a human-readable label
-            label = self._build_serving_label(modifier, amount, gram_weight, description)
+            # Build a human-readable description and unit key
+            serving_description = self._build_serving_label(modifier, amount, gram_weight, description)
+            unit_key = self._generate_unit_key(modifier, description)
             
             servings.append(ServingSize(
-                label=label,
-                grams=gram_weight,
-                modifier=modifier
+                unit=unit_key,
+                description=serving_description,
+                grams=gram_weight
             ))
         
         # Sort by gram weight (smallest first, most common sizes)
@@ -241,6 +242,35 @@ class FDCClient:
         servings = self._add_standard_servings(servings, seen_grams)
         
         return servings
+    
+    def _generate_unit_key(self, modifier: str, description: str) -> str:
+        """Generate a unique unit key from modifier and description."""
+        modifier_lower = modifier.lower().strip() if modifier else ""
+        
+        # Common unit patterns
+        if "cup" in modifier_lower:
+            return "cup"
+        if "tbsp" in modifier_lower or "tablespoon" in modifier_lower:
+            return "tbsp"
+        if "tsp" in modifier_lower or "teaspoon" in modifier_lower:
+            return "tsp"
+        if "slice" in modifier_lower:
+            return "slice"
+        if "piece" in modifier_lower:
+            return "piece"
+        
+        # Size descriptors combined with item name
+        size_words = ["small", "medium", "large", "extra_large", "jumbo"]
+        for size in size_words:
+            if size.replace("_", " ") in modifier_lower or size.replace("_", "-") in modifier_lower:
+                item = self._get_item_name(description)
+                return f"{size}_{item}".replace(" ", "_")
+        
+        # Default: use modifier or generate from description
+        if modifier_lower:
+            return modifier_lower.replace(" ", "_").replace("-", "_")
+        
+        return f"serving_{self._get_item_name(description)}"
     
     def _build_serving_label(self, modifier: str, amount: float, grams: float, description: str) -> str:
         """Build a human-readable serving label."""
@@ -301,16 +331,16 @@ class FDCClient:
     def _add_standard_servings(self, servings: List[ServingSize], seen_grams: set) -> List[ServingSize]:
         """Add standard serving options if not already present."""
         standard_servings = [
-            (28.35, "1 oz"),
-            (100, "100g"),
+            (28.35, "oz", "1 oz (28g)"),
+            (100, "100g", "100g"),
         ]
         
-        for grams, label in standard_servings:
+        for grams, unit, description in standard_servings:
             if grams not in seen_grams:
                 servings.append(ServingSize(
-                    label=f"{label} ({int(grams)}g)",
-                    grams=grams,
-                    modifier="standard"
+                    unit=unit,
+                    description=description,
+                    grams=grams
                 ))
         
         # Re-sort after adding

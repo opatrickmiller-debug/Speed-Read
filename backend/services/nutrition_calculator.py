@@ -125,8 +125,8 @@ def food_to_calculator_format(food_detail: Dict) -> Dict:
             "fat": 9.51,
             "carbs": 0.72,
             "servings": [
-                {"label": "1 large egg (50g)", "grams": 50.0, "modifier": "large"},
-                {"label": "1 cup (243g)", "grams": 243.0, "modifier": "cup"}
+                {"unit": "large_egg", "description": "1 large egg (50g)", "grams": 50.0},
+                {"unit": "cup", "description": "1 cup (243g)", "grams": 243.0}
             ]
         }
     
@@ -146,42 +146,40 @@ def food_to_calculator_format(food_detail: Dict) -> Dict:
     
     # Convert API servings to calculator format
     for idx, s in enumerate(food_detail.get("servings", [])):
-        # Generate a unit key from the label or modifier
-        modifier = s.get("modifier", "").lower().replace(" ", "_")
-        label = s.get("label", "")
+        # Use unit directly if present, otherwise generate from description
+        unit = s.get("unit", "")
+        description = s.get("description", "") or s.get("label", "")  # Backward compatible
         
-        # Try to extract unit from common patterns
-        if "cup" in label.lower():
-            unit = "cup"
-        elif "tbsp" in label.lower():
-            unit = "tbsp"
-        elif "tsp" in label.lower():
-            unit = "tsp"
-        elif "oz" in label.lower() and "fl" not in label.lower():
-            unit = "oz"
-        elif "slice" in label.lower():
-            unit = "slice"
-        elif "piece" in label.lower():
-            unit = "piece"
-        elif modifier:
-            # Use modifier as unit (e.g., "large" -> "large_egg")
-            item = food_detail.get("description", "").split(",")[0].lower().replace(" ", "_")
-            unit = f"{modifier}_{item}" if item else modifier
-        else:
-            unit = f"serving_{idx}"
+        if not unit:
+            # Generate a unit key from the description (backward compatibility)
+            if "cup" in description.lower():
+                unit = "cup"
+            elif "tbsp" in description.lower():
+                unit = "tbsp"
+            elif "tsp" in description.lower():
+                unit = "tsp"
+            elif "oz" in description.lower() and "fl" not in description.lower():
+                unit = "oz"
+            elif "slice" in description.lower():
+                unit = "slice"
+            elif "piece" in description.lower():
+                unit = "piece"
+            else:
+                unit = f"serving_{idx}"
         
         servings.append({
             "unit": unit,
-            "description": label,
+            "description": description,
             "grams": s.get("grams", 100)
         })
     
-    # Always add gram unit
-    servings.append({
-        "unit": "g",
-        "description": "1 gram",
-        "grams": 1
-    })
+    # Always add gram unit if not present
+    if not any(s["unit"] == "g" for s in servings):
+        servings.append({
+            "unit": "g",
+            "description": "1 gram",
+            "grams": 1
+        })
     
     return {
         "name": food_detail.get("description", "Unknown"),

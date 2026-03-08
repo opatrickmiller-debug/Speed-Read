@@ -47,6 +47,11 @@ export const foodsApi = {
   search: (query, includeBranded = false, page = 1, pageSize = 25) => 
     api.get('/foods/search', { params: { query, page, page_size: pageSize, include_branded: includeBranded } }),
   getDetails: (fdcId) => api.get(`/foods/${fdcId}`),
+  autocomplete: (query, limit = 5) => 
+    api.get('/foods/autocomplete', { params: { q: query, limit } }),
+  // Calculate nutrition by amount and unit
+  calculate: ({ food_id, amount, unit }) => 
+    api.post('/foods/calculate', { food_id, amount, unit }).then(res => res.data),
 };
 
 // Keto Score

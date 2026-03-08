@@ -3,13 +3,13 @@
 ## PWA Installation (Instant - No Build Required)
 
 ### iPhone/iPad (Safari)
-1. Open https://meal-builder-pro.preview.emergentagent.com in Safari
+1. Open https://keto-tracker-pro.preview.emergentagent.com in Safari
 2. Tap the **Share** button (square with arrow)
 3. Scroll down and tap **"Add to Home Screen"**
 4. Tap **"Add"** in the top right
 
 ### Android (Chrome)
-1. Open https://meal-builder-pro.preview.emergentagent.com in Chrome
+1. Open https://keto-tracker-pro.preview.emergentagent.com in Chrome
 2. Tap the **menu** (⋮) in the top right
 3. Tap **"Add to Home Screen"** or **"Install app"**
 4. Tap **"Install"**

@@ -209,7 +209,7 @@ async def log_food_by_serving(log_data: ServingFoodLog, current_user: dict = Dep
         "fat": food_detail.fat,
         "carbs": food_detail.carbs,
         "fiber": food_detail.fiber,
-        "servings": [{"label": s.label, "grams": s.grams, "modifier": s.modifier} for s in food_detail.servings]
+        "servings": [{"unit": s.unit, "description": s.description, "grams": s.grams} for s in food_detail.servings]
     })
     
     calculator = NutritionCalculator(calc_format)
@@ -240,6 +240,8 @@ async def log_food_by_serving(log_data: ServingFoodLog, current_user: dict = Dep
     log_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
     
+    serving_desc = selected_serving.description or f"{selected_serving.unit} ({selected_serving.grams}g)"
+    
     log_doc = {
         "id": log_id,
         "user_id": current_user["id"],
@@ -247,7 +249,7 @@ async def log_food_by_serving(log_data: ServingFoodLog, current_user: dict = Dep
         "description": food_detail.description,
         "serving_size": grams,
         "serving_unit": "g",
-        "serving_description": f"{log_data.amount} × {selected_serving.label}",
+        "serving_description": f"{log_data.amount} × {serving_desc}",
         "servings": log_data.amount,
         "calories": nutrition.get("calories", 0),
         "protein": nutrition.get("protein", 0),
@@ -283,10 +285,10 @@ async def log_food_by_serving(log_data: ServingFoodLog, current_user: dict = Dep
     
     return {
         "success": True,
-        "message": f"Added {log_data.amount} × {selected_serving.label} to {log_data.meal.value}",
+        "message": f"Added {log_data.amount} × {serving_desc} to {log_data.meal.value}",
         "log_id": log_id,
         "grams": grams,
-        "serving_description": f"{log_data.amount} × {selected_serving.label}",
+        "serving_description": f"{log_data.amount} × {serving_desc}",
         "nutrition": nutrition
     }
 

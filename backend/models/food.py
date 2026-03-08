@@ -17,9 +17,9 @@ class FattyAcid(BaseModel):
 
 class ServingSize(BaseModel):
     """Represents a serving size option from USDA foodPortions"""
-    label: str          # e.g., "1 large egg", "1 cup"
-    grams: float        # Weight in grams
-    modifier: str = ""  # Original modifier from USDA (e.g., "large", "medium")
+    unit: str                        # e.g., "large_egg", "cup", "g"
+    description: Optional[str] = None  # e.g., "1 large egg (50g)", "1 cup"
+    grams: float                     # Weight in grams
 
 class FoodSearchResult(BaseModel):
     fdc_id: str
@@ -27,6 +27,14 @@ class FoodSearchResult(BaseModel):
     brand_owner: Optional[str] = None
     data_type: str
     protein_per_100g: float = 0
+
+class FoodDetailSimple(BaseModel):
+    """Simplified food detail model for NutritionCalculator"""
+    id: str
+    name: str
+    nutrition: Dict[str, float]
+    base_amount: float = 100
+    servings: List[ServingSize]
 
 class FoodDetail(BaseModel):
     fdc_id: str
