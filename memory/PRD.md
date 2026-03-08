@@ -149,6 +149,26 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - **SHARED CODE**: Both FoodDetails and MealBuilder use same conversion utilities
 - **TESTED**: Verified 2oz → 56.7g → backend receives correct grams
 
+### March 8, 2026 - Fast 1-Tap Logging
+- **IMPLEMENTED**: 1-tap logging for common foods
+- **NEW FEATURES**:
+  - "+ Log 1 Serving (100g)" quick button on food details page
+  - Smart meal defaults: Time-based (breakfast/lunch/dinner) or last logged meal
+  - Quick amount buttons: [½] [1] [2] [3]
+  - Quick gram portions: [50g] [100g] [150g] [200g]
+  - Single-row meal selector: [Bkfst] [Lunch] [Dinner] [Snack]
+  - Real-time nutrition preview updates on any change
+  - Dynamic submit button: "+ Add to {Meal}"
+- **SMART DEFAULTS**:
+  - Remembers last logged meal in localStorage
+  - Falls back to time-based defaults (before 10am = breakfast, etc.)
+  - Default portion: 1 serving
+- **USER FLOW**:
+  - 1 tap: Quick log 1 serving to smart meal
+  - 2 taps: Open modal → Log custom portion
+- **TOAST NOTIFICATIONS**: "Logged 1 serving to Dinner - 100g • 160 cal"
+- **AUTO-NAVIGATION**: Redirects to Food Log after logging
+
 ## What's Been Implemented
 
 ### March 7, 2026 - MyFitnessPal-Style Portion Selection UI

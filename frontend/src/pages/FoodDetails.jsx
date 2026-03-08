@@ -34,8 +34,32 @@ export const FoodDetails = () => {
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [portionAmount, setPortionAmount] = useState(1);
   const [portionUnit, setPortionUnit] = useState('serving');
-  const [mealType, setMealType] = useState('snack');
+  const [mealType, setMealType] = useState('lunch');
   const [logging, setLogging] = useState(false);
+  const [quickLogging, setQuickLogging] = useState(false);
+
+  // Get last logged meal from localStorage or default to time-based meal
+  const getSmartDefaultMeal = () => {
+    // Check localStorage for last meal
+    const lastMeal = localStorage.getItem('lastLoggedMeal');
+    if (lastMeal) return lastMeal;
+    
+    // Time-based default
+    const hour = new Date().getHours();
+    if (hour < 10) return 'breakfast';
+    if (hour < 14) return 'lunch';
+    if (hour < 18) return 'snack';
+    return 'dinner';
+  };
+
+  // Initialize meal type on modal open
+  useEffect(() => {
+    if (logModalOpen) {
+      setMealType(getSmartDefaultMeal());
+      setPortionAmount(1);
+      setPortionUnit('serving');
+    }
+  }, [logModalOpen]);
 
   // Get serving weight from USDA data or default to 100g
   const getServingWeight = () => {
@@ -98,16 +122,15 @@ export const FoodDetails = () => {
     return per100g * getMultiplier();
   };
 
-  // Handle log food
-  const handleLogFood = async () => {
+  // Handle log food (main function)
+  const handleLogFood = async (customGrams = null, customMeal = null) => {
     if (!food) return;
+    
+    const gramsAmount = customGrams !== null ? customGrams : getGrams();
+    const meal = customMeal || mealType;
     
     setLogging(true);
     try {
-      // Convert portion to grams for backend
-      const gramsAmount = getGrams();
-      
-      // Use simplified quick log endpoint
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/logs/quick`, {
         method: 'POST',
         headers: {
@@ -117,7 +140,7 @@ export const FoodDetails = () => {
         body: JSON.stringify({
           food_id: fdcId,
           amount: gramsAmount,
-          meal: mealType
+          meal: meal
         })
       });
       
@@ -127,19 +150,72 @@ export const FoodDetails = () => {
         throw new Error(data.detail || 'Failed to log food');
       }
       
-      // Show success toast
-      toast.success(data.message || `Added to ${mealType}`);
+      // Save last meal to localStorage for smart defaults
+      localStorage.setItem('lastLoggedMeal', meal);
+      
+      // Show success toast with meal name
+      const mealLabel = meal.charAt(0).toUpperCase() + meal.slice(1);
+      toast.success(`Added to ${mealLabel}`, {
+        description: `${Math.round(gramsAmount)}g logged`
+      });
       
       // Close modal
       setLogModalOpen(false);
       
-      // Redirect to food log page
+      // Navigate to food log
       navigate('/log');
     } catch (err) {
       console.error('Failed to log food:', err);
       toast.error(err.message || 'Failed to log food');
     } finally {
       setLogging(false);
+    }
+  };
+
+  // Quick 1-tap log (1 serving to current meal)
+  const handleQuickLog = async () => {
+    if (!food) return;
+    
+    setQuickLogging(true);
+    const servingGrams = getServingWeight();
+    const meal = getSmartDefaultMeal();
+    
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/logs/quick`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          food_id: fdcId,
+          amount: servingGrams,
+          meal: meal
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to log food');
+      }
+      
+      // Save last meal
+      localStorage.setItem('lastLoggedMeal', meal);
+      
+      // Show success toast
+      const mealLabel = meal.charAt(0).toUpperCase() + meal.slice(1);
+      toast.success(`Logged 1 serving to ${mealLabel}`, {
+        description: `${servingGrams}g • ${Math.round(food.calories || 0)} cal`
+      });
+      
+      // Navigate to food log
+      navigate('/log');
+    } catch (err) {
+      console.error('Quick log failed:', err);
+      toast.error(err.message || 'Failed to log food');
+    } finally {
+      setQuickLogging(false);
     }
   };
 
@@ -462,19 +538,40 @@ export const FoodDetails = () => {
           )}
         </div>
 
-        {/* Fixed Log Food Button */}
+        {/* Fixed Log Food Buttons */}
         <div className={cn(
           "fixed bottom-0 left-0 right-0 p-4 border-t",
           theme === 'dark' ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-gray-200'
         )}>
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-2xl mx-auto space-y-2">
+            {/* Quick 1-Tap Log Button */}
+            <button
+              onClick={handleQuickLog}
+              disabled={quickLogging}
+              data-testid="quick-log-btn"
+              className={cn(
+                "w-full flex items-center justify-center gap-2 font-bold py-3 rounded-xl transition-colors",
+                theme === 'dark' 
+                  ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30'
+                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200'
+              )}
+            >
+              {quickLogging ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4" />
+              )}
+              Log 1 Serving ({getServingWeight()}g)
+            </button>
+            
+            {/* Custom Portion Button */}
             <button
               onClick={() => setLogModalOpen(true)}
               data-testid="log-food-btn"
               className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-4 rounded-xl transition-colors text-lg"
             >
               <Plus className="w-5 h-5" />
-              Log Food
+              Log Custom Portion
             </button>
           </div>
         </div>
@@ -590,24 +687,54 @@ export const FoodDetails = () => {
                     </p>
                   )}
                 </div>
+                
+                {/* Quick Gram Portions */}
+                <div className="mt-3">
+                  <span className={cn(
+                    "text-xs mr-2",
+                    theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                  )}>Quick portions:</span>
+                  <div className="flex gap-2 mt-1">
+                    {[50, 100, 150, 200].map(g => (
+                      <button
+                        key={g}
+                        onClick={() => {
+                          setPortionAmount(g);
+                          setPortionUnit('g');
+                        }}
+                        data-testid={`quick-gram-${g}`}
+                        className={cn(
+                          "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                          portionUnit === 'g' && portionAmount === g
+                            ? 'bg-emerald-500 text-black'
+                            : theme === 'dark'
+                              ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        )}
+                      >
+                        {g}g
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              {/* Meal Type */}
+              {/* Meal Type - Single Row */}
               <div>
                 <label className={cn(
                   "block text-sm font-medium mb-2",
                   theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
                 )}>
-                  Meal
+                  Add to
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="flex gap-2">
                   {['breakfast', 'lunch', 'dinner', 'snack'].map(meal => (
                     <button
                       key={meal}
                       onClick={() => setMealType(meal)}
                       data-testid={`meal-${meal}`}
                       className={cn(
-                        "px-4 py-3 rounded-lg text-sm font-medium capitalize transition-colors",
+                        "flex-1 px-2 py-2.5 rounded-lg text-sm font-medium capitalize transition-colors",
                         mealType === meal
                           ? 'bg-emerald-500 text-black'
                           : theme === 'dark'
@@ -615,7 +742,7 @@ export const FoodDetails = () => {
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       )}
                     >
-                      {meal}
+                      {meal === 'breakfast' ? 'Bkfst' : meal === 'dinner' ? 'Dinner' : meal.charAt(0).toUpperCase() + meal.slice(1)}
                     </button>
                   ))}
                 </div>
