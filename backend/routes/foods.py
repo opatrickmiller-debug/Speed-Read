@@ -264,24 +264,10 @@ async def search_foods(
         include_branded=include_branded  # Pass the branded preference
     )
     
-    # Count tiers for response metadata
-    tier_counts = {"best_match": 0, "verified": 0, "community": 0}
-    for food in ranked_results:
-        tier = food.get("tier", 3)
-        if tier == 1:
-            tier_counts["best_match"] += 1
-        elif tier == 2:
-            tier_counts["verified"] += 1
-        else:
-            tier_counts["community"] += 1
-    
     return {
         "foods": ranked_results,
-        "total_hits": len(usda_results) + len(off_results) + len(custom_results),
-        "current_page": page,
-        "page_size": page_size,
-        "sources": list(set(f["source"] for f in ranked_results)) if ranked_results else [],
-        "tiers": tier_counts
+        "total": len(usda_results) + len(off_results) + len(custom_results),
+        "count": len(ranked_results)
     }
 
 # ==================== AUTOCOMPLETE ====================

@@ -481,45 +481,52 @@ class FoodSearchService:
         # Step 6: Take top N results (default 25)
         top_results = unique_foods[:limit]
         
-        # Step 7: Clean up internal fields and add tier labels
+        # Step 7: Build optimized summary response (no detailed nutrient profiles)
+        # Detailed data (amino_acids, fatty_acids, etc.) only from GET /api/foods/{id}
+        SUMMARY_FIELDS = {
+            "fdc_id", "description", "brand_owner", "source", "data_type",
+            "protein_per_100g", "calories_per_100g", "fat_per_100g", 
+            "carbs_per_100g", "fiber_per_100g"
+        }
+        
         final_results = []
         for rank, food in enumerate(top_results, 1):
-            # Remove internal scoring fields (but keep some for debugging in dev)
-            clean_food = {k: v for k, v in food.items() if not k.startswith("_")}
-            
-            # Add rank position
-            clean_food["rank"] = rank
+            # Build summary-only response
+            summary = {
+                "fdc_id": food.get("fdc_id") or food.get("id"),
+                "description": food.get("description", ""),
+                "brand": food.get("brand_owner"),
+                "source": food.get("source", ""),
+                "protein": round(food.get("protein_per_100g", 0) or 0, 1),
+                "calories": round(food.get("calories_per_100g", 0) or 0, 0),
+                "fat": round(food.get("fat_per_100g", 0) or 0, 1),
+                "carbs": round(food.get("carbs_per_100g", 0) or 0, 1),
+                "rank": rank
+            }
             
             # Get tier from breakdown or calculate
             tier = food.get("_score_breakdown", {}).get("tier", self.get_food_tier(food))
             source = food.get("source", "")
             data_type = food.get("data_type", "")
             
-            clean_food["tier"] = tier
+            summary["tier"] = tier
             
             # Set tier labels and verification status
             if source == "custom":
-                clean_food["is_verified"] = True
-                clean_food["tier_label"] = "Your Food"
+                summary["tier_label"] = "Your Food"
             elif tier == 1:
-                clean_food["is_verified"] = True
-                clean_food["tier_label"] = "Best Match"
+                summary["tier_label"] = "Best Match"
             elif tier == 2:
-                clean_food["is_verified"] = True
-                clean_food["tier_label"] = "Verified"
+                summary["tier_label"] = "Verified"
             else:
-                clean_food["is_verified"] = False
                 if source == "off":
-                    clean_food["tier_label"] = "Community"
+                    summary["tier_label"] = "Community"
                 elif data_type == "Branded":
-                    clean_food["tier_label"] = "Branded"
+                    summary["tier_label"] = "Branded"
                 else:
-                    clean_food["tier_label"] = "Other"
+                    summary["tier_label"] = "Other"
             
-            # Add branded flag for frontend filtering
-            clean_food["is_branded"] = food.get("_score_breakdown", {}).get("is_branded", False)
-            
-            final_results.append(clean_food)
+            final_results.append(summary)
         
         logger.info(f"Returning top {len(final_results)} ranked results (limit={limit})")
         return final_results
