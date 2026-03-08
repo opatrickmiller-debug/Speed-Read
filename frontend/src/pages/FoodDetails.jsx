@@ -142,27 +142,54 @@ export const FoodDetails = () => {
     return per100g * getMultiplier();
   };
 
+  // Get serving index for API call
+  const getSelectedServingIndex = () => {
+    if (!selectedServing || !food?.servings) return -1;
+    return food.servings.findIndex(s => s.grams === selectedServing.grams);
+  };
+
   // Handle log food (main function)
   const handleLogFood = async (customGrams = null, customMeal = null) => {
     if (!food) return;
     
-    const gramsAmount = customGrams !== null ? customGrams : getGrams();
     const meal = customMeal || mealType;
+    const servingIndex = getSelectedServingIndex();
     
     setLogging(true);
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/logs/quick`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          food_id: fdcId,
-          amount: gramsAmount,
-          meal: meal
-        })
-      });
+      let response;
+      
+      // Use serving endpoint if USDA serving selected, otherwise use grams
+      if (portionUnit === 'usda_serving' && servingIndex >= 0) {
+        response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/logs/serving`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            food_id: fdcId,
+            amount: portionAmount,
+            serving_index: servingIndex,
+            meal: meal
+          })
+        });
+      } else {
+        // Fallback to gram-based logging
+        const gramsAmount = customGrams !== null ? customGrams : getGrams();
+        response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/logs/quick`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            food_id: fdcId,
+            amount: gramsAmount,
+            meal: meal
+          })
+        });
+      }
       
       const data = await response.json();
       
@@ -173,10 +200,11 @@ export const FoodDetails = () => {
       // Save last meal to localStorage for smart defaults
       localStorage.setItem('lastLoggedMeal', meal);
       
-      // Show success toast with meal name
+      // Show success toast with serving description
       const mealLabel = meal.charAt(0).toUpperCase() + meal.slice(1);
+      const servingDesc = data.serving_description || `${Math.round(data.grams || getGrams())}g`;
       toast.success(`Added to ${mealLabel}`, {
-        description: `${Math.round(gramsAmount)}g logged`
+        description: servingDesc
       });
       
       // Close modal

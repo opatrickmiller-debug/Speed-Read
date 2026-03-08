@@ -72,6 +72,9 @@ export const customMealsApi = {
 export const logsApi = {
   create: (data) => api.post('/logs', data),
   quickLog: (foodId, amount, meal) => api.post('/logs/quick', { food_id: foodId, amount, meal }),
+  // Log by serving selection (MyFitnessPal style)
+  logByServing: (foodId, amount, servingIndex, meal) => 
+    api.post('/logs/serving', { food_id: foodId, amount, serving_index: servingIndex, meal }),
   getAll: (date) => api.get('/logs', { params: date ? { date } : {} }),
   delete: (logId) => api.delete(`/logs/${logId}`),
 };

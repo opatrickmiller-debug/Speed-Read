@@ -9,6 +9,7 @@ from core.security import get_current_user
 from models.food import FoodLogCreate, FoodLogResponse
 from routes.popularity import track_food_log
 from services.fdc_client import fdc_client
+from services.nutrition_calculator import NutritionCalculator, food_to_calculator_format
 
 router = APIRouter(prefix="/logs", tags=["Food Logs"])
 
@@ -24,6 +25,14 @@ class SimpleFoodLog(BaseModel):
     """Simplified food log request - server fetches nutrition data"""
     food_id: str
     amount: float = 100  # grams
+    meal: MealType = MealType.snack
+
+
+class ServingFoodLog(BaseModel):
+    """Food log using serving unit (like MyFitnessPal)"""
+    food_id: str
+    amount: float = 1.0        # Number of servings
+    serving_index: int = 0     # Index into food's servings array
     meal: MealType = MealType.snack
 
 
@@ -154,6 +163,131 @@ async def quick_log_food(log_data: SimpleFoodLog, current_user: dict = Depends(g
             "fat": log_doc["fat"],
             "carbs": log_doc["carbs"]
         }
+    }
+
+
+@router.post("/serving")
+async def log_food_by_serving(log_data: ServingFoodLog, current_user: dict = Depends(get_current_user)):
+    """
+    Log food using serving unit selection (MyFitnessPal style).
+    
+    Body:
+    {
+      "food_id": "171287",
+      "amount": 2,              // 2 servings
+      "serving_index": 3,       // Index into servings array (e.g., "1 large egg")
+      "meal": "breakfast"
+    }
+    
+    The server will:
+    1. Fetch food details including servings array
+    2. Look up the serving at serving_index
+    3. Calculate: grams = amount × serving.grams
+    4. Calculate nutrition based on grams
+    """
+    # Fetch food details
+    usda_raw = await fdc_client.get_food_details(log_data.food_id)
+    if not usda_raw:
+        raise HTTPException(status_code=404, detail="Food not found")
+    
+    # Parse food to get servings
+    food_detail = fdc_client.parse_food_detail(usda_raw)
+    
+    # Validate serving index
+    if log_data.serving_index >= len(food_detail.servings):
+        raise HTTPException(status_code=400, detail=f"Invalid serving_index. Food has {len(food_detail.servings)} servings.")
+    
+    # Get selected serving
+    selected_serving = food_detail.servings[log_data.serving_index]
+    
+    # Convert to calculator format and calculate
+    calc_format = food_to_calculator_format({
+        "fdc_id": food_detail.fdc_id,
+        "description": food_detail.description,
+        "calories": food_detail.calories,
+        "protein": food_detail.protein,
+        "fat": food_detail.fat,
+        "carbs": food_detail.carbs,
+        "fiber": food_detail.fiber,
+        "servings": [{"label": s.label, "grams": s.grams, "modifier": s.modifier} for s in food_detail.servings]
+    })
+    
+    calculator = NutritionCalculator(calc_format)
+    
+    # Find the unit key for this serving
+    serving_unit = None
+    for unit, serving_data in calculator.servings.items():
+        if abs(serving_data["grams"] - selected_serving.grams) < 0.1:
+            serving_unit = unit
+            break
+    
+    if not serving_unit:
+        # Fallback to gram calculation
+        grams = log_data.amount * selected_serving.grams
+        result = calculator.calculate_from_grams(grams)
+    else:
+        result = calculator.calculate_nutrition(log_data.amount, serving_unit)
+    
+    grams = result["grams"]
+    nutrition = result["nutrition"]
+    
+    # Extract amino acids and fatty acids with multiplier
+    multiplier = grams / 100
+    amino_acids = fdc_client.extract_amino_acids(usda_raw)
+    fatty_acids = fdc_client.extract_fatty_acids(usda_raw)
+    
+    # Build log document
+    log_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    
+    log_doc = {
+        "id": log_id,
+        "user_id": current_user["id"],
+        "fdc_id": log_data.food_id,
+        "description": food_detail.description,
+        "serving_size": grams,
+        "serving_unit": "g",
+        "serving_description": f"{log_data.amount} × {selected_serving.label}",
+        "servings": log_data.amount,
+        "calories": nutrition.get("calories", 0),
+        "protein": nutrition.get("protein", 0),
+        "fat": nutrition.get("fat", 0),
+        "carbs": nutrition.get("carbs", 0),
+        "fiber": nutrition.get("fiber", 0),
+        "amino_acids": [
+            {
+                "name": aa.name,
+                "value": round(aa.value * multiplier, 3),
+                "is_essential": aa.is_essential
+            }
+            for aa in amino_acids
+        ],
+        "fatty_acids": [
+            {
+                "name": fa.name,
+                "value": round(fa.value * multiplier, 3),
+                "is_essential": fa.is_essential,
+                "omega_type": fa.omega_type
+            }
+            for fa in fatty_acids
+        ],
+        "meal_type": log_data.meal.value,
+        "logged_at": now.isoformat(),
+        "created_at": now.isoformat()
+    }
+    
+    await db.food_logs.insert_one(log_doc)
+    
+    # Track food popularity
+    await track_food_log(log_data.food_id, food_detail.description, "usda")
+    
+    return {
+        "success": True,
+        "message": f"Added {log_data.amount} × {selected_serving.label} to {log_data.meal.value}",
+        "log_id": log_id,
+        "grams": grams,
+        "serving_description": f"{log_data.amount} × {selected_serving.label}",
+        "nutrition": nutrition
     }
 
 
