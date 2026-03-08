@@ -85,10 +85,18 @@ const MacroRadar = ({ calories, carbs, fat, protein, theme }) => {
 
   return (
     <div className="py-2">
-      {/* Radar Chart */}
-      <div className="w-full h-[200px]">
+      {/* Section Header - matches Amino Acid Profile style */}
+      <h3 className={cn(
+        "text-sm font-bold uppercase tracking-[0.15em] mb-4 px-2",
+        theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+      )}>
+        Macro Profile
+      </h3>
+      
+      {/* Radar Chart - same height as Amino Acid chart */}
+      <div className="w-full h-[280px]">
         <ResponsiveContainer width="100%" height="100%">
-          <RadarChart data={radarData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
+          <RadarChart data={radarData} margin={{ top: 30, right: 40, bottom: 30, left: 40 }}>
             <PolarGrid 
               stroke={theme === 'dark' ? '#27272A' : '#E5E7EB'} 
               strokeWidth={1}
@@ -96,7 +104,7 @@ const MacroRadar = ({ calories, carbs, fat, protein, theme }) => {
             />
             <PolarAngleAxis
               dataKey="name"
-              tick={{ fill: theme === 'dark' ? '#A1A1AA' : '#4B5563', fontSize: 12, fontWeight: 600 }}
+              tick={{ fill: theme === 'dark' ? '#A1A1AA' : '#4B5563', fontSize: 13, fontWeight: 500 }}
               tickLine={false}
             />
             <PolarRadiusAxis
@@ -113,7 +121,7 @@ const MacroRadar = ({ calories, carbs, fat, protein, theme }) => {
               fillOpacity={0.3}
               strokeWidth={2}
               dot={{
-                r: 4,
+                r: 5,
                 fill: '#10B981',
                 stroke: theme === 'dark' ? '#050505' : '#FFFFFF',
                 strokeWidth: 2,
@@ -124,46 +132,80 @@ const MacroRadar = ({ calories, carbs, fat, protein, theme }) => {
         </ResponsiveContainer>
       </div>
       
-      {/* Macro values below chart */}
-      <div className="flex justify-center gap-6 mt-2">
-        <div className="text-center">
-          <p className={cn(
-            "text-xl font-bold",
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>{Math.round(calories)}</p>
-          <p className={cn(
-            "text-xs",
-            theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-          )}>Cal</p>
+      {/* Macro values below chart - matches Amino Acid breakdown style */}
+      <h3 className={cn(
+        "text-sm font-bold uppercase tracking-[0.15em] mt-4 mb-3 px-2",
+        theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+      )}>
+        Macro Breakdown
+      </h3>
+      <div className="space-y-2 px-2">
+        {/* Protein */}
+        <div className={cn(
+          "flex items-center justify-between py-2 border-b",
+          theme === 'dark' ? 'border-white/5' : 'border-gray-200'
+        )}>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className={cn(
+              "text-sm font-medium",
+              theme === 'dark' ? 'text-zinc-200' : 'text-gray-800'
+            )}>Protein</span>
+          </div>
+          <span className={cn(
+            "text-sm font-mono font-semibold text-emerald-500"
+          )}>{protein.toFixed(1)}g</span>
         </div>
-        <div className="text-center">
-          <p className={cn(
-            "text-xl font-bold text-emerald-500"
-          )}>{protein.toFixed(1)}g</p>
-          <p className={cn(
-            "text-xs",
-            theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-          )}>Protein</p>
-        </div>
-        <div className="text-center">
-          <p className={cn(
-            "text-xl font-bold",
+        {/* Calories */}
+        <div className={cn(
+          "flex items-center justify-between py-2 border-b",
+          theme === 'dark' ? 'border-white/5' : 'border-gray-200'
+        )}>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-amber-500" />
+            <span className={cn(
+              "text-sm font-medium",
+              theme === 'dark' ? 'text-zinc-200' : 'text-gray-800'
+            )}>Calories</span>
+          </div>
+          <span className={cn(
+            "text-sm font-mono font-semibold",
             theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>{fat.toFixed(1)}g</p>
-          <p className={cn(
-            "text-xs",
-            theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-          )}>Fat</p>
+          )}>{Math.round(calories)} kcal</span>
         </div>
-        <div className="text-center">
-          <p className={cn(
-            "text-xl font-bold",
+        {/* Fat */}
+        <div className={cn(
+          "flex items-center justify-between py-2 border-b",
+          theme === 'dark' ? 'border-white/5' : 'border-gray-200'
+        )}>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-fuchsia-500" />
+            <span className={cn(
+              "text-sm font-medium",
+              theme === 'dark' ? 'text-zinc-200' : 'text-gray-800'
+            )}>Fat</span>
+          </div>
+          <span className={cn(
+            "text-sm font-mono font-semibold",
             theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>{carbs.toFixed(1)}g</p>
-          <p className={cn(
-            "text-xs",
-            theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-          )}>Carbs</p>
+          )}>{fat.toFixed(1)}g</span>
+        </div>
+        {/* Carbs */}
+        <div className={cn(
+          "flex items-center justify-between py-2",
+          theme === 'dark' ? 'border-white/5' : 'border-gray-200'
+        )}>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-cyan-500" />
+            <span className={cn(
+              "text-sm font-medium",
+              theme === 'dark' ? 'text-zinc-200' : 'text-gray-800'
+            )}>Carbs</span>
+          </div>
+          <span className={cn(
+            "text-sm font-mono font-semibold",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>{carbs.toFixed(1)}g</span>
         </div>
       </div>
     </div>
