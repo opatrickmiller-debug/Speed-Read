@@ -135,6 +135,20 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - **Calculation**: User inputs amount in preferred unit → converted to grams → macros calculated from per-100g USDA data
 - **Example**: 2oz cheese → 56.7g → macros = per_100g × 0.567
 
+### March 8, 2026 - Serving Size Converter Enhancement
+- **IMPROVED**: Cleaner modal UI with dropdown selector
+- **NEW FEATURES**:
+  - Dropdown unit selector (cleaner than button grid)
+  - Universal quick buttons: [½] [1] [2] [3]
+  - Gram conversion box: "2 oz = 56.7g" with serving label
+  - Dynamic serving size from USDA data when available
+  - Additional units: slice (28g), piece (50g)
+- **UTILITY FUNCTIONS** (`/lib/utils.js`):
+  - `unitToGrams(amount, unit, servingWeight)` - Convert any unit to grams
+  - `getUnitOptions(servingWeight, servingLabel)` - Get unit definitions
+- **SHARED CODE**: Both FoodDetails and MealBuilder use same conversion utilities
+- **TESTED**: Verified 2oz → 56.7g → backend receives correct grams
+
 ## What's Been Implemented
 
 ### March 7, 2026 - MyFitnessPal-Style Portion Selection UI

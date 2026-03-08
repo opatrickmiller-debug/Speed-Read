@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { Input } from '../components/ui/input';
 import { useTheme } from '../context/ThemeContext';
-import { cn } from '../lib/utils';
+import { cn, unitToGrams, getUnitOptions } from '../lib/utils';
 import { 
   ChefHat, 
   Loader2, 
@@ -22,15 +22,8 @@ import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-// Unit conversion factors to grams
-const unitConversions = {
-  g: { factor: 1, label: 'g' },
-  oz: { factor: 28.35, label: 'oz' },
-  lb: { factor: 453.6, label: 'lb' },
-  cup: { factor: 240, label: 'cup' },
-  tbsp: { factor: 15, label: 'tbsp' },
-  tsp: { factor: 5, label: 'tsp' }
-};
+// Get unit options from shared utility
+const unitConversions = getUnitOptions();
 
 export const MealBuilder = () => {
   const navigate = useNavigate();
@@ -142,18 +135,20 @@ export const MealBuilder = () => {
     updated[index].portionUnit = newUnit;
     // Set sensible default amounts per unit
     if (newUnit === 'g') updated[index].portionAmount = 100;
+    else if (newUnit === 'serving') updated[index].portionAmount = 1;
     else if (newUnit === 'oz') updated[index].portionAmount = 3;
     else if (newUnit === 'lb') updated[index].portionAmount = 0.5;
     else if (newUnit === 'cup') updated[index].portionAmount = 1;
     else if (newUnit === 'tbsp') updated[index].portionAmount = 2;
     else if (newUnit === 'tsp') updated[index].portionAmount = 1;
+    else if (newUnit === 'slice') updated[index].portionAmount = 1;
+    else if (newUnit === 'piece') updated[index].portionAmount = 1;
     setFoods(updated);
   };
 
-  // Get grams from portion
+  // Get grams from portion using shared utility
   const getGrams = (food) => {
-    const conversion = unitConversions[food.portionUnit] || unitConversions.g;
-    return food.portionAmount * conversion.factor;
+    return unitToGrams(food.portionAmount, food.portionUnit, food.serving_size_grams || 100);
   };
 
   // Calculate totals
