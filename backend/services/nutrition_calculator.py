@@ -19,24 +19,47 @@ class NutritionCalculator:
         food = {
             "name": "Egg",
             "nutrition": {"calories": 155, "protein": 13, "fat": 11, "carbs": 1.1},
+            "amino_acids": {"lysine": 0.9, "methionine": 0.4},
+            "fatty_acids": {"omega3": 0.05, "omega6": 1.2},
             "base_amount": 100,
             "servings": [
                 {"unit": "egg", "description": "1 large egg", "grams": 50},
-                {"unit": "cup", "description": "1 cup chopped", "grams": 243},
+                {"unit": "cup", "description": "1 cup chopped egg", "grams": 243},
                 {"unit": "g", "description": "1 gram", "grams": 1}
             ]
         }
         
         calc = NutritionCalculator(food)
         result = calc.calculate_nutrition(2, "egg")
-        # Returns: {"grams": 100, "nutrition": {"calories": 155, "protein": 13, ...}}
+        # Returns: {
+        #   "grams": 100, 
+        #   "nutrition": {"calories": 155, "protein": 13, ...},
+        #   "amino_acids": {"lysine": 0.9, ...},
+        #   "fatty_acids": {"omega3": 0.05, ...}
+        # }
     """
     
     def __init__(self, food: Dict):
+        """
+        Extended food example:
+        {
+            "name": "Egg",
+            "nutrition": {"calories": 155, "protein": 13, "fat": 11, "carbs": 1.1},
+            "amino_acids": {"lysine": 0.9, "methionine": 0.4},
+            "fatty_acids": {"omega3": 0.05, "omega6": 1.2},
+            "base_amount": 100,
+            "servings": [
+                {"unit": "egg", "description": "1 large egg", "grams": 50},
+                {"unit": "cup", "description": "1 cup chopped egg", "grams": 243},
+                {"unit": "g", "description": "1 gram", "grams": 1}
+            ]
+        }
+        """
         self.food = food
-        self.name = food.get("name", "Unknown")
         self.base_amount = food.get("base_amount", 100)
-        self.base_nutrition = food.get("nutrition", {})
+        self.nutrition = food.get("nutrition", {})
+        self.amino_acids = food.get("amino_acids", {})
+        self.fatty_acids = food.get("fatty_acids", {})
         self.servings = {s["unit"]: s for s in food.get("servings", [])}
         
         # Add default gram serving if not present
@@ -67,6 +90,10 @@ class NutritionCalculator:
             for s in self.servings.values()
         ]
     
+    def scale_nutrients(self, nutrients: Dict[str, float], factor: float) -> Dict[str, float]:
+        """Scale nutrient values by a factor."""
+        return {k: round(v * factor, 3) for k, v in nutrients.items()}
+    
     def calculate_nutrition(self, amount: float, unit: str) -> Dict:
         """
         Calculate nutrition for a given amount and serving unit.
@@ -78,25 +105,19 @@ class NutritionCalculator:
         Returns:
             {
                 "grams": 100.0,
-                "nutrition": {
-                    "calories": 155.0,
-                    "protein": 13.0,
-                    "fat": 11.0,
-                    "carbs": 1.1
-                }
+                "nutrition": {"calories": 155.0, "protein": 13.0, ...},
+                "amino_acids": {"lysine": 0.9, ...},
+                "fatty_acids": {"omega3": 0.05, ...}
             }
         """
         grams = amount * self.get_serving_grams(unit)
         factor = grams / self.base_amount
         
-        nutrition = {
-            key: round(value * factor, 2) 
-            for key, value in self.base_nutrition.items()
-        }
-        
         return {
             "grams": round(grams, 2),
-            "nutrition": nutrition
+            "nutrition": self.scale_nutrients(self.nutrition, factor),
+            "amino_acids": self.scale_nutrients(self.amino_acids, factor),
+            "fatty_acids": self.scale_nutrients(self.fatty_acids, factor)
         }
     
     def calculate_from_grams(self, grams: float) -> Dict:
@@ -107,7 +128,7 @@ class NutritionCalculator:
             grams: Weight in grams
         
         Returns:
-            {"grams": 50.0, "nutrition": {...}}
+            {"grams": 50.0, "nutrition": {...}, "amino_acids": {...}, "fatty_acids": {...}}
         """
         return self.calculate_nutrition(grams, "g")
 
@@ -181,6 +202,24 @@ def food_to_calculator_format(food_detail: Dict) -> Dict:
             "grams": 1
         })
     
+    # Convert amino_acids list to dict format if needed
+    amino_acids = {}
+    for aa in food_detail.get("amino_acids", []):
+        if isinstance(aa, dict):
+            name = aa.get("name", "")
+            value = aa.get("value", 0)
+            if name:
+                amino_acids[name] = value
+    
+    # Convert fatty_acids list to dict format if needed
+    fatty_acids = {}
+    for fa in food_detail.get("fatty_acids", []):
+        if isinstance(fa, dict):
+            name = fa.get("name", "")
+            value = fa.get("value", 0)
+            if name:
+                fatty_acids[name] = value
+    
     return {
         "name": food_detail.get("description", "Unknown"),
         "fdc_id": food_detail.get("fdc_id"),
@@ -191,6 +230,8 @@ def food_to_calculator_format(food_detail: Dict) -> Dict:
             "carbs": food_detail.get("carbs", 0),
             "fiber": food_detail.get("fiber", 0)
         },
+        "amino_acids": amino_acids,
+        "fatty_acids": fatty_acids,
         "base_amount": 100,
         "servings": servings
     }

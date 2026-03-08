@@ -25,6 +25,8 @@ class NutritionResponse(BaseModel):
     """Response for nutrition calculation"""
     grams: float
     nutrition: dict
+    amino_acids: dict = {}
+    fatty_acids: dict = {}
 
 # Open Food Facts search
 async def search_open_food_facts(query: str, page_size: int = 20) -> list:
@@ -487,13 +489,9 @@ async def calculate_nutrition(req: NutritionRequest, current_user: dict = Depend
     Returns:
     {
       "grams": 100.0,
-      "nutrition": {
-        "calories": 143.0,
-        "protein": 12.56,
-        "fat": 9.51,
-        "carbs": 0.72,
-        "fiber": 0.0
-      }
+      "nutrition": {"calories": 143.0, "protein": 12.56, ...},
+      "amino_acids": {"lysine": 0.9, ...},
+      "fatty_acids": {"omega3": 0.05, ...}
     }
     """
     # Fetch food from USDA
@@ -504,7 +502,11 @@ async def calculate_nutrition(req: NutritionRequest, current_user: dict = Depend
     # Parse food details
     food_detail = fdc_client.parse_food_detail(usda_raw)
     
-    # Convert to calculator format
+    # Extract amino acids and fatty acids
+    amino_acids = fdc_client.extract_amino_acids(usda_raw)
+    fatty_acids = fdc_client.extract_fatty_acids(usda_raw)
+    
+    # Convert to calculator format with amino/fatty acids
     calc_format = food_to_calculator_format({
         "fdc_id": food_detail.fdc_id,
         "description": food_detail.description,
@@ -513,6 +515,8 @@ async def calculate_nutrition(req: NutritionRequest, current_user: dict = Depend
         "fat": food_detail.fat,
         "carbs": food_detail.carbs,
         "fiber": food_detail.fiber,
+        "amino_acids": [{"name": aa.name, "value": aa.value} for aa in amino_acids],
+        "fatty_acids": [{"name": fa.name, "value": fa.value} for fa in fatty_acids],
         "servings": [{"unit": s.unit, "description": s.description, "grams": s.grams} for s in food_detail.servings]
     })
     
