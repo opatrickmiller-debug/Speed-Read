@@ -124,8 +124,21 @@ async def search_foods(
     5. Branded penalty: -60 points unless include_branded=true
     
     Returns top 25 results by default, sorted by ranking score.
+    
+    Caching: USDA results are cached for 1 hour to speed up subsequent searches.
     """
+    from core.cache import cache, CacheKeys
+    
     source = source or "all"
+    
+    # Normalize query for caching
+    normalized_query = query.lower().strip()
+    
+    # Check cache for USDA results (cached separately since they're common for all users)
+    cached_usda = None
+    if source in ["all", "usda"]:
+        usda_cache_key = f"usda_search:{normalized_query}:{include_branded}"
+        cached_usda = await cache.get(usda_cache_key)
     
     # Get popularity scores for ranking boost
     popularity_scores = await get_popular_foods(200)
@@ -141,18 +154,22 @@ async def search_foods(
     
     tasks = []
     
-    # For USDA, search foundation/SR Legacy foods first (whole foods with amino acid data)
-    # Then supplement with branded if requested
-    if source in ["all", "usda"]:
-        # Search Foundation and SR Legacy foods (high-quality whole foods)
+    # For USDA, use cache if available, otherwise search
+    if source in ["all", "usda"] and not cached_usda:
+        # Search Foundation and SR Legacy foods first (whole foods with amino acid data)
         tasks.append(safe_search("usda_foundation", fdc_client.search_foods(query, page_size, page, data_type="Foundation")))
         tasks.append(safe_search("usda_sr_legacy", fdc_client.search_foods(query, page_size, page, data_type="SR Legacy")))
         tasks.append(safe_search("usda_survey", fdc_client.search_foods(query, page_size, page, data_type="Survey (FNDDS)")))
         if include_branded:
             tasks.append(safe_search("usda_branded", fdc_client.search_foods(query, page_size // 2, page, data_type="Branded")))
     
+    # Check cache for OFF results too
+    cached_off = None
     if source in ["all", "off"]:
-        tasks.append(safe_search("off", search_open_food_facts(query, page_size)))
+        off_cache_key = f"off_search:{normalized_query}"
+        cached_off = await cache.get(off_cache_key)
+        if not cached_off:
+            tasks.append(safe_search("off", search_open_food_facts(query, page_size)))
     
     if source in ["all", "custom"]:
         tasks.append(safe_search("custom", search_custom_foods(query, current_user["id"])))
@@ -221,31 +238,50 @@ async def search_foods(
     
     # Collect USDA results
     usda_results = []
+    from_cache = False
     
-    # Process Foundation foods first (highest quality)
-    if "usda_foundation" in results_by_source:
-        usda_results.extend(process_usda_foods(results_by_source["usda_foundation"], "Foundation"))
+    # Use cached USDA results if available
+    if cached_usda:
+        usda_results = cached_usda
+        from_cache = True
+    else:
+        # Process Foundation foods first (highest quality)
+        if "usda_foundation" in results_by_source:
+            usda_results.extend(process_usda_foods(results_by_source["usda_foundation"], "Foundation"))
+        
+        # Then SR Legacy (whole foods reference)
+        if "usda_sr_legacy" in results_by_source:
+            usda_results.extend(process_usda_foods(results_by_source["usda_sr_legacy"], "SR Legacy"))
+        
+        # Then Survey foods (common foods)
+        if "usda_survey" in results_by_source:
+            usda_results.extend(process_usda_foods(results_by_source["usda_survey"], "Survey (FNDDS)"))
+        
+        # Finally branded (if enabled)
+        if "usda_branded" in results_by_source:
+            usda_results.extend(process_usda_foods(results_by_source["usda_branded"], "Branded"))
+        
+        # Legacy support for old "usda" key (single search)
+        if "usda" in results_by_source:
+            usda_results.extend(process_usda_foods(results_by_source["usda"]))
+        
+        # Cache USDA results for 1 hour (3600 seconds)
+        if usda_results and source in ["all", "usda"]:
+            usda_cache_key = f"usda_search:{normalized_query}:{include_branded}"
+            await cache.set(usda_cache_key, usda_results, ttl=3600)
     
-    # Then SR Legacy (whole foods reference)
-    if "usda_sr_legacy" in results_by_source:
-        usda_results.extend(process_usda_foods(results_by_source["usda_sr_legacy"], "SR Legacy"))
+    # Get Open Food Facts results (from cache or API)
+    if cached_off:
+        off_results = cached_off
+        from_cache = True
+    else:
+        off_results = results_by_source.get("off", [])
+        # Cache OFF results for 1 hour
+        if off_results and source in ["all", "off"]:
+            off_cache_key = f"off_search:{normalized_query}"
+            await cache.set(off_cache_key, off_results, ttl=3600)
     
-    # Then Survey foods (common foods)
-    if "usda_survey" in results_by_source:
-        usda_results.extend(process_usda_foods(results_by_source["usda_survey"], "Survey (FNDDS)"))
-    
-    # Finally branded (if enabled)
-    if "usda_branded" in results_by_source:
-        usda_results.extend(process_usda_foods(results_by_source["usda_branded"], "Branded"))
-    
-    # Legacy support for old "usda" key (single search)
-    if "usda" in results_by_source:
-        usda_results.extend(process_usda_foods(results_by_source["usda"]))
-    
-    # Get Open Food Facts results
-    off_results = results_by_source.get("off", [])
-    
-    # Get custom foods results
+    # Get custom foods results (not cached since user-specific)
     custom_results = results_by_source.get("custom", [])
     
     # ==================== ADVANCED RANKING (using food_search_service) ====================
@@ -267,7 +303,8 @@ async def search_foods(
     return {
         "foods": ranked_results,
         "total": len(usda_results) + len(off_results) + len(custom_results),
-        "count": len(ranked_results)
+        "count": len(ranked_results),
+        "cached": from_cache
     }
 
 # ==================== AUTOCOMPLETE ====================
