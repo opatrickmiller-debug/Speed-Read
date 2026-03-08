@@ -55,6 +55,7 @@ export const FoodSearch = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedMeal, setSelectedMeal] = useState(searchParams.get('meal') || 'snack');
   const inputRef = useRef(null);
+  const searchContainerRef = useRef(null);
   
   // Get initial query from URL params (for back navigation)
   const initialQuery = searchParams.get('q') || '';
@@ -72,6 +73,11 @@ export const FoodSearch = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   
+  // Autocomplete state
+  const [autocomplete, setAutocomplete] = useState([]);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [loadingAutocomplete, setLoadingAutocomplete] = useState(false);
+  
   // Tabs: recent, frequent, all
   const [activeTab, setActiveTab] = useState(initialQuery ? 'all' : 'recent');
   const [recentFoods, setRecentFoods] = useState([]);
@@ -83,6 +89,7 @@ export const FoodSearch = () => {
   const [quickAddData, setQuickAddData] = useState({ calories: '', protein: '', carbs: '', fat: '' });
   
   const debouncedQuery = useDebounce(query, 300);
+  const autocompleteDebounce = useDebounce(query, 150); // Faster for autocomplete
   const getToken = () => localStorage.getItem('token');
 
   // Load recent and frequent foods
@@ -172,8 +179,38 @@ export const FoodSearch = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQuery]);
 
+  // Autocomplete - fetch suggestions as user types
+  useEffect(() => {
+    const fetchAutocomplete = async () => {
+      if (autocompleteDebounce.length < 1) {
+        setAutocomplete([]);
+        return;
+      }
+      
+      setLoadingAutocomplete(true);
+      try {
+        const token = getToken();
+        const res = await fetch(
+          `${API_URL}/api/foods/autocomplete?q=${encodeURIComponent(autocompleteDebounce)}&limit=10`,
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setAutocomplete(data.suggestions || []);
+        }
+      } catch (err) {
+        console.error('Autocomplete failed:', err);
+      } finally {
+        setLoadingAutocomplete(false);
+      }
+    };
+    
+    fetchAutocomplete();
+  }, [autocompleteDebounce]);
+
   const performSearch = async (searchQuery) => {
     setLoading(true);
+    setShowAutocomplete(false);
     try {
       const res = await foodsApi.search(searchQuery, false);
       setResults(res.data.foods || []);
@@ -182,6 +219,13 @@ export const FoodSearch = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle autocomplete suggestion click - run full search
+  const handleAutocompleteSuggestion = (suggestion) => {
+    setQuery(suggestion.description);
+    setShowAutocomplete(false);
+    performSearch(suggestion.description);
   };
 
   const handleSelectFood = useCallback((food) => {
@@ -260,6 +304,8 @@ export const FoodSearch = () => {
   const clearSearch = () => {
     setQuery('');
     setResults([]);
+    setAutocomplete([]);
+    setShowAutocomplete(false);
     inputRef.current?.focus();
   };
 
@@ -482,17 +528,30 @@ export const FoodSearch = () => {
             })}
           </div>
           
-          {/* Search Bar */}
-          <div className="relative">
+          {/* Search Bar with Autocomplete */}
+          <div className="relative" ref={searchContainerRef}>
             <SearchIcon className={cn(
-              "absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5",
+              "absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 z-10",
               theme === 'dark' ? 'text-zinc-500' : 'text-gray-400'
             )} />
             <Input
               ref={inputRef}
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setShowAutocomplete(e.target.value.length >= 1);
+              }}
+              onFocus={() => {
+                if (query.length >= 1) {
+                  setShowAutocomplete(true);
+                }
+              }}
+              onBlur={() => {
+                // Delay hiding to allow click on suggestions
+                setTimeout(() => setShowAutocomplete(false), 250);
+              }}
               placeholder="Search foods..."
+              data-testid="search-input"
               className={cn(
                 "pl-10 pr-10 h-12 rounded-xl",
                 theme === 'dark' 
@@ -504,12 +563,88 @@ export const FoodSearch = () => {
               <button
                 onClick={clearSearch}
                 className={cn(
-                  "absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full",
+                  "absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full z-10",
                   theme === 'dark' ? 'text-zinc-500 hover:text-white' : 'text-gray-400 hover:text-gray-600'
                 )}
               >
                 <X className="w-4 h-4" />
               </button>
+            )}
+            
+            {/* Autocomplete Dropdown */}
+            {showAutocomplete && autocomplete.length > 0 && (
+              <div 
+                className={cn(
+                  "absolute top-full left-0 right-0 mt-1 rounded-xl border shadow-lg overflow-hidden z-50",
+                  theme === 'dark' 
+                    ? 'bg-zinc-900 border-zinc-700' 
+                    : 'bg-white border-gray-200'
+                )}
+                data-testid="autocomplete-dropdown"
+              >
+                {loadingAutocomplete && (
+                  <div className="flex items-center justify-center py-3">
+                    <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
+                  </div>
+                )}
+                {autocomplete.map((suggestion, idx) => (
+                  <button
+                    key={`${suggestion.fdc_id}-${idx}`}
+                    onMouseDown={(e) => {
+                      e.preventDefault(); // Prevent blur
+                      handleAutocompleteSuggestion(suggestion);
+                    }}
+                    data-testid={`autocomplete-item-${idx}`}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b last:border-0",
+                      theme === 'dark' 
+                        ? 'hover:bg-zinc-800 border-zinc-800' 
+                        : 'hover:bg-gray-50 border-gray-100'
+                    )}
+                  >
+                    <SearchIcon className={cn(
+                      "w-4 h-4 flex-shrink-0",
+                      theme === 'dark' ? 'text-zinc-600' : 'text-gray-400'
+                    )} />
+                    <div className="flex-1 min-w-0">
+                      <p className={cn(
+                        "font-medium truncate",
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                      )}>
+                        {suggestion.description}
+                      </p>
+                      {suggestion.protein > 0 && (
+                        <p className={cn(
+                          "text-xs",
+                          theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                        )}>
+                          {suggestion.protein}g protein
+                        </p>
+                      )}
+                    </div>
+                    {suggestion.source === 'recent' && (
+                      <span className={cn(
+                        "text-[10px] px-2 py-0.5 rounded-full",
+                        theme === 'dark' 
+                          ? 'bg-cyan-500/20 text-cyan-400' 
+                          : 'bg-cyan-100 text-cyan-600'
+                      )}>
+                        Recent
+                      </span>
+                    )}
+                    {suggestion.source === 'popular' && (
+                      <span className={cn(
+                        "text-[10px] px-2 py-0.5 rounded-full",
+                        theme === 'dark' 
+                          ? 'bg-amber-500/20 text-amber-400' 
+                          : 'bg-amber-100 text-amber-600'
+                      )}>
+                        Popular
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
           
