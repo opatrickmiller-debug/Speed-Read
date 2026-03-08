@@ -9,7 +9,7 @@ import uuid
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL')
 if not BASE_URL:
-    BASE_URL = "https://keto-nutrition-hub.preview.emergentagent.com"
+    BASE_URL = "https://nutrition-pulse-9.preview.emergentagent.com"
 
 class TestCustomFoodsCRUD:
     """Test custom foods CRUD endpoints"""

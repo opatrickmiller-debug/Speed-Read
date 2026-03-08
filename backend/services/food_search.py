@@ -12,48 +12,93 @@ Features:
 - Deduplication by name + brand
 - Popularity and user history boosting
 
-Ranking is based on:
-- Exact/fuzzy name matching (RapidFuzz)
-- User's food logging history
-- Popularity scores
-- Data source quality (USDA verified vs community)
+Ranking Priority (v2):
+1. Exact phrase match in description (highest)
+2. RapidFuzz fuzzy similarity score
+3. Tier priority: Tier1 (USDA Foundation/SR Legacy, Custom) > Tier2 (Survey) > Tier3 (OFF)
+4. Nutrition density: higher protein foods rank higher for protein-related searches
+5. Branded foods penalized unless include_branded=true
 """
 
 import re
 import asyncio
 import logging
 from typing import Dict, List, Optional, Set, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from rapidfuzz import fuzz, process
 
 from core.cache import cache, CacheKeys, CacheTTL
 
 logger = logging.getLogger(__name__)
 
+# Protein-related search terms for nutrition density boosting
+PROTEIN_SEARCH_TERMS = {
+    "protein", "chicken", "beef", "steak", "fish", "salmon", "tuna", "pork",
+    "turkey", "lamb", "shrimp", "egg", "eggs", "meat", "poultry", "seafood",
+    "whey", "casein", "tofu", "tempeh", "seitan"
+}
+
 
 @dataclass
 class RankingWeights:
-    """Configurable weights for the ranking algorithm"""
-    EXACT_MATCH: int = 100
-    USER_LOGGED: int = 40
-    POPULARITY_MULTIPLIER: int = 10
-    USDA_VERIFIED: int = 20
-    FUZZY_MULTIPLIER: float = 0.30  # fuzzy_score * 30
+    """
+    Configurable weights for the ranking algorithm (v2)
+    
+    Priority order:
+    1. EXACT_PHRASE_MATCH - Query appears exactly as phrase in description
+    2. FUZZY_SCORE - RapidFuzz similarity (scaled 0-100)
+    3. TIER_BONUS - Source quality tiers
+    4. NUTRITION_DENSITY - Protein content for protein-related searches
+    5. BRANDED_PENALTY - Negative weight for branded items
+    """
+    # Priority 1: Exact phrase matching
+    EXACT_PHRASE_MATCH: int = 200        # Full phrase match
+    EXACT_PHRASE_START: int = 180        # Phrase at start of description
+    EXACT_PHRASE_CONTAINS: int = 120     # Phrase found anywhere
+    
+    # Priority 2: Fuzzy similarity (multiplied by score 0-100)
+    FUZZY_MULTIPLIER: float = 0.8        # fuzzy_score * 0.8 = max 80 points
+    
+    # Priority 3: Tier bonuses
+    TIER_1_BONUS: int = 50               # USDA Foundation, SR Legacy, Custom
+    TIER_2_BONUS: int = 25               # USDA Survey (FNDDS)
+    TIER_3_BONUS: int = 0                # Open Food Facts
+    
+    # Priority 4: Nutrition density (for protein searches)
+    PROTEIN_DENSITY_MULTIPLIER: float = 0.5  # protein_per_100g * 0.5 = max ~15-20 points
+    
+    # Priority 5: Branded penalty
+    BRANDED_PENALTY: int = -60           # Penalty for branded foods
+    
+    # Bonus modifiers
+    USER_LOGGED_BONUS: int = 30          # User has logged this before
+    POPULARITY_MULTIPLIER: float = 5.0   # popularity_score (0-5) * 5 = max 25 points
 
 
 class FoodSearchService:
     """
-    Advanced food search with intelligent ranking.
+    Advanced food search with intelligent ranking (v2).
     
     Features:
     - Query normalization
-    - Multi-source parallel fetching
+    - Multi-source parallel fetching  
     - Deduplication by name + brand
-    - Smart ranking with fuzzy matching
+    - Smart ranking with 5-tier priority system:
+      1. Exact phrase match
+      2. Fuzzy similarity
+      3. Source tier (Foundation > Survey > OFF)
+      4. Nutrition density
+      5. Branded penalty
     """
     
     def __init__(self):
         self.weights = RankingWeights()
+    
+    def is_protein_search(self, query: str) -> bool:
+        """Check if the search query is related to protein/high-protein foods"""
+        query_lower = query.lower()
+        query_tokens = set(query_lower.split())
+        return bool(query_tokens & PROTEIN_SEARCH_TERMS)
     
     # ========================
     # 1. QUERY NORMALIZATION
@@ -137,6 +182,7 @@ class FoodSearchService:
         - ratio: Simple character-level similarity
         - token_sort_ratio: Handles word reordering ("scrambled eggs" vs "eggs scrambled")
         - token_set_ratio: Handles partial matches ("chicken" in "chicken breast raw")
+        - partial_ratio: Handles substring matches
         
         Returns: Score from 0-100
         """
@@ -156,18 +202,101 @@ class FoodSearchService:
         token_set = fuzz.token_set_ratio(query_norm, text_norm)
         partial_ratio = fuzz.partial_ratio(query_norm, text_norm)
         
-        # Weighted combination (token-based matching is more useful for food names)
+        # Weighted combination (emphasize token-based for food names)
         weighted_score = (
-            simple_ratio * 0.15 +
-            token_sort * 0.35 +
-            token_set * 0.30 +
-            partial_ratio * 0.20
+            simple_ratio * 0.10 +      # Less weight on exact char match
+            token_sort * 0.30 +        # Word order flexibility
+            token_set * 0.35 +         # Partial word matching (most important)
+            partial_ratio * 0.25       # Substring matching
         )
         
         return weighted_score
     
+    def check_exact_phrase_match(self, query: str, description: str) -> str:
+        """
+        Check for exact phrase matching.
+        
+        Returns:
+        - "full" if description equals query exactly
+        - "start" if description starts with query
+        - "contains" if query appears as complete phrase in description
+        - "none" if no exact match
+        """
+        query_norm = self.normalize_query(query)
+        desc_norm = self.normalize_query(description)
+        
+        if not query_norm or not desc_norm:
+            return "none"
+        
+        # Full match
+        if desc_norm == query_norm:
+            return "full"
+        
+        # Starts with query
+        if desc_norm.startswith(query_norm + " ") or desc_norm.startswith(query_norm):
+            return "start"
+        
+        # Contains query as a phrase (with word boundaries)
+        # Using word boundary check to avoid partial word matches
+        query_words = query_norm.split()
+        desc_words = desc_norm.split()
+        
+        # Check if all query words appear consecutively in description
+        query_len = len(query_words)
+        for i in range(len(desc_words) - query_len + 1):
+            if desc_words[i:i + query_len] == query_words:
+                return "contains"
+        
+        return "none"
+    
+    def get_food_tier(self, food: Dict) -> int:
+        """
+        Determine the quality tier of a food item.
+        
+        Tier 1 (Best): USDA Foundation, SR Legacy, Custom foods
+        Tier 2 (Good): USDA Survey (FNDDS)
+        Tier 3 (Basic): Open Food Facts, USDA Branded
+        
+        Returns: 1, 2, or 3
+        """
+        source = food.get("source", "")
+        data_type = food.get("data_type", "")
+        
+        # Tier 1: High-quality verified sources
+        if source == "custom":
+            return 1
+        if source == "usda" and data_type in {"Foundation", "SR Legacy"}:
+            return 1
+        
+        # Tier 2: USDA Survey data
+        if source == "usda" and data_type == "Survey (FNDDS)":
+            return 2
+        
+        # Tier 3: Community/branded sources
+        return 3
+    
+    def is_branded_food(self, food: Dict) -> bool:
+        """Check if a food item is a branded/packaged product"""
+        source = food.get("source", "")
+        data_type = food.get("data_type", "")
+        brand = food.get("brand_owner", "")
+        
+        # USDA Branded category
+        if source == "usda" and data_type == "Branded":
+            return True
+        
+        # Open Food Facts with brand
+        if source == "off" and brand:
+            return True
+        
+        # Has a brand owner regardless of source
+        if brand and source != "custom":
+            return True
+        
+        return False
+    
     # ========================
-    # 4. RANKING ALGORITHM
+    # 4. RANKING ALGORITHM (v2)
     # ========================
     
     def calculate_ranking_score(
@@ -175,58 +304,96 @@ class FoodSearchService:
         food: Dict,
         query: str,
         user_logged_foods: Set[str],
-        popularity_scores: Dict[str, float]
-    ) -> float:
+        popularity_scores: Dict[str, float],
+        include_branded: bool = False
+    ) -> Tuple[float, Dict]:
         """
-        Calculate the ranking score for a food item.
+        Calculate the ranking score for a food item (v2 algorithm).
         
-        Score breakdown:
-        - Exact name match:        +100 points
-        - User previously logged:  +40 points  
-        - Popularity score:        +10 × popularity_value (0-5)
-        - USDA verified food:      +20 points
-        - Fuzzy similarity:        fuzzy_score × 0.30 (max ~30 points)
+        Priority order:
+        1. Exact phrase match:      +200 (full), +180 (start), +120 (contains)
+        2. Fuzzy similarity:        score × 0.8 (max ~80 points)
+        3. Tier bonus:              +50 (T1), +25 (T2), +0 (T3)
+        4. Nutrition density:       protein_per_100g × 0.5 (for protein searches)
+        5. Branded penalty:         -60 (if branded and not include_branded)
+        + User logged bonus:        +30
+        + Popularity bonus:         popularity × 5 (max 25)
         
-        Returns: Total ranking score (higher = more relevant)
+        Returns: (total_score, score_breakdown_dict)
         """
+        breakdown = {}
         score = 0.0
+        
         food_id = str(food.get("fdc_id") or food.get("id", ""))
         description = food.get("description", "")
         
-        normalized_query = self.normalize_query(query)
-        normalized_desc = self.normalize_query(description)
+        # ===== PRIORITY 1: Exact Phrase Match =====
+        phrase_match = self.check_exact_phrase_match(query, description)
+        if phrase_match == "full":
+            score += self.weights.EXACT_PHRASE_MATCH
+            breakdown["exact_match"] = self.weights.EXACT_PHRASE_MATCH
+        elif phrase_match == "start":
+            score += self.weights.EXACT_PHRASE_START
+            breakdown["exact_match"] = self.weights.EXACT_PHRASE_START
+        elif phrase_match == "contains":
+            score += self.weights.EXACT_PHRASE_CONTAINS
+            breakdown["exact_match"] = self.weights.EXACT_PHRASE_CONTAINS
+        else:
+            breakdown["exact_match"] = 0
         
-        # 1. EXACT NAME MATCH (+100)
-        # Check if query exactly matches the start of description
-        if normalized_desc.startswith(normalized_query):
-            score += self.weights.EXACT_MATCH
-        elif normalized_query in normalized_desc:
-            # Partial exact match (query appears somewhere in name)
-            score += self.weights.EXACT_MATCH * 0.7
-        
-        # 2. USER PREVIOUSLY LOGGED (+40)
-        if food_id in user_logged_foods:
-            score += self.weights.USER_LOGGED
-        
-        # 3. POPULARITY SCORE (+10 × value)
-        popularity_value = popularity_scores.get(food_id, 0)
-        score += self.weights.POPULARITY_MULTIPLIER * popularity_value
-        
-        # 4. USDA VERIFIED FOOD (+20)
-        source = food.get("source", "")
-        data_type = food.get("data_type", "")
-        
-        if source == "usda" and data_type in {"Foundation", "SR Legacy", "Survey (FNDDS)"}:
-            score += self.weights.USDA_VERIFIED
-        elif source == "custom":
-            # User's own foods are also "verified" in a sense
-            score += self.weights.USDA_VERIFIED
-        
-        # 5. FUZZY SIMILARITY SCORE (×30)
+        # ===== PRIORITY 2: Fuzzy Similarity Score =====
         fuzzy_score = self.calculate_fuzzy_score(query, description)
-        score += fuzzy_score * self.weights.FUZZY_MULTIPLIER
+        fuzzy_points = fuzzy_score * self.weights.FUZZY_MULTIPLIER
+        score += fuzzy_points
+        breakdown["fuzzy"] = round(fuzzy_points, 2)
+        breakdown["fuzzy_raw"] = round(fuzzy_score, 1)
         
-        return round(score, 2)
+        # ===== PRIORITY 3: Tier Bonus =====
+        tier = self.get_food_tier(food)
+        if tier == 1:
+            score += self.weights.TIER_1_BONUS
+            breakdown["tier_bonus"] = self.weights.TIER_1_BONUS
+        elif tier == 2:
+            score += self.weights.TIER_2_BONUS
+            breakdown["tier_bonus"] = self.weights.TIER_2_BONUS
+        else:
+            breakdown["tier_bonus"] = 0
+        breakdown["tier"] = tier
+        
+        # ===== PRIORITY 4: Nutrition Density (for protein searches) =====
+        is_protein_query = self.is_protein_search(query)
+        if is_protein_query:
+            protein_per_100g = food.get("protein_per_100g", 0) or 0
+            protein_bonus = protein_per_100g * self.weights.PROTEIN_DENSITY_MULTIPLIER
+            score += protein_bonus
+            breakdown["protein_density"] = round(protein_bonus, 2)
+        else:
+            breakdown["protein_density"] = 0
+        
+        # ===== PRIORITY 5: Branded Penalty =====
+        is_branded = self.is_branded_food(food)
+        if is_branded and not include_branded:
+            score += self.weights.BRANDED_PENALTY  # Negative value
+            breakdown["branded_penalty"] = self.weights.BRANDED_PENALTY
+        else:
+            breakdown["branded_penalty"] = 0
+        breakdown["is_branded"] = is_branded
+        
+        # ===== BONUS: User Logged =====
+        if food_id in user_logged_foods:
+            score += self.weights.USER_LOGGED_BONUS
+            breakdown["user_logged"] = self.weights.USER_LOGGED_BONUS
+        else:
+            breakdown["user_logged"] = 0
+        
+        # ===== BONUS: Popularity =====
+        popularity_value = popularity_scores.get(food_id, 0)
+        popularity_bonus = popularity_value * self.weights.POPULARITY_MULTIPLIER
+        score += popularity_bonus
+        breakdown["popularity"] = round(popularity_bonus, 2)
+        
+        breakdown["total"] = round(score, 2)
+        return round(score, 2), breakdown
     
     # ========================
     # 5. MAIN SEARCH METHOD
@@ -240,10 +407,11 @@ class FoodSearchService:
         custom_results: List[Dict],
         user_logged_foods: Set[str],
         popularity_scores: Dict[str, float],
-        limit: int = 20
+        limit: int = 25,
+        include_branded: bool = False
     ) -> List[Dict]:
         """
-        Main search method that combines, deduplicates, and ranks results.
+        Main search method that combines, deduplicates, and ranks results (v2).
         
         Args:
             query: Search query string
@@ -252,14 +420,23 @@ class FoodSearchService:
             custom_results: Results from user's custom foods
             user_logged_foods: Set of food IDs the user has logged before
             popularity_scores: Dict mapping food_id -> popularity score (0-5)
-            limit: Maximum number of results to return (default 20)
+            limit: Maximum number of results to return (default 25)
+            include_branded: If True, don't penalize branded foods
+        
+        Ranking Priority:
+            1. Exact phrase match in description
+            2. RapidFuzz fuzzy similarity score
+            3. Tier priority (Foundation/SR/Custom > Survey > OFF)
+            4. Nutrition density (protein searches boost high-protein foods)
+            5. Branded penalty (unless include_branded=True)
         
         Returns:
-            List of ranked food items, top `limit` results
+            List of ranked food items, top `limit` results (default 25)
         """
         # Step 1: Normalize query
         normalized_query = self.normalize_query(query)
-        logger.info(f"Search query normalized: '{query}' -> '{normalized_query}'")
+        is_protein_query = self.is_protein_search(query)
+        logger.info(f"Search query: '{query}' -> '{normalized_query}' (protein_search={is_protein_query})")
         
         # Step 2: Combine all results (order matters for dedup priority)
         # Custom foods first, then USDA (verified), then OFF (community)
@@ -280,70 +457,71 @@ class FoodSearchService:
             food["source"] = food.get("source", "off")
             all_foods.append(food)
         
-        logger.info(f"Combined results: {len(custom_results)} custom + {len(usda_results)} USDA + {len(off_results)} OFF = {len(all_foods)} total")
+        logger.info(f"Combined: {len(custom_results)} custom + {len(usda_results)} USDA + {len(off_results)} OFF = {len(all_foods)} total")
         
         # Step 3: Deduplicate by name + brand
         unique_foods = self.deduplicate_foods(all_foods)
         
-        # Step 4: Calculate ranking scores
+        # Step 4: Calculate ranking scores with new v2 algorithm
         for food in unique_foods:
-            food["_ranking_score"] = self.calculate_ranking_score(
+            score, breakdown = self.calculate_ranking_score(
                 food=food,
                 query=normalized_query,
                 user_logged_foods=user_logged_foods,
-                popularity_scores=popularity_scores
+                popularity_scores=popularity_scores,
+                include_branded=include_branded
             )
-            
-            # Also calculate and store fuzzy score for debugging/display
-            food["_fuzzy_score"] = round(
-                self.calculate_fuzzy_score(query, food.get("description", "")), 
-                1
-            )
+            food["_ranking_score"] = score
+            food["_score_breakdown"] = breakdown
+            food["_fuzzy_score"] = breakdown.get("fuzzy_raw", 0)
         
         # Step 5: Sort by ranking score (descending)
         unique_foods.sort(key=lambda x: x.get("_ranking_score", 0), reverse=True)
         
-        # Step 6: Take top N results
+        # Step 6: Take top N results (default 25)
         top_results = unique_foods[:limit]
         
         # Step 7: Clean up internal fields and add tier labels
         final_results = []
         for rank, food in enumerate(top_results, 1):
-            # Remove internal scoring fields
+            # Remove internal scoring fields (but keep some for debugging in dev)
             clean_food = {k: v for k, v in food.items() if not k.startswith("_")}
             
             # Add rank position
             clean_food["rank"] = rank
             
-            # Add tier/verification labels
+            # Get tier from breakdown or calculate
+            tier = food.get("_score_breakdown", {}).get("tier", self.get_food_tier(food))
             source = food.get("source", "")
             data_type = food.get("data_type", "")
             
+            clean_food["tier"] = tier
+            
+            # Set tier labels and verification status
             if source == "custom":
-                clean_food["tier"] = 1
                 clean_food["is_verified"] = True
                 clean_food["tier_label"] = "Your Food"
-            elif source == "usda":
-                if data_type in {"Foundation", "SR Legacy"}:
-                    clean_food["tier"] = 1
-                    clean_food["is_verified"] = True
-                    clean_food["tier_label"] = "Best Match"
-                elif data_type == "Survey (FNDDS)":
-                    clean_food["tier"] = 2
-                    clean_food["is_verified"] = True
-                    clean_food["tier_label"] = "Verified"
-                else:
-                    clean_food["tier"] = 3
-                    clean_food["is_verified"] = False
-                    clean_food["tier_label"] = "Branded"
+            elif tier == 1:
+                clean_food["is_verified"] = True
+                clean_food["tier_label"] = "Best Match"
+            elif tier == 2:
+                clean_food["is_verified"] = True
+                clean_food["tier_label"] = "Verified"
             else:
-                clean_food["tier"] = 3
                 clean_food["is_verified"] = False
-                clean_food["tier_label"] = "Community"
+                if source == "off":
+                    clean_food["tier_label"] = "Community"
+                elif data_type == "Branded":
+                    clean_food["tier_label"] = "Branded"
+                else:
+                    clean_food["tier_label"] = "Other"
+            
+            # Add branded flag for frontend filtering
+            clean_food["is_branded"] = food.get("_score_breakdown", {}).get("is_branded", False)
             
             final_results.append(clean_food)
         
-        logger.info(f"Returning top {len(final_results)} ranked results")
+        logger.info(f"Returning top {len(final_results)} ranked results (limit={limit})")
         return final_results
     
     # ========================

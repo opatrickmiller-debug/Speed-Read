@@ -105,20 +105,27 @@ async def search_foods(
     page_size: int = Query(25, ge=1, le=100),
     page: int = Query(1, ge=1),
     source: Optional[str] = Query(None, description="Filter by source: usda, off, custom, all"),
-    include_branded: bool = Query(False, description="Include USDA branded foods (less reliable)"),
+    include_branded: bool = Query(False, description="Include branded foods (penalized by default)"),
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Unified food search across all sources:
+    Unified food search across all sources with v2 ranking algorithm.
+    
+    Sources:
     - USDA FoodData Central (with amino acid data)
     - Open Food Facts (2M+ products)
     - User's custom foods
     
-    Results are ranked to prioritize simple whole foods over complex meals.
-    By default, excludes branded products which may have stale/invalid IDs.
+    Ranking Priority (v2):
+    1. Exact phrase match in description (highest)
+    2. RapidFuzz fuzzy similarity score
+    3. Tier priority: T1 (Foundation/SR Legacy/Custom) > T2 (Survey) > T3 (OFF)
+    4. Nutrition density: higher protein foods rank higher for protein searches
+    5. Branded penalty: -60 points unless include_branded=true
+    
+    Returns top 25 results by default, sorted by ranking score.
     """
     source = source or "all"
-    all_results = []
     
     # Get popularity scores for ranking boost
     popularity_scores = await get_popular_foods(200)
@@ -245,7 +252,7 @@ async def search_foods(
     # Get user's previously logged foods for ranking boost
     user_logged_foods = await food_search_service.get_user_logged_foods(db, current_user["id"])
     
-    # Use the advanced ranking algorithm
+    # Use the advanced ranking algorithm (v2)
     ranked_results = await food_search_service.search_and_rank(
         query=query,
         usda_results=usda_results,
@@ -253,7 +260,8 @@ async def search_foods(
         custom_results=custom_results,
         user_logged_foods=user_logged_foods,
         popularity_scores=popularity_scores,
-        limit=page_size
+        limit=page_size,
+        include_branded=include_branded  # Pass the branded preference
     )
     
     # Count tiers for response metadata
