@@ -1,482 +1,155 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
-import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
-import { AminoAcidRadar, AminoAcidList } from '../components/AminoAcidRadar';
-import { FattyAcidChart, FattyAcidList, OmegaSummary } from '../components/FattyAcidChart';
-import { FoodDetailSkeleton } from '../components/Skeletons';
-import { Input } from '../components/ui/input';
-import { foodsApi, logsApi, favoritesApi } from '../lib/api';
+import { AminoAcidRadar } from '../components/AminoAcidRadar';
+import { FattyAcidChart } from '../components/FattyAcidChart';
+import { foodsApi, logsApi } from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { cn } from '../lib/utils';
 import { 
   ArrowLeft,
-  Heart,
-  Plus,
-  CheckCircle2,
+  Loader2,
   AlertTriangle,
-  Check,
-  ChevronRight,
-  Info
+  Flame,
+  Beef,
+  Droplets,
+  Wheat,
+  Salad,
+  Plus
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import {
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts';
-
-// Custom Tooltip for Macro Radar
-const MacroTooltip = ({ active, payload }) => {
-  if (active && payload && payload.length) {
-    const data = payload[0].payload;
-    return (
-      <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 shadow-2xl">
-        <p className="text-white font-medium text-sm">{data.fullName}</p>
-        <p className="text-emerald-400 text-sm mt-1">
-          {data.displayValue}
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
-
-// Macro Radar Chart Component (matches Amino Acid visual style exactly)
-const MacroRadar = ({ calories, carbs, fat, protein, theme }) => {
-  // Use actual values for display (like amino acids)
-  const radarData = [
-    { 
-      name: 'Cal', 
-      fullName: 'Calories',
-      value: calories,
-      displayValue: `${Math.round(calories)} kcal`
-    },
-    { 
-      name: 'Pro', 
-      fullName: 'Protein',
-      value: protein,
-      displayValue: `${protein.toFixed(2)}g`
-    },
-    { 
-      name: 'Fat', 
-      fullName: 'Fat',
-      value: fat,
-      displayValue: `${fat.toFixed(2)}g`
-    },
-    { 
-      name: 'Carb', 
-      fullName: 'Carbs',
-      value: carbs,
-      displayValue: `${carbs.toFixed(2)}g`
-    },
-  ];
-
-  // Calculate max value for scale (like amino acids)
-  const maxValue = Math.max(...radarData.map((d) => d.value), 1);
-
-  return (
-    <div className="w-full h-full min-h-[280px]">
-      <ResponsiveContainer width="100%" height="100%">
-        <RadarChart data={radarData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
-          <PolarGrid 
-            stroke={theme === 'dark' ? '#27272A' : '#E5E7EB'} 
-            strokeWidth={1}
-            gridType="polygon"
-          />
-          <PolarAngleAxis
-            dataKey="name"
-            tick={{ fill: theme === 'dark' ? '#A1A1AA' : '#4B5563', fontSize: 11, fontWeight: 500 }}
-            tickLine={false}
-          />
-          <PolarRadiusAxis
-            angle={90}
-            domain={[0, maxValue]}
-            tick={false}
-            axisLine={false}
-          />
-          <Radar
-            name="Macros"
-            dataKey="value"
-            stroke="#10B981"
-            fill="#10B981"
-            fillOpacity={0.3}
-            strokeWidth={2}
-            dot={{
-              r: 4,
-              fill: '#10B981',
-              stroke: theme === 'dark' ? '#050505' : '#FFFFFF',
-              strokeWidth: 2,
-            }}
-          />
-          <Tooltip content={<MacroTooltip />} />
-        </RadarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-};
-
-// Macro List Component (matches Amino Acid List style exactly)
-const MacroList = ({ calories, carbs, fat, protein, theme }) => {
-  const macros = [
-    { name: 'Protein', value: protein, unit: 'g', color: 'bg-emerald-500', isHighlight: true },
-    { name: 'Calories', value: calories, unit: 'kcal', color: 'bg-amber-500', isHighlight: false },
-    { name: 'Fat', value: fat, unit: 'g', color: 'bg-fuchsia-500', isHighlight: false },
-    { name: 'Carbs', value: carbs, unit: 'g', color: 'bg-cyan-500', isHighlight: false },
-  ];
-
-  return (
-    <div className="space-y-2">
-      {macros.map((macro) => (
-        <div
-          key={macro.name}
-          className={cn(
-            "flex items-center justify-between py-2 border-b last:border-0",
-            theme === 'dark' ? 'border-white/5' : 'border-gray-200'
-          )}
-        >
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${macro.color}`} />
-            <span className={cn(
-              "text-sm font-medium",
-              theme === 'dark' ? 'text-zinc-200' : 'text-gray-800'
-            )}>
-              {macro.name}
-            </span>
-          </div>
-          <span className={cn(
-            "text-sm font-mono font-semibold",
-            macro.isHighlight 
-              ? 'text-emerald-500' 
-              : theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>
-            {macro.unit === 'kcal' ? Math.round(macro.value) : macro.value.toFixed(2)}{macro.unit}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-// Row component for settings-like interface
-const SettingsRow = ({ label, value, onClick, theme, showChevron = true, valueClassName = '' }) => (
-  <button
-    onClick={onClick}
-    className={cn(
-      "w-full flex items-center justify-between py-4 px-1 border-b transition-colors",
-      theme === 'dark' 
-        ? 'border-zinc-800 hover:bg-zinc-900/50' 
-        : 'border-gray-100 hover:bg-gray-50'
-    )}
-  >
-    <span className={cn(
-      "text-base",
-      theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
-    )}>{label}</span>
-    <div className="flex items-center gap-2">
-      <span className={cn(
-        "text-base font-medium text-emerald-500",
-        valueClassName
-      )}>{value}</span>
-      {showChevron && (
-        <ChevronRight className={cn(
-          "w-5 h-5",
-          theme === 'dark' ? 'text-zinc-600' : 'text-gray-400'
-        )} />
-      )}
-    </div>
-  </button>
-);
+import { Input } from '../components/ui/input';
 
 export const FoodDetails = () => {
   const { fdcId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const { theme } = useTheme();
   
-  const [foodDetails, setFoodDetails] = useState(null);
+  const [food, setFood] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [favoriteId, setFavoriteId] = useState(null);
+  const [error, setError] = useState(null);
   
-  // Portion state
-  const [portionAmount, setPortionAmount] = useState(1);
-  const [selectedPortion, setSelectedPortion] = useState(null);
-  
-  // Modal states
-  const [portionModalOpen, setPortionModalOpen] = useState(false);
-  const [mealModalOpen, setMealModalOpen] = useState(false);
-  const [showNutritionDetails, setShowNutritionDetails] = useState(false);
-  
-  // Temp states for modals
-  const [tempPortionAmount, setTempPortionAmount] = useState(1);
-  const [tempSelectedPortion, setTempSelectedPortion] = useState(null);
-  
-  // Get meal type from URL params
-  const urlParams = new URLSearchParams(location.search);
-  const [mealType, setMealType] = useState(urlParams.get('meal') || 'snack');
+  // Log food modal state
+  const [logModalOpen, setLogModalOpen] = useState(false);
+  const [servingSize, setServingSize] = useState(100);
+  const [mealType, setMealType] = useState('snack');
+  const [logging, setLogging] = useState(false);
 
-  const [notFoundError, setNotFoundError] = useState(false);
-
-  // Build available portion options from food data (like MyFitnessPal)
-  const portionOptions = useMemo(() => {
-    const options = [];
-    
-    // Add the default serving size if available
-    if (foodDetails?.serving_size && foodDetails?.serving_unit) {
-      const servingLabel = foodDetails.serving_unit === 'g' 
-        ? `${foodDetails.serving_size}g serving`
-        : `1.0 ${foodDetails.serving_unit || 'serving'} (${foodDetails.serving_size}g)`;
-      options.push({
-        id: 'serving',
-        label: servingLabel,
-        grams: foodDetails.serving_size,
-        isDefault: true
-      });
-    }
-    
-    // Standard weight options
-    options.push({ id: 'gram', label: '1.0 gram', grams: 1 });
-    options.push({ id: 'ounce', label: '1.0 ounce', grams: 28.35 });
-    options.push({ id: 'pound', label: '1.0 pound', grams: 453.59 });
-    options.push({ id: 'kilogram', label: '1.0 kilogram', grams: 1000 });
-    
-    // Volume options
-    options.push({ id: 'teaspoon', label: '1.0 teaspoon', grams: 5 });
-    options.push({ id: 'tablespoon', label: '1.0 tablespoon', grams: 15 });
-    options.push({ id: 'cup', label: '1.0 cup', grams: 240 });
-    
-    return options;
-  }, [foodDetails]);
-
-  // Set default portion when food loads
+  // Fetch food details on mount
   useEffect(() => {
-    if (foodDetails && portionOptions.length > 0 && !selectedPortion) {
-      const defaultOption = portionOptions.find(p => p.isDefault) || portionOptions.find(p => p.id === 'gram');
-      if (defaultOption) {
-        setSelectedPortion(defaultOption);
-        setTempSelectedPortion(defaultOption);
-        // Default to 100g if gram is selected
-        if (defaultOption.id === 'gram') {
-          setPortionAmount(100);
-          setTempPortionAmount(100);
-        }
-      }
-    }
-  }, [foodDetails, portionOptions, selectedPortion]);
-
-  // Calculate grams from current portion selection
-  const getGramsFromPortion = () => {
-    if (!selectedPortion) return 100;
-    return portionAmount * selectedPortion.grams;
-  };
-
-  // Calculate nutrition values based on portion
-  const calculateNutrition = (value) => {
-    if (!value) return 0;
-    const grams = getGramsFromPortion();
-    return (value * grams / 100);
-  };
-
-  const totalProtein = calculateNutrition(foodDetails?.protein);
-  const totalCalories = calculateNutrition(foodDetails?.calories);
-  const totalFat = calculateNutrition(foodDetails?.fat);
-  const totalCarbs = calculateNutrition(foodDetails?.carbs);
-
-  // Get display label for current serving size
-  const getServingSizeLabel = () => {
-    if (!selectedPortion) return '1.0 serving';
-    const amountStr = portionAmount % 1 === 0 ? portionAmount.toString() : portionAmount.toFixed(1);
-    // Extract the unit name from the label
-    const unitName = selectedPortion.label.replace(/^[\d.]+\s*/, '');
-    return `${amountStr} ${unitName}`;
-  };
-
-  // Get meal type display name
-  const getMealDisplayName = () => {
-    const names = {
-      breakfast: 'Breakfast',
-      lunch: 'Lunch',
-      dinner: 'Dinner',
-      snack: 'Snack'
-    };
-    return names[mealType] || 'Select a Meal';
-  };
-
-  // Scroll to top on mount
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  // Load food details
-  useEffect(() => {
-    const loadFoodDetails = async () => {
+    const fetchFood = async () => {
       if (!fdcId) return;
       
       setLoading(true);
-      setNotFoundError(false);
+      setError(null);
+      
       try {
-        const [detailsRes, favRes] = await Promise.all([
-          foodsApi.getDetails(fdcId),
-          favoritesApi.check(fdcId)
-        ]);
-        setFoodDetails(detailsRes.data);
-        setIsFavorite(favRes.data.is_favorite);
-        setFavoriteId(favRes.data.favorite_id);
+        const res = await foodsApi.getDetails(fdcId);
+        setFood(res.data);
       } catch (err) {
+        console.error('Failed to fetch food:', err);
         if (err.response?.status === 404) {
-          setNotFoundError(true);
-          toast.error('Food not found. It may have been removed from the database.');
+          setError('Food not found');
         } else {
-          toast.error('Failed to load food details. Please try again.');
+          setError('Failed to load food details');
         }
       } finally {
         setLoading(false);
       }
     };
     
-    loadFoodDetails();
+    fetchFood();
   }, [fdcId]);
 
-  // Get search query from URL params to pass back
-  const searchParams = new URLSearchParams(location.search);
-  const searchQuery = searchParams.get('q');
-  const mealParam = searchParams.get('meal') || 'snack';
-
-  const handleBack = () => {
-    // Build the return URL with preserved search query and meal
-    let returnUrl = '/search';
-    const params = new URLSearchParams();
-    params.set('meal', mealParam);
-    if (searchQuery) {
-      params.set('q', searchQuery);
-    }
-    returnUrl += '?' + params.toString();
-    navigate(returnUrl);
+  // Calculate nutrition based on serving size
+  const calculateValue = (per100g) => {
+    if (!per100g) return 0;
+    return (per100g * servingSize / 100);
   };
 
-  const handleAddToLog = async () => {
-    if (!foodDetails) return;
+  // Handle log food
+  const handleLogFood = async () => {
+    if (!food) return;
     
-    const grams = getGramsFromPortion();
-    
+    setLogging(true);
     try {
       await logsApi.create({
-        fdc_id: foodDetails.fdc_id,
-        description: foodDetails.description,
-        serving_size: grams,
+        fdc_id: food.fdc_id,
+        description: food.description,
+        serving_size: servingSize,
         serving_unit: 'g',
         servings: 1,
-        calories: parseFloat(totalCalories) || 0,
-        protein: parseFloat(totalProtein) || 0,
-        fat: parseFloat(totalFat) || 0,
-        carbs: parseFloat(totalCarbs) || 0,
-        fiber: calculateNutrition(foodDetails.fiber) || 0,
-        amino_acids: foodDetails.amino_acids?.map(aa => ({
+        calories: calculateValue(food.calories),
+        protein: calculateValue(food.protein),
+        fat: calculateValue(food.fat),
+        carbs: calculateValue(food.carbs),
+        fiber: calculateValue(food.fiber),
+        amino_acids: food.amino_acids?.map(aa => ({
           name: aa.name,
-          value: parseFloat((aa.value * grams / 100).toFixed(2)),
+          value: parseFloat((aa.value * servingSize / 100).toFixed(3)),
           is_essential: aa.is_essential
         })) || [],
-        fatty_acids: foodDetails.fatty_acids?.map(fa => ({
+        fatty_acids: food.fatty_acids?.map(fa => ({
           name: fa.name,
-          value: parseFloat((fa.value * grams / 100).toFixed(2)),
+          value: parseFloat((fa.value * servingSize / 100).toFixed(3)),
           is_essential: fa.is_essential,
           omega_type: fa.omega_type
         })) || [],
         meal_type: mealType
       });
       
-      toast.success('Food added to log!');
-      // Navigate back to search or dashboard
-      handleBack();
+      toast.success(`Added ${food.description.split(',')[0]} to ${mealType}`);
+      setLogModalOpen(false);
+      navigate('/search');
     } catch (err) {
-      toast.error('Failed to add food to log');
+      console.error('Failed to log food:', err);
+      toast.error('Failed to log food');
+    } finally {
+      setLogging(false);
     }
   };
 
-  const toggleFavorite = async () => {
-    if (!foodDetails) return;
-    
-    try {
-      if (isFavorite && favoriteId) {
-        await favoritesApi.delete(favoriteId);
-        setIsFavorite(false);
-        setFavoriteId(null);
-        toast.success('Removed from favorites');
-      } else {
-        const res = await favoritesApi.add({
-          fdc_id: foodDetails.fdc_id,
-          description: foodDetails.description,
-          protein_per_100g: foodDetails.protein,
-          is_complete_protein: foodDetails.is_complete_protein
-        });
-        setIsFavorite(true);
-        setFavoriteId(res.data.id);
-        toast.success('Added to favorites');
-      }
-    } catch (err) {
-      toast.error('Failed to update favorites');
-    }
-  };
-
-  // Open portion modal with current values
-  const openPortionModal = () => {
-    setTempPortionAmount(portionAmount);
-    setTempSelectedPortion(selectedPortion);
-    setPortionModalOpen(true);
-  };
-
-  // Save portion changes
-  const savePortionChanges = () => {
-    setPortionAmount(tempPortionAmount);
-    setSelectedPortion(tempSelectedPortion);
-    setPortionModalOpen(false);
-  };
-
+  // Loading state
   if (loading) {
     return (
       <Layout>
-        <div className="max-w-lg mx-auto">
-          <GlassCard className="min-h-[500px]">
-            <FoodDetailSkeleton />
-          </GlassCard>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
         </div>
       </Layout>
     );
   }
 
-  if (notFoundError || !foodDetails) {
+  // Error state
+  if (error || !food) {
     return (
       <Layout>
-        <div className="max-w-lg mx-auto p-4">
-          <GlassCard className="min-h-[300px] flex items-center justify-center">
-            <div className="text-center px-6">
-              <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-amber-500" />
-              <p className={cn(
-                "text-lg font-semibold mb-2",
-                theme === 'dark' ? 'text-white' : 'text-gray-900'
-              )}>
-                Food Not Found
-              </p>
-              <p className={cn(
-                "text-sm mb-4",
-                theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
-              )}>
-                This item may have been removed from the database.
-              </p>
-              <button
-                onClick={handleBack}
-                className="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-6 py-2.5 rounded-xl transition-colors"
-              >
-                Search Again
-              </button>
-            </div>
-          </GlassCard>
+        <div className="max-w-lg mx-auto px-4 py-12">
+          <div className={cn(
+            "rounded-xl p-8 text-center",
+            theme === 'dark' ? 'bg-zinc-900' : 'bg-white'
+          )}>
+            <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-amber-500" />
+            <h2 className={cn(
+              "text-xl font-bold mb-2",
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            )}>
+              {error || 'Food Not Found'}
+            </h2>
+            <p className={cn(
+              "mb-6",
+              theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+            )}>
+              This food may have been removed from the database.
+            </p>
+            <button
+              onClick={() => navigate('/search')}
+              className="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-6 py-3 rounded-xl transition-colors"
+            >
+              Back to Search
+            </button>
+          </div>
         </div>
       </Layout>
     );
@@ -485,672 +158,442 @@ export const FoodDetails = () => {
   return (
     <Layout>
       <div className={cn(
-        "min-h-screen",
+        "min-h-screen pb-24",
         theme === 'dark' ? 'bg-zinc-950' : 'bg-gray-50'
       )}>
-        {/* Header - MyFitnessPal style */}
+        {/* Header */}
         <div className={cn(
-          "sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b",
-          theme === 'dark' 
-            ? 'bg-zinc-950 border-zinc-800' 
-            : 'bg-white border-gray-200'
+          "sticky top-0 z-10 flex items-center gap-4 px-4 py-4 border-b",
+          theme === 'dark' ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-gray-200'
         )}>
           <button
-            onClick={handleBack}
-            data-testid="back-to-search-btn"
+            onClick={() => navigate('/search')}
+            data-testid="back-btn"
             className={cn(
-              "p-2 -ml-2 rounded-lg transition-colors",
-              theme === 'dark' 
-                ? 'text-zinc-400 hover:text-white hover:bg-zinc-800' 
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              "p-2 rounded-lg transition-colors",
+              theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-gray-100 text-gray-600'
             )}
           >
             <ArrowLeft className="w-6 h-6" />
           </button>
-          
           <h1 className={cn(
-            "text-lg font-semibold",
+            "text-lg font-semibold truncate",
             theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>Add Food</h1>
-          
-          <button
-            onClick={handleAddToLog}
-            data-testid="confirm-add-log-btn"
-            className="p-2 -mr-2 text-emerald-500 hover:text-emerald-400 transition-colors"
-          >
-            <Check className="w-6 h-6" strokeWidth={3} />
-          </button>
+          )}>
+            Food Details
+          </h1>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-lg mx-auto px-4 py-4">
-          {/* Food Title with Favorite */}
-          <div className="flex items-start justify-between gap-3 mb-6">
-            <div className="flex-1">
-              <h2 className={cn(
-                "text-xl font-bold leading-tight",
-                theme === 'dark' ? 'text-white' : 'text-gray-900'
-              )}>
-                {foodDetails.description}
-              </h2>
-              {/* Source badge */}
-              <span className={`inline-block mt-2 text-xs px-2 py-0.5 rounded font-medium ${
-                foodDetails.source === 'usda' ? 'bg-cyan-500/20 text-cyan-600' :
-                foodDetails.source === 'off' ? 'bg-orange-500/20 text-orange-600' :
-                foodDetails.source === 'custom' ? 'bg-purple-500/20 text-purple-600' :
-                theme === 'dark' ? 'bg-zinc-700/50 text-zinc-400' : 'bg-gray-200 text-gray-600'
-              }`}>
-                {foodDetails.source === 'usda' ? 'USDA' :
-                 foodDetails.source === 'off' ? 'Open Food Facts' :
-                 foodDetails.source === 'custom' ? 'Custom' : 'Database'}
-              </span>
-            </div>
-            <button
-              onClick={toggleFavorite}
-              data-testid="favorite-btn"
-              className={cn(
-                "p-2 rounded-full transition-all shrink-0",
-                isFavorite 
-                  ? 'bg-emerald-500 text-white' 
-                  : theme === 'dark'
-                    ? 'bg-zinc-800 text-zinc-400 hover:text-white'
-                    : 'bg-gray-100 text-gray-500 hover:text-gray-700'
-              )}
-            >
-              {isFavorite ? <Check className="w-5 h-5" /> : <Heart className="w-5 h-5" />}
-            </button>
+        <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+          {/* Food Description */}
+          <div className={cn(
+            "rounded-xl p-6",
+            theme === 'dark' ? 'bg-zinc-900' : 'bg-white'
+          )}>
+            <h2 className={cn(
+              "text-2xl font-bold mb-2",
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            )} data-testid="food-description">
+              {food.description}
+            </h2>
+            <span className={cn(
+              "inline-block text-xs px-2 py-1 rounded font-medium",
+              food.source === 'usda' ? 'bg-cyan-500/20 text-cyan-500' :
+              food.source === 'off' ? 'bg-orange-500/20 text-orange-500' :
+              'bg-purple-500/20 text-purple-500'
+            )}>
+              {food.source === 'usda' ? 'USDA' : food.source === 'off' ? 'Open Food Facts' : 'Custom'}
+            </span>
           </div>
 
-          {/* Settings-style rows */}
+          {/* Nutrition Facts */}
           <div className={cn(
-            "rounded-xl overflow-hidden mb-6",
-            theme === 'dark' ? 'bg-zinc-900/50' : 'bg-white'
+            "rounded-xl p-6",
+            theme === 'dark' ? 'bg-zinc-900' : 'bg-white'
           )}>
-            <div className="px-4">
-              <SettingsRow 
-                label="Meal" 
-                value={getMealDisplayName()} 
-                onClick={() => setMealModalOpen(true)}
-                theme={theme}
-              />
-              <SettingsRow 
-                label="Number of Servings" 
-                value={portionAmount}
-                onClick={openPortionModal}
-                theme={theme}
-              />
-              <SettingsRow 
-                label="Serving Size" 
-                value={getServingSizeLabel()}
-                onClick={openPortionModal}
-                theme={theme}
-              />
-              <SettingsRow 
-                label="Nutrition Details" 
-                value=""
-                onClick={() => setShowNutritionDetails(true)}
-                theme={theme}
-                valueClassName="text-zinc-400"
-              />
-            </div>
-          </div>
-
-          {/* Macro Profile - matches Amino Acid Profile layout */}
-          <div className={cn(
-            "rounded-xl p-4 mb-6",
-            theme === 'dark' ? 'bg-zinc-900/50' : 'bg-white'
-          )}>
-            {/* Section Header */}
             <h3 className={cn(
-              "text-sm font-bold uppercase tracking-[0.15em] mb-4",
+              "text-sm font-bold uppercase tracking-wider mb-4",
               theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
             )}>
-              Macro Profile
+              Nutrition per 100g
             </h3>
             
-            {/* Radar Chart */}
-            <div className="h-[280px]">
-              <MacroRadar 
-                calories={totalCalories}
-                carbs={totalCarbs}
-                fat={totalFat}
-                protein={totalProtein}
-                theme={theme}
-              />
-            </div>
-            
-            {/* Section Header */}
-            <h3 className={cn(
-              "text-sm font-bold uppercase tracking-[0.15em] mt-4 mb-3",
-              theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-            )}>
-              Macro Breakdown
-            </h3>
-            
-            {/* Macro List */}
-            <MacroList
-              calories={totalCalories}
-              carbs={totalCarbs}
-              fat={totalFat}
-              protein={totalProtein}
-              theme={theme}
-            />
-          </div>
-
-          {/* Quick Add Button */}
-          <button
-            onClick={handleAddToLog}
-            data-testid="add-to-log-btn"
-            className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-4 rounded-xl transition-all text-lg"
-          >
-            Add to {getMealDisplayName()}
-          </button>
-        </div>
-      </div>
-
-      {/* "How Much?" Portion Modal */}
-      <Dialog open={portionModalOpen} onOpenChange={setPortionModalOpen}>
-        <DialogContent className={cn(
-          "border max-w-md p-0 overflow-hidden",
-          theme === 'dark' 
-            ? 'bg-zinc-900 border-zinc-700 text-white' 
-            : 'bg-white border-gray-200 text-gray-900'
-        )}>
-          <DialogHeader className={cn(
-            "px-6 pt-6 pb-4 border-b",
-            theme === 'dark' ? 'border-zinc-700' : 'border-gray-200'
-          )}>
-            <DialogTitle className="text-xl font-bold">How Much?</DialogTitle>
-          </DialogHeader>
-          
-          <div className="px-6 py-4">
-            {/* Quick Presets */}
-            <div className="mb-4">
-              <p className={cn(
-                "text-xs uppercase tracking-wider mb-2",
-                theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-              )}>Quick Select</p>
-              <div className="flex flex-wrap gap-2">
-                {/* Dynamic presets based on selected portion type */}
-                {tempSelectedPortion?.id === 'serving' && [0.5, 1, 1.5, 2, 3].map(val => (
-                  <button
-                    key={val}
-                    onClick={() => setTempPortionAmount(val)}
-                    className={cn(
-                      "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                      tempPortionAmount === val
-                        ? 'bg-emerald-500 text-black'
-                        : theme === 'dark'
-                          ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    )}
-                  >
-                    {val === 0.5 ? '½' : val === 1.5 ? '1½' : val} srv
-                  </button>
-                ))}
-                {tempSelectedPortion?.id === 'gram' && [50, 100, 150, 200, 250].map(val => (
-                  <button
-                    key={val}
-                    onClick={() => setTempPortionAmount(val)}
-                    className={cn(
-                      "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                      tempPortionAmount === val
-                        ? 'bg-emerald-500 text-black'
-                        : theme === 'dark'
-                          ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    )}
-                  >
-                    {val}g
-                  </button>
-                ))}
-                {tempSelectedPortion?.id === 'ounce' && [1, 2, 3, 4, 6, 8].map(val => (
-                  <button
-                    key={val}
-                    onClick={() => setTempPortionAmount(val)}
-                    className={cn(
-                      "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                      tempPortionAmount === val
-                        ? 'bg-emerald-500 text-black'
-                        : theme === 'dark'
-                          ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    )}
-                  >
-                    {val} oz
-                  </button>
-                ))}
-                {tempSelectedPortion?.id === 'cup' && [0.25, 0.5, 0.75, 1, 1.5, 2].map(val => (
-                  <button
-                    key={val}
-                    onClick={() => setTempPortionAmount(val)}
-                    className={cn(
-                      "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                      tempPortionAmount === val
-                        ? 'bg-emerald-500 text-black'
-                        : theme === 'dark'
-                          ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    )}
-                  >
-                    {val === 0.25 ? '¼' : val === 0.5 ? '½' : val === 0.75 ? '¾' : val === 1.5 ? '1½' : val} cup
-                  </button>
-                ))}
-                {tempSelectedPortion?.id === 'tablespoon' && [1, 2, 3, 4].map(val => (
-                  <button
-                    key={val}
-                    onClick={() => setTempPortionAmount(val)}
-                    className={cn(
-                      "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                      tempPortionAmount === val
-                        ? 'bg-emerald-500 text-black'
-                        : theme === 'dark'
-                          ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    )}
-                  >
-                    {val} tbsp
-                  </button>
-                ))}
-                {tempSelectedPortion?.id === 'teaspoon' && [1, 2, 3, 4].map(val => (
-                  <button
-                    key={val}
-                    onClick={() => setTempPortionAmount(val)}
-                    className={cn(
-                      "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                      tempPortionAmount === val
-                        ? 'bg-emerald-500 text-black'
-                        : theme === 'dark'
-                          ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    )}
-                  >
-                    {val} tsp
-                  </button>
-                ))}
-                {tempSelectedPortion?.id === 'pound' && [0.25, 0.5, 1, 1.5, 2].map(val => (
-                  <button
-                    key={val}
-                    onClick={() => setTempPortionAmount(val)}
-                    className={cn(
-                      "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                      tempPortionAmount === val
-                        ? 'bg-emerald-500 text-black'
-                        : theme === 'dark'
-                          ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    )}
-                  >
-                    {val === 0.25 ? '¼' : val === 0.5 ? '½' : val === 1.5 ? '1½' : val} lb
-                  </button>
-                ))}
-                {tempSelectedPortion?.id === 'kilogram' && [0.25, 0.5, 1, 1.5, 2].map(val => (
-                  <button
-                    key={val}
-                    onClick={() => setTempPortionAmount(val)}
-                    className={cn(
-                      "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                      tempPortionAmount === val
-                        ? 'bg-emerald-500 text-black'
-                        : theme === 'dark'
-                          ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    )}
-                  >
-                    {val === 0.25 ? '¼' : val === 0.5 ? '½' : val === 1.5 ? '1½' : val} kg
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Amount input with unit selector */}
-            <div className="flex items-center gap-3 mb-4">
-              <Input
-                type="number"
-                value={tempPortionAmount}
-                onChange={(e) => setTempPortionAmount(parseFloat(e.target.value) || 0)}
-                min={0}
-                step={0.5}
-                data-testid="portion-amount-input"
-                className={cn(
-                  "h-14 text-lg font-medium w-24 text-center",
-                  theme === 'dark' 
-                    ? 'bg-zinc-800 border-zinc-600 text-white' 
-                    : 'bg-gray-50 border-gray-200 text-gray-900'
-                )}
-              />
-              <span className={cn(
-                "text-base",
-                theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
-              )}>Serving(s) of</span>
-            </div>
-            
-            {/* Current selection with dropdown arrow */}
-            <div className={cn(
-              "flex items-center justify-between p-3 rounded-lg mb-4 cursor-pointer",
-              theme === 'dark' 
-                ? 'bg-zinc-800 hover:bg-zinc-700' 
-                : 'bg-gray-100 hover:bg-gray-200'
-            )}>
-              <span className={cn(
-                "font-medium",
-                theme === 'dark' ? 'text-white' : 'text-gray-900'
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {/* Calories */}
+              <div className={cn(
+                "p-4 rounded-xl",
+                theme === 'dark' ? 'bg-orange-500/10' : 'bg-orange-50'
               )}>
-                {tempSelectedPortion?.label || 'Select portion'}
-              </span>
-              <ChevronRight className={cn(
-                "w-5 h-5 rotate-90",
-                theme === 'dark' ? 'text-zinc-500' : 'text-gray-400'
-              )} />
-            </div>
-            
-            {/* Portion options list */}
-            <div className={cn(
-              "max-h-64 overflow-y-auto rounded-lg",
-              theme === 'dark' ? 'bg-zinc-800' : 'bg-gray-50'
-            )}>
-              {portionOptions.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => setTempSelectedPortion(option)}
-                  data-testid={`portion-option-${option.id}`}
-                  className={cn(
-                    "w-full text-left px-4 py-3 transition-colors border-b last:border-b-0",
-                    theme === 'dark' 
-                      ? 'border-zinc-700 hover:bg-zinc-700' 
-                      : 'border-gray-200 hover:bg-gray-100',
-                    tempSelectedPortion?.id === option.id && (
-                      theme === 'dark' ? 'bg-zinc-700' : 'bg-emerald-50'
-                    )
-                  )}
-                >
+                <div className="flex items-center gap-2 mb-2">
+                  <Flame className="w-5 h-5 text-orange-500" />
                   <span className={cn(
-                    "block",
-                    tempSelectedPortion?.id === option.id 
-                      ? 'text-emerald-500 font-medium' 
-                      : theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    "text-sm font-medium",
+                    theme === 'dark' ? 'text-orange-400' : 'text-orange-600'
+                  )}>Calories</span>
+                </div>
+                <p className={cn(
+                  "text-3xl font-bold",
+                  theme === 'dark' ? 'text-orange-400' : 'text-orange-600'
+                )} data-testid="calories-value">
+                  {Math.round(food.calories || 0)}
+                </p>
+                <p className={cn(
+                  "text-xs",
+                  theme === 'dark' ? 'text-orange-400/70' : 'text-orange-500/70'
+                )}>kcal</p>
+              </div>
+
+              {/* Protein */}
+              <div className={cn(
+                "p-4 rounded-xl",
+                theme === 'dark' ? 'bg-red-500/10' : 'bg-red-50'
+              )}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Beef className="w-5 h-5 text-red-500" />
+                  <span className={cn(
+                    "text-sm font-medium",
+                    theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                  )}>Protein</span>
+                </div>
+                <p className={cn(
+                  "text-3xl font-bold",
+                  theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                )} data-testid="protein-value">
+                  {(food.protein || 0).toFixed(1)}
+                </p>
+                <p className={cn(
+                  "text-xs",
+                  theme === 'dark' ? 'text-red-400/70' : 'text-red-500/70'
+                )}>grams</p>
+              </div>
+
+              {/* Fat */}
+              <div className={cn(
+                "p-4 rounded-xl",
+                theme === 'dark' ? 'bg-yellow-500/10' : 'bg-yellow-50'
+              )}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Droplets className="w-5 h-5 text-yellow-500" />
+                  <span className={cn(
+                    "text-sm font-medium",
+                    theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600'
+                  )}>Fat</span>
+                </div>
+                <p className={cn(
+                  "text-3xl font-bold",
+                  theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600'
+                )} data-testid="fat-value">
+                  {(food.fat || 0).toFixed(1)}
+                </p>
+                <p className={cn(
+                  "text-xs",
+                  theme === 'dark' ? 'text-yellow-400/70' : 'text-yellow-500/70'
+                )}>grams</p>
+              </div>
+
+              {/* Carbs */}
+              <div className={cn(
+                "p-4 rounded-xl",
+                theme === 'dark' ? 'bg-blue-500/10' : 'bg-blue-50'
+              )}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Wheat className="w-5 h-5 text-blue-500" />
+                  <span className={cn(
+                    "text-sm font-medium",
+                    theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                  )}>Carbs</span>
+                </div>
+                <p className={cn(
+                  "text-3xl font-bold",
+                  theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                )} data-testid="carbs-value">
+                  {(food.carbs || 0).toFixed(1)}
+                </p>
+                <p className={cn(
+                  "text-xs",
+                  theme === 'dark' ? 'text-blue-400/70' : 'text-blue-500/70'
+                )}>grams</p>
+              </div>
+
+              {/* Fiber */}
+              <div className={cn(
+                "p-4 rounded-xl",
+                theme === 'dark' ? 'bg-green-500/10' : 'bg-green-50'
+              )}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Salad className="w-5 h-5 text-green-500" />
+                  <span className={cn(
+                    "text-sm font-medium",
+                    theme === 'dark' ? 'text-green-400' : 'text-green-600'
+                  )}>Fiber</span>
+                </div>
+                <p className={cn(
+                  "text-3xl font-bold",
+                  theme === 'dark' ? 'text-green-400' : 'text-green-600'
+                )} data-testid="fiber-value">
+                  {(food.fiber || 0).toFixed(1)}
+                </p>
+                <p className={cn(
+                  "text-xs",
+                  theme === 'dark' ? 'text-green-400/70' : 'text-green-500/70'
+                )}>grams</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Amino Acid Radar */}
+          {food.amino_acids?.length > 0 && (
+            <div className={cn(
+              "rounded-xl p-6",
+              theme === 'dark' ? 'bg-zinc-900' : 'bg-white'
+            )}>
+              <h3 className={cn(
+                "text-sm font-bold uppercase tracking-wider mb-4",
+                theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+              )}>
+                Amino Acid Profile
+              </h3>
+              <div className="h-[320px]">
+                <AminoAcidRadar aminoAcids={food.amino_acids} />
+              </div>
+              
+              {/* Amino acid list */}
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {food.amino_acids.filter(aa => aa.is_essential).map(aa => (
+                  <div key={aa.name} className={cn(
+                    "flex items-center justify-between px-3 py-2 rounded-lg",
+                    theme === 'dark' ? 'bg-zinc-800' : 'bg-gray-50'
                   )}>
-                    {option.label}
-                  </span>
-                  {option.isDefault && (
-                    <span className="text-xs text-emerald-500">Default serving</span>
-                  )}
-                </button>
-              ))}
+                    <span className={cn(
+                      "text-sm",
+                      theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
+                    )}>{aa.name}</span>
+                    <span className="text-sm font-mono text-emerald-500">
+                      {aa.value?.toFixed(2)}g
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-          
-          {/* Footer buttons */}
-          <div className={cn(
-            "flex gap-3 px-6 py-4 border-t",
-            theme === 'dark' ? 'border-zinc-700' : 'border-gray-200'
-          )}>
-            <button
-              onClick={() => setPortionModalOpen(false)}
-              className={cn(
-                "flex-1 py-3 rounded-lg font-medium transition-colors",
-                theme === 'dark' 
-                  ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          )}
+
+          {/* Fatty Acid Chart */}
+          {food.fatty_acids?.length > 0 && (
+            <div className={cn(
+              "rounded-xl p-6",
+              theme === 'dark' ? 'bg-zinc-900' : 'bg-white'
+            )}>
+              <h3 className={cn(
+                "text-sm font-bold uppercase tracking-wider mb-4",
+                theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+              )}>
+                Fatty Acid Profile
+              </h3>
+              
+              {/* Omega Summary */}
+              {(food.omega3_total > 0 || food.omega6_total > 0) && (
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className={cn(
+                    "p-3 rounded-lg text-center",
+                    theme === 'dark' ? 'bg-cyan-500/10' : 'bg-cyan-50'
+                  )}>
+                    <p className={cn(
+                      "text-xs font-medium",
+                      theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'
+                    )}>Omega-3</p>
+                    <p className={cn(
+                      "text-xl font-bold",
+                      theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'
+                    )}>{(food.omega3_total || 0).toFixed(2)}g</p>
+                  </div>
+                  <div className={cn(
+                    "p-3 rounded-lg text-center",
+                    theme === 'dark' ? 'bg-amber-500/10' : 'bg-amber-50'
+                  )}>
+                    <p className={cn(
+                      "text-xs font-medium",
+                      theme === 'dark' ? 'text-amber-400' : 'text-amber-600'
+                    )}>Omega-6</p>
+                    <p className={cn(
+                      "text-xl font-bold",
+                      theme === 'dark' ? 'text-amber-400' : 'text-amber-600'
+                    )}>{(food.omega6_total || 0).toFixed(2)}g</p>
+                  </div>
+                </div>
               )}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={savePortionChanges}
-              className="flex-1 py-3 rounded-lg font-medium bg-emerald-500 text-black hover:bg-emerald-400 transition-colors"
-            >
-              Save
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Meal Selection Modal */}
-      <Dialog open={mealModalOpen} onOpenChange={setMealModalOpen}>
-        <DialogContent className={cn(
-          "border max-w-md p-0 overflow-hidden",
-          theme === 'dark' 
-            ? 'bg-zinc-900 border-zinc-700 text-white' 
-            : 'bg-white border-gray-200 text-gray-900'
-        )}>
-          <DialogHeader className={cn(
-            "px-6 pt-6 pb-4 border-b",
-            theme === 'dark' ? 'border-zinc-700' : 'border-gray-200'
-          )}>
-            <DialogTitle className="text-xl font-bold">Select Meal</DialogTitle>
-          </DialogHeader>
-          
-          <div className="p-2">
-            {['breakfast', 'lunch', 'dinner', 'snack'].map((meal) => (
-              <button
-                key={meal}
-                onClick={() => {
-                  setMealType(meal);
-                  setMealModalOpen(false);
-                }}
-                data-testid={`meal-option-${meal}`}
-                className={cn(
-                  "w-full text-left px-4 py-4 rounded-lg transition-colors flex items-center justify-between",
-                  theme === 'dark' 
-                    ? 'hover:bg-zinc-800' 
-                    : 'hover:bg-gray-100',
-                  mealType === meal && (
-                    theme === 'dark' ? 'bg-zinc-800' : 'bg-emerald-50'
-                  )
-                )}
-              >
-                <span className={cn(
-                  "text-base font-medium capitalize",
-                  mealType === meal 
-                    ? 'text-emerald-500' 
-                    : theme === 'dark' ? 'text-white' : 'text-gray-900'
-                )}>
-                  {meal}
-                </span>
-                {mealType === meal && (
-                  <Check className="w-5 h-5 text-emerald-500" />
-                )}
-              </button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Nutrition Details Modal */}
-      <Dialog open={showNutritionDetails} onOpenChange={setShowNutritionDetails}>
-        <DialogContent className={cn(
-          "border max-w-2xl max-h-[90vh] overflow-y-auto",
-          theme === 'dark' 
-            ? 'bg-zinc-900 border-zinc-700 text-white' 
-            : 'bg-white border-gray-200 text-gray-900'
-        )}>
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold">Nutrition Details</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6 pt-4">
-            {/* Basic Macros */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className={cn(
-                "p-4 rounded-xl text-center border",
-                theme === 'dark' 
-                  ? 'bg-black/30 border-white/5' 
-                  : 'bg-emerald-50 border-emerald-100'
-              )}>
-                <p className={cn(
-                  "text-3xl font-bold",
-                  theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'
-                )}>{foodDetails.protein?.toFixed(1)}</p>
-                <p className={cn(
-                  "text-xs mt-1",
-                  theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-                )}>Protein (g)</p>
-              </div>
-              <div className={cn(
-                "p-4 rounded-xl text-center border",
-                theme === 'dark' 
-                  ? 'bg-black/30 border-white/5' 
-                  : 'bg-gray-50 border-gray-100'
-              )}>
-                <p className={cn(
-                  "text-3xl font-bold",
-                  theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
-                )}>{foodDetails.calories?.toFixed(0)}</p>
-                <p className={cn(
-                  "text-xs mt-1",
-                  theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-                )}>Calories</p>
-              </div>
-              <div className={cn(
-                "p-4 rounded-xl text-center border",
-                theme === 'dark' 
-                  ? 'bg-black/30 border-white/5' 
-                  : 'bg-gray-50 border-gray-100'
-              )}>
-                <p className={cn(
-                  "text-3xl font-bold",
-                  theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
-                )}>{foodDetails.fat?.toFixed(1)}</p>
-                <p className={cn(
-                  "text-xs mt-1",
-                  theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-                )}>Fat (g)</p>
-              </div>
-              <div className={cn(
-                "p-4 rounded-xl text-center border",
-                theme === 'dark' 
-                  ? 'bg-black/30 border-white/5' 
-                  : 'bg-gray-50 border-gray-100'
-              )}>
-                <p className={cn(
-                  "text-3xl font-bold",
-                  theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
-                )}>{foodDetails.carbs?.toFixed(1)}</p>
-                <p className={cn(
-                  "text-xs mt-1",
-                  theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-                )}>Carbs (g)</p>
+              
+              <div className="h-[200px]">
+                <FattyAcidChart fattyAcids={food.fatty_acids} />
               </div>
             </div>
+          )}
+        </div>
 
-            {/* Protein Status */}
-            {foodDetails.has_amino_acids ? (
-              <div className={cn(
-                "flex items-center gap-3 p-4 rounded-xl border",
-                foodDetails.is_complete_protein 
-                  ? 'bg-emerald-500/10 border-emerald-500/20' 
-                  : 'bg-amber-500/10 border-amber-500/20'
-              )}>
-                {foodDetails.is_complete_protein ? (
-                  <>
-                    <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-                    <div>
-                      <p className="text-emerald-600 font-semibold">Complete Protein</p>
-                      <p className="text-xs text-emerald-600/70">Contains all 9 essential amino acids</p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="w-6 h-6 text-amber-500" />
-                    <div>
-                      <p className="text-amber-600 font-semibold">Incomplete Protein</p>
-                      <p className="text-xs text-amber-600/70">
-                        Missing: {foodDetails.missing_amino_acids?.join(', ') || 'Some essential amino acids'}
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className={cn(
-                "flex items-center gap-3 p-4 rounded-xl border",
-                theme === 'dark' 
-                  ? 'bg-zinc-800/50 border-zinc-700/50'
-                  : 'bg-gray-100 border-gray-200'
-              )}>
-                <Info className={cn(
-                  "w-5 h-5",
-                  theme === 'dark' ? 'text-zinc-400' : 'text-gray-500'
-                )} />
-                <div>
-                  <p className={cn(
-                    "font-medium text-sm",
-                    theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
-                  )}>Basic Nutrition Data</p>
-                  <p className={cn(
-                    "text-xs",
-                    theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-                  )}>Amino acid profile not available for this item</p>
-                </div>
-              </div>
-            )}
-
-            {/* Amino Acid Radar */}
-            {foodDetails.amino_acids?.length > 0 && (
-              <div>
-                <h3 className={cn(
-                  "text-sm font-bold uppercase tracking-[0.15em] mb-4",
-                  theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-                )}>
-                  Amino Acid Profile
-                </h3>
-                <div className="h-[320px]">
-                  <AminoAcidRadar aminoAcids={foodDetails.amino_acids} />
-                </div>
-              </div>
-            )}
-
-            {/* Amino Acid List */}
-            {foodDetails.amino_acids?.length > 0 && (
-              <div>
-                <h3 className={cn(
-                  "text-sm font-bold uppercase tracking-[0.15em] mb-4",
-                  theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-                )}>
-                  Amino Acid Breakdown
-                </h3>
-                <AminoAcidList aminoAcids={foodDetails.amino_acids} showAll />
-              </div>
-            )}
-
-            {/* Fatty Acid Summary */}
-            <OmegaSummary 
-              omega3Total={foodDetails.omega3_total || 0}
-              omega6Total={foodDetails.omega6_total || 0}
-              omegaRatio={foodDetails.omega_ratio}
-            />
-
-            {/* Fatty Acid Chart */}
-            {foodDetails.fatty_acids?.length > 0 && (
-              <div>
-                <h3 className={cn(
-                  "text-sm font-bold uppercase tracking-[0.15em] mb-4",
-                  theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-                )}>
-                  Fatty Acid Profile
-                </h3>
-                <div className="h-[200px]">
-                  <FattyAcidChart fattyAcids={foodDetails.fatty_acids} />
-                </div>
-              </div>
-            )}
-
-            {/* Fatty Acid List */}
-            {foodDetails.fatty_acids?.length > 0 && (
-              <div>
-                <h3 className={cn(
-                  "text-sm font-bold uppercase tracking-[0.15em] mb-4",
-                  theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-                )}>
-                  Fatty Acid Breakdown
-                </h3>
-                <FattyAcidList fattyAcids={foodDetails.fatty_acids} showAll />
-              </div>
-            )}
+        {/* Fixed Log Food Button */}
+        <div className={cn(
+          "fixed bottom-0 left-0 right-0 p-4 border-t",
+          theme === 'dark' ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-gray-200'
+        )}>
+          <div className="max-w-2xl mx-auto">
+            <button
+              onClick={() => setLogModalOpen(true)}
+              data-testid="log-food-btn"
+              className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-4 rounded-xl transition-colors text-lg"
+            >
+              <Plus className="w-5 h-5" />
+              Log Food
+            </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+
+        {/* Log Food Modal */}
+        <Dialog open={logModalOpen} onOpenChange={setLogModalOpen}>
+          <DialogContent className={cn(
+            "border max-w-md",
+            theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-white' : 'bg-white border-gray-200'
+          )}>
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">Log Food</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6 pt-4">
+              {/* Serving Size */}
+              <div>
+                <label className={cn(
+                  "block text-sm font-medium mb-2",
+                  theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
+                )}>
+                  Serving Size (grams)
+                </label>
+                <div className="flex gap-2">
+                  {[50, 100, 150, 200].map(size => (
+                    <button
+                      key={size}
+                      onClick={() => setServingSize(size)}
+                      className={cn(
+                        "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                        servingSize === size
+                          ? 'bg-emerald-500 text-black'
+                          : theme === 'dark'
+                            ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      )}
+                    >
+                      {size}g
+                    </button>
+                  ))}
+                </div>
+                <Input
+                  type="number"
+                  value={servingSize}
+                  onChange={(e) => setServingSize(parseFloat(e.target.value) || 100)}
+                  min={1}
+                  data-testid="serving-size-input"
+                  className={cn(
+                    "mt-3 h-12",
+                    theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-gray-50 border-gray-200'
+                  )}
+                />
+              </div>
+
+              {/* Meal Type */}
+              <div>
+                <label className={cn(
+                  "block text-sm font-medium mb-2",
+                  theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
+                )}>
+                  Meal
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['breakfast', 'lunch', 'dinner', 'snack'].map(meal => (
+                    <button
+                      key={meal}
+                      onClick={() => setMealType(meal)}
+                      data-testid={`meal-${meal}`}
+                      className={cn(
+                        "px-4 py-3 rounded-lg text-sm font-medium capitalize transition-colors",
+                        mealType === meal
+                          ? 'bg-emerald-500 text-black'
+                          : theme === 'dark'
+                            ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      )}
+                    >
+                      {meal}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Calculated Nutrition */}
+              <div className={cn(
+                "p-4 rounded-xl",
+                theme === 'dark' ? 'bg-zinc-800' : 'bg-gray-50'
+              )}>
+                <p className={cn(
+                  "text-xs font-medium uppercase tracking-wider mb-3",
+                  theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                )}>
+                  Nutrition for {servingSize}g
+                </p>
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  <div>
+                    <p className="text-lg font-bold text-orange-500">
+                      {Math.round(calculateValue(food.calories))}
+                    </p>
+                    <p className={cn(
+                      "text-xs",
+                      theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                    )}>cal</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-red-500">
+                      {calculateValue(food.protein).toFixed(1)}g
+                    </p>
+                    <p className={cn(
+                      "text-xs",
+                      theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                    )}>protein</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-yellow-500">
+                      {calculateValue(food.fat).toFixed(1)}g
+                    </p>
+                    <p className={cn(
+                      "text-xs",
+                      theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                    )}>fat</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-blue-500">
+                      {calculateValue(food.carbs).toFixed(1)}g
+                    </p>
+                    <p className={cn(
+                      "text-xs",
+                      theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                    )}>carbs</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                onClick={handleLogFood}
+                disabled={logging}
+                data-testid="confirm-log-btn"
+                className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-bold py-4 rounded-xl transition-colors"
+              >
+                {logging ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Plus className="w-5 h-5" />
+                )}
+                Add to {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </Layout>
   );
 };
