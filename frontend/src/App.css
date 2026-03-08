@@ -1,6 +1,9 @@
 .App {
     min-height: 100vh;
+    min-height: 100dvh;
     background-color: #050505;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* Custom font-heading class */
@@ -70,10 +73,19 @@
     --safe-area-right: env(safe-area-inset-right);
 }
 
-/* Prevent rubber banding on iOS */
-html, body {
-    overscroll-behavior: none;
+/* Prevent rubber banding on iOS but allow scrolling */
+html {
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
+
+body {
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: scroll;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
 }
 
 /* Touch optimization */

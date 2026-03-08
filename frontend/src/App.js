@@ -117,7 +117,7 @@ function App() {
   
   return (
     <ThemeProvider>
-      <div className="App">
+      <div className="App min-h-screen overflow-y-auto">
         <BrowserRouter>
           <AuthProvider>
             <AppRoutes />
