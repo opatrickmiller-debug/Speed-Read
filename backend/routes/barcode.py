@@ -7,8 +7,43 @@ from services.off_client import off_client
 
 router = APIRouter(prefix="/barcode", tags=["Barcode"])
 
-@router.get("/{barcode}")
+
+@router.get("/lookup/{barcode}")
 async def lookup_barcode(barcode: str, current_user: dict = Depends(get_current_user)):
+    """
+    Look up a barcode in Open Food Facts database.
+    
+    Returns product info if found, 404 if not found.
+    Frontend should navigate to /food/{fdc_id} on success.
+    """
+    if not barcode.isdigit() or not (8 <= len(barcode) <= 14):
+        raise HTTPException(status_code=400, detail="Invalid barcode format. Must be 8-14 digits.")
+    
+    product = await off_client.lookup_barcode(barcode)
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Food not found")
+    
+    # Return with fdc_id for navigation
+    return {
+        "found": True,
+        "fdc_id": f"barcode:{barcode}",
+        "barcode": barcode,
+        "product_name": product.product_name,
+        "brand": product.brand,
+        "calories": product.calories_per_100g,
+        "protein": product.protein_per_100g,
+        "fat": product.fat_per_100g,
+        "carbs": product.carbs_per_100g,
+        "fiber": product.fiber_per_100g,
+        "image_url": product.image_url
+    }
+
+
+# Keep old endpoint for backwards compatibility
+@router.get("/{barcode}")
+async def lookup_barcode_legacy(barcode: str, current_user: dict = Depends(get_current_user)):
+    """Legacy endpoint - use /lookup/{barcode} instead"""
     if not barcode.isdigit() or not (8 <= len(barcode) <= 14):
         raise HTTPException(status_code=400, detail="Invalid barcode format. Must be 8-14 digits.")
     

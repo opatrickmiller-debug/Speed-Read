@@ -642,6 +642,57 @@ async def get_food_details(fdc_id: str, current_user: dict = Depends(get_current
             except httpx.HTTPError:
                 raise HTTPException(status_code=404, detail="Product not found")
     
+    # Handle barcode: prefix (same as off:)
+    if fdc_id.startswith("barcode:"):
+        barcode = fdc_id.replace("barcode:", "")
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            try:
+                url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}"
+                params = {"fields": "code,product_name,brands,nutriments,image_url,serving_size,ingredients_text"}
+                headers = {"User-Agent": "IsotopeNutritionTracker/1.0"}
+                
+                response = await client.get(url, params=params, headers=headers)
+                if response.status_code != 200:
+                    raise HTTPException(status_code=404, detail="Product not found")
+                
+                data = response.json()
+                if data.get("status") != 1:
+                    raise HTTPException(status_code=404, detail="Product not found")
+                
+                product = data.get("product", {})
+                nutriments = product.get("nutriments", {})
+                
+                return {
+                    "fdc_id": fdc_id,
+                    "description": product.get("product_name", "Unknown Product"),
+                    "brand_owner": product.get("brands"),
+                    "source": "barcode",
+                    "serving_size": 100,
+                    "serving_unit": "g",
+                    "calories": nutriments.get("energy-kcal_100g", 0) or 0,
+                    "protein": nutriments.get("proteins_100g", 0) or 0,
+                    "fat": nutriments.get("fat_100g", 0) or 0,
+                    "carbs": nutriments.get("carbohydrates_100g", 0) or 0,
+                    "fiber": nutriments.get("fiber_100g", 0) or 0,
+                    "sugar": nutriments.get("sugars_100g"),
+                    "sodium": nutriments.get("sodium_100g"),
+                    "saturated_fat": nutriments.get("saturated-fat_100g"),
+                    "amino_acids": [],
+                    "fatty_acids": [],
+                    "is_complete_protein": False,
+                    "missing_amino_acids": [],
+                    "protein_quality_score": 0,
+                    "omega3_total": 0,
+                    "omega6_total": 0,
+                    "omega_ratio": None,
+                    "has_amino_acids": False,
+                    "has_fatty_acids": False,
+                    "image_url": product.get("image_url"),
+                    "ingredients": product.get("ingredients_text")
+                }
+            except httpx.HTTPError:
+                raise HTTPException(status_code=404, detail="Product not found")
+    
     # Handle USDA foods
     food_data = await fdc_client.get_food_details(fdc_id)
     if not food_data:

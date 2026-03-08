@@ -1,17 +1,17 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Quagga from '@ericblade/quagga2';
 import { Layout } from '../components/Layout';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '../components/GlassCard';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { useTheme } from '../context/ThemeContext';
+import { cn } from '../lib/utils';
 import { 
   ScanBarcode, 
   Camera, 
   Loader2, 
   Package,
-  Plus,
   AlertTriangle,
   CameraOff,
   ScanLine
@@ -21,13 +21,11 @@ import { toast } from 'sonner';
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 export const BarcodeScanner = () => {
+  const navigate = useNavigate();
+  const { theme } = useTheme();
   const [barcode, setBarcode] = useState('');
   const [loading, setLoading] = useState(false);
-  const [product, setProduct] = useState(null);
-  const [logDialogOpen, setLogDialogOpen] = useState(false);
-  const [servings, setServings] = useState(1);
-  const [servingSize, setServingSize] = useState(100);
-  const [mealType, setMealType] = useState('snack');
+  const [notFound, setNotFound] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraSupported, setCameraSupported] = useState(null);
   const [scanning, setScanning] = useState(false);
@@ -77,17 +75,18 @@ export const BarcodeScanner = () => {
     }
 
     setLoading(true);
-    setProduct(null);
+    setNotFound(false);
 
     try {
-      const res = await fetch(`${API_URL}/api/barcode/${code}`, {
+      const res = await fetch(`${API_URL}/api/barcode/lookup/${code}`, {
         headers: {
           'Authorization': `Bearer ${getToken()}`,
         },
       });
 
       if (res.status === 404) {
-        toast.error('Product not found in database');
+        setNotFound(true);
+        toast.error('Food not found');
         return;
       }
 
@@ -96,13 +95,15 @@ export const BarcodeScanner = () => {
       }
 
       const data = await res.json();
-      setProduct(data);
-      toast.success('Product found!');
       
       // Stop camera after successful scan
       if (cameraActive) {
         stopCamera();
       }
+      
+      // Navigate to food details page
+      toast.success(`Found: ${data.product_name || 'Product'}`);
+      navigate(`/food/${data.fdc_id}`);
     } catch (err) {
       toast.error('Failed to look up barcode');
     } finally {
@@ -112,33 +113,6 @@ export const BarcodeScanner = () => {
 
   const handleManualLookup = () => {
     lookupBarcode(barcode);
-  };
-
-  const handleAddToLog = async () => {
-    if (!product) return;
-
-    try {
-      const res = await fetch(
-        `${API_URL}/api/barcode/log?barcode=${product.barcode}&servings=${servings}&serving_size=${servingSize}&meal_type=${mealType}`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${getToken()}`,
-          },
-        }
-      );
-
-      if (!res.ok) throw new Error('Failed to log');
-
-      toast.success('Added to food log!');
-      setLogDialogOpen(false);
-      setProduct(null);
-      setBarcode('');
-      setServings(1);
-      setServingSize(100);
-    } catch (err) {
-      toast.error('Failed to add to log');
-    }
   };
 
   // Scan for barcode using Quagga on a video frame
@@ -284,47 +258,62 @@ export const BarcodeScanner = () => {
 
   return (
     <Layout>
-      <div className="p-4 md:p-8 max-w-4xl mx-auto">
+      <div className={cn(
+        "min-h-screen p-4 md:p-8 max-w-2xl mx-auto",
+        theme === 'dark' ? 'bg-zinc-950' : 'bg-gray-50'
+      )}>
         {/* Header */}
         <div className="mb-6">
-          <h1 className="font-heading text-2xl md:text-4xl font-bold text-foreground dark:text-white">
+          <h1 className={cn(
+            "text-2xl md:text-3xl font-bold",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
             Barcode Scanner
           </h1>
-          <p className="text-muted-foreground dark:text-zinc-500 mt-1 text-sm">
-            Scan or enter product barcodes to quickly log packaged foods
+          <p className={cn(
+            "mt-1 text-sm",
+            theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+          )}>
+            Scan or enter a barcode to find food
           </p>
         </div>
 
-        {/* Camera Scanner Section - Primary Action */}
+        {/* Camera Scanner Section */}
         {!cameraActive && (
           <GlassCard className="mb-6" data-testid="camera-scanner-card">
             <GlassCardContent className="py-8">
-              {/* Big Camera Button */}
               <div className="flex flex-col items-center">
                 {cameraSupported === null ? (
-                  // Loading state
                   <div className="flex flex-col items-center">
-                    <div className="w-24 h-24 rounded-full bg-cyan-500/10 flex items-center justify-center mb-4">
-                      <Loader2 className="w-12 h-12 text-cyan-400 animate-spin" />
+                    <div className={cn(
+                      "w-24 h-24 rounded-full flex items-center justify-center mb-4",
+                      theme === 'dark' ? 'bg-cyan-500/10' : 'bg-cyan-100'
+                    )}>
+                      <Loader2 className="w-12 h-12 text-cyan-500 animate-spin" />
                     </div>
-                    <p className="text-muted-foreground dark:text-zinc-400">Checking camera...</p>
-                  </div>
-                ) : cameraSupported === false ? (
-                  // Camera not supported
-                  <div className="flex flex-col items-center text-center">
-                    <div className="w-24 h-24 rounded-full bg-zinc-800/50 flex items-center justify-center mb-4">
-                      <CameraOff className="w-12 h-12 text-zinc-500" />
-                    </div>
-                    <p className="text-muted-foreground dark:text-zinc-400 mb-2">Camera not available</p>
-                    {cameraError && (
-                      <p className="text-xs text-red-400 max-w-xs">{cameraError}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground dark:text-zinc-500 mt-2">
-                      Enter the barcode manually below
+                    <p className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-500'}>
+                      Checking camera...
                     </p>
                   </div>
+                ) : cameraSupported === false ? (
+                  <div className="flex flex-col items-center text-center">
+                    <div className={cn(
+                      "w-24 h-24 rounded-full flex items-center justify-center mb-4",
+                      theme === 'dark' ? 'bg-zinc-800' : 'bg-gray-200'
+                    )}>
+                      <CameraOff className={cn(
+                        "w-12 h-12",
+                        theme === 'dark' ? 'text-zinc-500' : 'text-gray-400'
+                      )} />
+                    </div>
+                    <p className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-500'}>
+                      Camera not available
+                    </p>
+                    {cameraError && (
+                      <p className="text-xs text-red-400 max-w-xs mt-2">{cameraError}</p>
+                    )}
+                  </div>
                 ) : (
-                  // Camera supported - show scan button
                   <>
                     <button
                       onClick={startCamera}
@@ -333,10 +322,13 @@ export const BarcodeScanner = () => {
                     >
                       <Camera className="w-14 h-14 text-white" />
                     </button>
-                    <p className="text-foreground dark:text-white font-semibold text-lg mb-1">
+                    <p className={cn(
+                      "font-semibold text-lg mb-1",
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    )}>
                       Tap to Scan
                     </p>
-                    <p className="text-muted-foreground dark:text-zinc-400 text-sm">
+                    <p className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-500'}>
                       Point camera at barcode
                     </p>
                   </>
@@ -351,18 +343,15 @@ export const BarcodeScanner = () => {
           <GlassCard className="mb-6" data-testid="camera-active-card">
             <GlassCardContent className="p-2">
               <div className="relative rounded-xl overflow-hidden bg-black aspect-[4/3]">
-                {/* Native video element for camera feed */}
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   muted
                   className="w-full h-full object-cover"
-                  style={{ transform: 'scaleX(1)' }}
                 />
-                {/* Hidden canvas for Quagga frame analysis */}
                 <canvas ref={canvasRef} className="hidden" />
-                {/* Scan frame overlay */}
+                {/* Scan overlay */}
                 <div className="absolute inset-0 pointer-events-none z-10">
                   <div className="absolute inset-4 border-2 border-cyan-400/50 rounded-lg" />
                   <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
@@ -371,14 +360,12 @@ export const BarcodeScanner = () => {
                     </div>
                   </div>
                 </div>
-                {/* Status bar */}
                 <div className="absolute bottom-0 left-0 right-0 bg-black/70 py-2 px-4 z-10">
                   <p className="text-cyan-400 text-sm text-center">
                     {scanning ? 'Scanning...' : 'Position barcode in the frame'}
                   </p>
                 </div>
               </div>
-              {/* Stop button */}
               <button
                 onClick={stopCamera}
                 data-testid="stop-camera-btn"
@@ -391,215 +378,92 @@ export const BarcodeScanner = () => {
           </GlassCard>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Manual Barcode Input */}
-          <GlassCard data-testid="barcode-input-card">
-            <GlassCardHeader>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center">
-                  <ScanBarcode className="w-5 h-5 text-cyan-400" />
-                </div>
-                <GlassCardTitle>Enter Barcode Manually</GlassCardTitle>
+        {/* Manual Barcode Input */}
+        <GlassCard data-testid="barcode-input-card">
+          <GlassCardHeader>
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "w-10 h-10 rounded-xl flex items-center justify-center",
+                theme === 'dark' ? 'bg-cyan-500/20' : 'bg-cyan-100'
+              )}>
+                <ScanBarcode className="w-5 h-5 text-cyan-500" />
               </div>
-            </GlassCardHeader>
-            <GlassCardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-muted-foreground dark:text-zinc-400">Barcode / UPC</Label>
-                <Input
-                  value={barcode}
-                  onChange={(e) => setBarcode(e.target.value.replace(/\D/g, ''))}
-                  onKeyDown={(e) => e.key === 'Enter' && handleManualLookup()}
-                  placeholder="Enter 8-14 digit barcode"
-                  data-testid="barcode-input"
-                  maxLength={14}
-                  className="bg-black/50 border-white/10 text-foreground dark:text-white placeholder:text-zinc-600 h-14 text-xl font-mono tracking-wider"
-                />
-              </div>
-
-              <button
-                onClick={handleManualLookup}
-                disabled={loading || barcode.length < 8}
-                data-testid="lookup-barcode-btn"
-                className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-6 py-3.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <ScanBarcode className="w-5 h-5" />
-                    Look Up Product
-                  </>
+              <GlassCardTitle>Enter Barcode</GlassCardTitle>
+            </div>
+          </GlassCardHeader>
+          <GlassCardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label className={theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}>
+                Barcode / UPC
+              </Label>
+              <Input
+                value={barcode}
+                onChange={(e) => {
+                  setBarcode(e.target.value.replace(/\D/g, ''));
+                  setNotFound(false);
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && handleManualLookup()}
+                placeholder="Enter 8-14 digit barcode"
+                data-testid="barcode-input"
+                maxLength={14}
+                className={cn(
+                  "h-14 text-xl font-mono tracking-wider",
+                  theme === 'dark' 
+                    ? 'bg-black/50 border-white/10 text-white placeholder:text-zinc-600'
+                    : 'bg-white border-gray-200 text-gray-900 placeholder:text-gray-400'
                 )}
-              </button>
-
-              <p className="text-xs text-muted-foreground dark:text-zinc-600 text-center">
-                Data from Open Food Facts database
-              </p>
-            </GlassCardContent>
-          </GlassCard>
-
-          {/* Product Result */}
-          <GlassCard data-testid="product-result-card">
-            <GlassCardHeader>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
-                  <Package className="w-5 h-5 text-violet-400" />
-                </div>
-                <GlassCardTitle>Product Info</GlassCardTitle>
-              </div>
-            </GlassCardHeader>
-            <GlassCardContent>
-              {product ? (
-                <div className="space-y-6">
-                  {/* Product Image & Name */}
-                  <div className="flex gap-4">
-                    {product.image_url && (
-                      <img
-                        src={product.image_url}
-                        alt={product.product_name}
-                        className="w-24 h-24 rounded-xl object-cover bg-zinc-800"
-                      />
-                    )}
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-foreground dark:text-white">
-                        {product.product_name || 'Unknown Product'}
-                      </h3>
-                      <p className="text-sm text-muted-foreground dark:text-zinc-500">{product.brand || 'Unknown Brand'}</p>
-                      <p className="text-xs text-muted-foreground dark:text-zinc-600 mt-1 font-mono">{product.barcode}</p>
-                    </div>
-                  </div>
-
-                  {/* Nutrition per 100g */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 rounded-xl bg-black/30 dark:bg-black/30 bg-emerald-50 border border-emerald-200 dark:border-white/5">
-                      <p className="text-2xl font-semibold text-emerald-600 dark:text-emerald-400">
-                        {product.protein_per_100g?.toFixed(1) || 0}g
-                      </p>
-                      <p className="text-xs text-muted-foreground dark:text-zinc-500">Protein</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/5">
-                      <p className="text-2xl font-semibold text-foreground dark:text-zinc-300">
-                        {product.calories_per_100g?.toFixed(0) || 0}
-                      </p>
-                      <p className="text-xs text-muted-foreground dark:text-zinc-500">Calories</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/5">
-                      <p className="text-2xl font-semibold text-foreground dark:text-zinc-300">
-                        {product.fat_per_100g?.toFixed(1) || 0}g
-                      </p>
-                      <p className="text-xs text-muted-foreground dark:text-zinc-500">Fat</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/5">
-                      <p className="text-2xl font-semibold text-foreground dark:text-zinc-300">
-                        {product.carbs_per_100g?.toFixed(1) || 0}g
-                      </p>
-                      <p className="text-xs text-muted-foreground dark:text-zinc-500">Carbs</p>
-                    </div>
-                  </div>
-
-                  {/* Note about amino acids */}
-                  <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                    <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-amber-600 dark:text-amber-400/80">
-                      Amino acid data not available for packaged products. Use USDA search for detailed amino acid profiles.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => setLogDialogOpen(true)}
-                    data-testid="add-barcode-to-log-btn"
-                    className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-6 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2"
-                  >
-                    <Plus className="w-5 h-5" />
-                    Add to Food Log
-                  </button>
-                </div>
-              ) : (
-                <div className="py-16 text-center">
-                  <ScanBarcode className="w-16 h-16 text-muted-foreground/30 dark:text-zinc-800 mx-auto mb-4" />
-                  <p className="text-muted-foreground dark:text-zinc-500">
-                    Enter a barcode to see product information
-                  </p>
-                  <p className="text-xs text-muted-foreground dark:text-zinc-600 mt-2">
-                    Supports UPC-A, EAN-13, and other formats
-                  </p>
-                </div>
-              )}
-            </GlassCardContent>
-          </GlassCard>
-        </div>
-      </div>
-
-      {/* Add to Log Dialog */}
-      <Dialog open={logDialogOpen} onOpenChange={setLogDialogOpen}>
-        <DialogContent className="bg-zinc-900 border-white/10 text-white" aria-describedby="add-to-log-description">
-          <DialogHeader>
-            <DialogTitle className="font-heading">Add to Food Log</DialogTitle>
-          </DialogHeader>
-          <p id="add-to-log-description" className="sr-only">
-            Configure serving size and add this product to your food log
-          </p>
-          <div className="space-y-6 pt-4">
-            <div>
-              <p className="text-white font-medium">{product?.product_name || 'Product'}</p>
-              <p className="text-sm text-zinc-500 mt-1">
-                {product?.protein_per_100g?.toFixed(1) || 0}g protein per 100g
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-zinc-400">Serving size (grams)</Label>
-              <Input
-                type="number"
-                value={servingSize}
-                onChange={(e) => setServingSize(parseFloat(e.target.value) || 100)}
-                min={1}
-                data-testid="serving-size-input"
-                className="bg-black/50 border-white/10 text-white h-12"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-zinc-400">Number of servings</Label>
-              <Input
-                type="number"
-                value={servings}
-                onChange={(e) => setServings(parseFloat(e.target.value) || 1)}
-                min={0.25}
-                step={0.25}
-                data-testid="barcode-servings-input"
-                className="bg-black/50 border-white/10 text-white h-12"
-              />
-              <p className="text-sm text-emerald-400">
-                Total: {((product?.protein_per_100g || 0) * (servingSize / 100) * servings).toFixed(1)}g protein
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-zinc-400">Meal type</Label>
-              <Select value={mealType} onValueChange={setMealType}>
-                <SelectTrigger data-testid="barcode-meal-type" className="bg-black/50 border-white/10 text-white h-12">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-white/10">
-                  <SelectItem value="breakfast">Breakfast</SelectItem>
-                  <SelectItem value="lunch">Lunch</SelectItem>
-                  <SelectItem value="dinner">Dinner</SelectItem>
-                  <SelectItem value="snack">Snack</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             <button
-              onClick={handleAddToLog}
-              data-testid="confirm-barcode-log-btn"
-              className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-8 py-3.5 rounded-full transition-all"
+              onClick={handleManualLookup}
+              disabled={loading || barcode.length < 8}
+              data-testid="lookup-barcode-btn"
+              className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-6 py-3.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Add to Log
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <ScanBarcode className="w-5 h-5" />
+                  Look Up Product
+                </>
+              )}
             </button>
-          </div>
-        </DialogContent>
-      </Dialog>
+
+            {/* Not Found Message */}
+            {notFound && (
+              <div className={cn(
+                "flex items-center gap-3 p-4 rounded-xl",
+                theme === 'dark' ? 'bg-red-500/10 border border-red-500/20' : 'bg-red-50 border border-red-200'
+              )}>
+                <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                <div>
+                  <p className={cn(
+                    "font-medium",
+                    theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                  )}>
+                    Food not found
+                  </p>
+                  <p className={cn(
+                    "text-sm mt-0.5",
+                    theme === 'dark' ? 'text-red-400/70' : 'text-red-500/70'
+                  )}>
+                    This barcode is not in our database
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <p className={cn(
+              "text-xs text-center",
+              theme === 'dark' ? 'text-zinc-600' : 'text-gray-500'
+            )}>
+              Data from Open Food Facts database
+            </p>
+          </GlassCardContent>
+        </GlassCard>
+      </div>
     </Layout>
   );
 };
