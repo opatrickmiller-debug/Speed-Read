@@ -47,167 +47,118 @@ const MacroTooltip = ({ active, payload }) => {
   return null;
 };
 
-// Macro Radar Chart Component (matches Amino Acid visual style)
+// Macro Radar Chart Component (matches Amino Acid visual style exactly)
 const MacroRadar = ({ calories, carbs, fat, protein, theme }) => {
-  // Normalize values to percentages for visual balance
-  // Using typical daily values as reference for scaling
-  const maxCal = 500;  // Reference max for display
-  const maxCarbs = 50;
-  const maxFat = 40;
-  const maxProtein = 50;
-  
+  // Use actual values for display (like amino acids)
   const radarData = [
     { 
       name: 'Cal', 
       fullName: 'Calories',
-      value: Math.min((calories / maxCal) * 100, 100),
+      value: calories,
       displayValue: `${Math.round(calories)} kcal`
     },
     { 
       name: 'Pro', 
       fullName: 'Protein',
-      value: Math.min((protein / maxProtein) * 100, 100),
-      displayValue: `${protein.toFixed(1)}g`
+      value: protein,
+      displayValue: `${protein.toFixed(2)}g`
     },
     { 
       name: 'Fat', 
       fullName: 'Fat',
-      value: Math.min((fat / maxFat) * 100, 100),
-      displayValue: `${fat.toFixed(1)}g`
+      value: fat,
+      displayValue: `${fat.toFixed(2)}g`
     },
     { 
       name: 'Carb', 
       fullName: 'Carbs',
-      value: Math.min((carbs / maxCarbs) * 100, 100),
-      displayValue: `${carbs.toFixed(1)}g`
+      value: carbs,
+      displayValue: `${carbs.toFixed(2)}g`
     },
   ];
 
+  // Calculate max value for scale (like amino acids)
+  const maxValue = Math.max(...radarData.map((d) => d.value), 1);
+
   return (
-    <div className="py-2">
-      {/* Section Header - matches Amino Acid Profile style */}
-      <h3 className={cn(
-        "text-sm font-bold uppercase tracking-[0.15em] mb-4 px-2",
-        theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-      )}>
-        Macro Profile
-      </h3>
-      
-      {/* Radar Chart - same height as Amino Acid chart */}
-      <div className="w-full h-[280px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <RadarChart data={radarData} margin={{ top: 30, right: 40, bottom: 30, left: 40 }}>
-            <PolarGrid 
-              stroke={theme === 'dark' ? '#27272A' : '#E5E7EB'} 
-              strokeWidth={1}
-              gridType="polygon"
-            />
-            <PolarAngleAxis
-              dataKey="name"
-              tick={{ fill: theme === 'dark' ? '#A1A1AA' : '#4B5563', fontSize: 13, fontWeight: 500 }}
-              tickLine={false}
-            />
-            <PolarRadiusAxis
-              angle={90}
-              domain={[0, 100]}
-              tick={false}
-              axisLine={false}
-            />
-            <Radar
-              name="Macros"
-              dataKey="value"
-              stroke="#10B981"
-              fill="#10B981"
-              fillOpacity={0.3}
-              strokeWidth={2}
-              dot={{
-                r: 5,
-                fill: '#10B981',
-                stroke: theme === 'dark' ? '#050505' : '#FFFFFF',
-                strokeWidth: 2,
-              }}
-            />
-            <Tooltip content={<MacroTooltip />} />
-          </RadarChart>
-        </ResponsiveContainer>
-      </div>
-      
-      {/* Macro values below chart - matches Amino Acid breakdown style */}
-      <h3 className={cn(
-        "text-sm font-bold uppercase tracking-[0.15em] mt-4 mb-3 px-2",
-        theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-      )}>
-        Macro Breakdown
-      </h3>
-      <div className="space-y-2 px-2">
-        {/* Protein */}
-        <div className={cn(
-          "flex items-center justify-between py-2 border-b",
-          theme === 'dark' ? 'border-white/5' : 'border-gray-200'
-        )}>
+    <div className="w-full h-full min-h-[280px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <RadarChart data={radarData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
+          <PolarGrid 
+            stroke={theme === 'dark' ? '#27272A' : '#E5E7EB'} 
+            strokeWidth={1}
+            gridType="polygon"
+          />
+          <PolarAngleAxis
+            dataKey="name"
+            tick={{ fill: theme === 'dark' ? '#A1A1AA' : '#4B5563', fontSize: 11, fontWeight: 500 }}
+            tickLine={false}
+          />
+          <PolarRadiusAxis
+            angle={90}
+            domain={[0, maxValue]}
+            tick={false}
+            axisLine={false}
+          />
+          <Radar
+            name="Macros"
+            dataKey="value"
+            stroke="#10B981"
+            fill="#10B981"
+            fillOpacity={0.3}
+            strokeWidth={2}
+            dot={{
+              r: 4,
+              fill: '#10B981',
+              stroke: theme === 'dark' ? '#050505' : '#FFFFFF',
+              strokeWidth: 2,
+            }}
+          />
+          <Tooltip content={<MacroTooltip />} />
+        </RadarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
+// Macro List Component (matches Amino Acid List style exactly)
+const MacroList = ({ calories, carbs, fat, protein, theme }) => {
+  const macros = [
+    { name: 'Protein', value: protein, unit: 'g', color: 'bg-emerald-500', isHighlight: true },
+    { name: 'Calories', value: calories, unit: 'kcal', color: 'bg-amber-500', isHighlight: false },
+    { name: 'Fat', value: fat, unit: 'g', color: 'bg-fuchsia-500', isHighlight: false },
+    { name: 'Carbs', value: carbs, unit: 'g', color: 'bg-cyan-500', isHighlight: false },
+  ];
+
+  return (
+    <div className="space-y-2">
+      {macros.map((macro) => (
+        <div
+          key={macro.name}
+          className={cn(
+            "flex items-center justify-between py-2 border-b last:border-0",
+            theme === 'dark' ? 'border-white/5' : 'border-gray-200'
+          )}
+        >
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            <div className={`w-2 h-2 rounded-full ${macro.color}`} />
             <span className={cn(
               "text-sm font-medium",
               theme === 'dark' ? 'text-zinc-200' : 'text-gray-800'
-            )}>Protein</span>
-          </div>
-          <span className={cn(
-            "text-sm font-mono font-semibold text-emerald-500"
-          )}>{protein.toFixed(1)}g</span>
-        </div>
-        {/* Calories */}
-        <div className={cn(
-          "flex items-center justify-between py-2 border-b",
-          theme === 'dark' ? 'border-white/5' : 'border-gray-200'
-        )}>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-amber-500" />
-            <span className={cn(
-              "text-sm font-medium",
-              theme === 'dark' ? 'text-zinc-200' : 'text-gray-800'
-            )}>Calories</span>
+            )}>
+              {macro.name}
+            </span>
           </div>
           <span className={cn(
             "text-sm font-mono font-semibold",
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>{Math.round(calories)} kcal</span>
+            macro.isHighlight 
+              ? 'text-emerald-500' 
+              : theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
+            {macro.unit === 'kcal' ? Math.round(macro.value) : macro.value.toFixed(2)}{macro.unit}
+          </span>
         </div>
-        {/* Fat */}
-        <div className={cn(
-          "flex items-center justify-between py-2 border-b",
-          theme === 'dark' ? 'border-white/5' : 'border-gray-200'
-        )}>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-fuchsia-500" />
-            <span className={cn(
-              "text-sm font-medium",
-              theme === 'dark' ? 'text-zinc-200' : 'text-gray-800'
-            )}>Fat</span>
-          </div>
-          <span className={cn(
-            "text-sm font-mono font-semibold",
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>{fat.toFixed(1)}g</span>
-        </div>
-        {/* Carbs */}
-        <div className={cn(
-          "flex items-center justify-between py-2",
-          theme === 'dark' ? 'border-white/5' : 'border-gray-200'
-        )}>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-cyan-500" />
-            <span className={cn(
-              "text-sm font-medium",
-              theme === 'dark' ? 'text-zinc-200' : 'text-gray-800'
-            )}>Carbs</span>
-          </div>
-          <span className={cn(
-            "text-sm font-mono font-semibold",
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>{carbs.toFixed(1)}g</span>
-        </div>
-      </div>
+      ))}
     </div>
   );
 };
@@ -644,12 +595,40 @@ export const FoodDetails = () => {
             </div>
           </div>
 
-          {/* Macro Radar Display */}
+          {/* Macro Profile - matches Amino Acid Profile layout */}
           <div className={cn(
             "rounded-xl p-4 mb-6",
             theme === 'dark' ? 'bg-zinc-900/50' : 'bg-white'
           )}>
-            <MacroRadar 
+            {/* Section Header */}
+            <h3 className={cn(
+              "text-sm font-bold uppercase tracking-[0.15em] mb-4",
+              theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+            )}>
+              Macro Profile
+            </h3>
+            
+            {/* Radar Chart */}
+            <div className="h-[280px]">
+              <MacroRadar 
+                calories={totalCalories}
+                carbs={totalCarbs}
+                fat={totalFat}
+                protein={totalProtein}
+                theme={theme}
+              />
+            </div>
+            
+            {/* Section Header */}
+            <h3 className={cn(
+              "text-sm font-bold uppercase tracking-[0.15em] mt-4 mb-3",
+              theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+            )}>
+              Macro Breakdown
+            </h3>
+            
+            {/* Macro List */}
+            <MacroList
               calories={totalCalories}
               carbs={totalCarbs}
               fat={totalFat}
