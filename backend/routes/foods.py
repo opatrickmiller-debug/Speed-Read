@@ -1,15 +1,30 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import Optional, List
 from datetime import datetime, timezone
+from pydantic import BaseModel
 import httpx
 import asyncio
 from core.database import db
 from core.security import get_current_user
 from services.fdc_client import fdc_client
 from services.food_search import food_search_service
+from services.nutrition_calculator import NutritionCalculator, food_to_calculator_format
 from routes.popularity import get_popular_foods, track_food_selection
 
 router = APIRouter(prefix="/foods", tags=["Foods"])
+
+
+class NutritionRequest(BaseModel):
+    """Request body for nutrition calculation"""
+    food_id: str
+    amount: float = 1.0
+    unit: str  # e.g., "large_egg", "cup", "g", "oz"
+
+
+class NutritionResponse(BaseModel):
+    """Response for nutrition calculation"""
+    grams: float
+    nutrition: dict
 
 # Open Food Facts search
 async def search_open_food_facts(query: str, page_size: int = 20) -> list:
@@ -455,6 +470,64 @@ async def autocomplete_foods(
         "count": len(suggestions[:limit]),
         "cached": False
     }
+
+
+@router.post("/calculate", response_model=NutritionResponse)
+async def calculate_nutrition(req: NutritionRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Calculate nutrition for a food based on amount and serving unit.
+    
+    Body:
+    {
+      "food_id": "171287",
+      "amount": 2,
+      "unit": "large_egg"  // or "g", "oz", "cup", etc.
+    }
+    
+    Returns:
+    {
+      "grams": 100.0,
+      "nutrition": {
+        "calories": 143.0,
+        "protein": 12.56,
+        "fat": 9.51,
+        "carbs": 0.72,
+        "fiber": 0.0
+      }
+    }
+    """
+    # Fetch food from USDA
+    usda_raw = await fdc_client.get_food_details(req.food_id)
+    if not usda_raw:
+        raise HTTPException(status_code=404, detail="Food not found")
+    
+    # Parse food details
+    food_detail = fdc_client.parse_food_detail(usda_raw)
+    
+    # Convert to calculator format
+    calc_format = food_to_calculator_format({
+        "fdc_id": food_detail.fdc_id,
+        "description": food_detail.description,
+        "calories": food_detail.calories,
+        "protein": food_detail.protein,
+        "fat": food_detail.fat,
+        "carbs": food_detail.carbs,
+        "fiber": food_detail.fiber,
+        "servings": [{"label": s.label, "grams": s.grams, "modifier": s.modifier} for s in food_detail.servings]
+    })
+    
+    try:
+        calculator = NutritionCalculator(calc_format)
+        result = calculator.calculate_nutrition(req.amount, req.unit)
+        return result
+    except ValueError as e:
+        # Unknown unit - list available units
+        available = list(calculator.servings.keys())
+        raise HTTPException(
+            status_code=400, 
+            detail=f"{str(e)}. Available units: {available}"
+        )
+
 
 # ==================== CATEGORY BROWSING & QUICK ACCESS ====================
 # These routes MUST be before /{fdc_id} to avoid path conflicts
