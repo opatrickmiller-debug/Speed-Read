@@ -169,6 +169,24 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
 - **TOAST NOTIFICATIONS**: "Logged 1 serving to Dinner - 100g • 160 cal"
 - **AUTO-NAVIGATION**: Redirects to Food Log after logging
 
+### March 8, 2026 - USDA Serving Size Implementation
+- **IMPLEMENTED**: True USDA portion sizes from foodPortions data
+- **BACKEND CHANGES** (`/services/fdc_client.py`):
+  - New `extract_servings()` method parses USDA foodPortions
+  - Builds human-readable labels: "1 large egg (50g)", "1 cup (243g)"
+  - Adds standard servings (1oz, 100g) if not present
+  - Returns `servings[]` array in food response
+- **FRONTEND CHANGES** (`FoodDetails.jsx`):
+  - "Select Serving Size" grid shows all USDA options
+  - Click serving → auto-selects as unit
+  - Amount multiplier: `grams = amount × serving.grams`
+  - "Custom" button switches to manual gram/oz/cup input
+- **EXAMPLE (Eggs)**:
+  - 1 small egg (38g), 1 medium egg (44g), 1 large egg (50g)
+  - 1 extra large egg (56g), 1 jumbo egg (63g), 1 cup (243g)
+- **MODEL CHANGE**: Added `ServingSize` model with label, grams, modifier
+- **CALCULATION**: `2 × 1 large egg (50g) = 100g → 143 cal, 12.6g protein`
+
 ## What's Been Implemented
 
 ### March 7, 2026 - MyFitnessPal-Style Portion Selection UI

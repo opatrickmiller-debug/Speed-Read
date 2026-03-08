@@ -6,7 +6,7 @@ from functools import lru_cache
 from core.config import settings
 from core.constants import ALL_AMINO_ACIDS, ESSENTIAL_AMINO_ACIDS, ALL_FATTY_ACIDS, ESSENTIAL_FATTY_ACIDS
 from core.cache import cache
-from models.food import AminoAcid, FattyAcid, FoodDetail
+from models.food import AminoAcid, FattyAcid, FoodDetail, ServingSize
 
 logger = logging.getLogger(__name__)
 
@@ -200,12 +200,131 @@ class FDCClient:
         
         return round(omega3_total, 3), round(omega6_total, 3), ratio
     
+    def extract_servings(self, food_data: Dict) -> List[ServingSize]:
+        """Extract serving size options from USDA foodPortions."""
+        servings = []
+        portions = food_data.get("foodPortions", [])
+        description = food_data.get("description", "").lower()
+        
+        # Track seen gram weights to avoid duplicates
+        seen_grams = set()
+        
+        for portion in portions:
+            gram_weight = portion.get("gramWeight")
+            modifier = portion.get("modifier", "")
+            amount = portion.get("amount", 1.0)
+            
+            if not gram_weight or gram_weight <= 0:
+                continue
+            
+            # Round to avoid float precision issues
+            gram_weight = round(gram_weight, 1)
+            
+            # Skip duplicates
+            if gram_weight in seen_grams:
+                continue
+            seen_grams.add(gram_weight)
+            
+            # Build a human-readable label
+            label = self._build_serving_label(modifier, amount, gram_weight, description)
+            
+            servings.append(ServingSize(
+                label=label,
+                grams=gram_weight,
+                modifier=modifier
+            ))
+        
+        # Sort by gram weight (smallest first, most common sizes)
+        servings.sort(key=lambda s: s.grams)
+        
+        # Add standard portions if not present
+        servings = self._add_standard_servings(servings, seen_grams)
+        
+        return servings
+    
+    def _build_serving_label(self, modifier: str, amount: float, grams: float, description: str) -> str:
+        """Build a human-readable serving label."""
+        # Handle common patterns
+        modifier_lower = modifier.lower() if modifier else ""
+        
+        # Cup measurements
+        if "cup" in modifier_lower:
+            return f"1 cup ({int(grams)}g)"
+        
+        # Tablespoon/teaspoon
+        if "tbsp" in modifier_lower or "tablespoon" in modifier_lower:
+            return f"1 tbsp ({int(grams)}g)"
+        if "tsp" in modifier_lower or "teaspoon" in modifier_lower:
+            return f"1 tsp ({int(grams)}g)"
+        
+        # Slice
+        if "slice" in modifier_lower:
+            return f"1 slice ({int(grams)}g)"
+        
+        # Piece
+        if "piece" in modifier_lower:
+            return f"1 piece ({int(grams)}g)"
+        
+        # Size descriptors (small, medium, large, etc.)
+        size_words = ["small", "medium", "large", "extra large", "jumbo", "extra-large"]
+        for size in size_words:
+            if size in modifier_lower:
+                # Try to determine item name from description
+                item = self._get_item_name(description)
+                return f"1 {size} {item} ({int(grams)}g)"
+        
+        # Numeric amounts with unit
+        if amount != 1.0:
+            return f"{amount} {modifier} ({int(grams)}g)" if modifier else f"{amount} ({int(grams)}g)"
+        
+        # Default: use modifier or generic
+        if modifier:
+            return f"1 {modifier} ({int(grams)}g)"
+        
+        return f"1 serving ({int(grams)}g)"
+    
+    def _get_item_name(self, description: str) -> str:
+        """Extract a simple item name from description."""
+        # Common food items to detect
+        items = ["egg", "apple", "banana", "orange", "chicken", "breast", "thigh", 
+                 "steak", "patty", "slice", "piece", "fillet", "cup", "can"]
+        
+        desc_lower = description.lower()
+        for item in items:
+            if item in desc_lower:
+                return item
+        
+        # Return first word as fallback
+        words = description.split(",")[0].split()
+        return words[0].lower() if words else "serving"
+    
+    def _add_standard_servings(self, servings: List[ServingSize], seen_grams: set) -> List[ServingSize]:
+        """Add standard serving options if not already present."""
+        standard_servings = [
+            (28.35, "1 oz"),
+            (100, "100g"),
+        ]
+        
+        for grams, label in standard_servings:
+            if grams not in seen_grams:
+                servings.append(ServingSize(
+                    label=f"{label} ({int(grams)}g)",
+                    grams=grams,
+                    modifier="standard"
+                ))
+        
+        # Re-sort after adding
+        servings.sort(key=lambda s: s.grams)
+        return servings
+    
     def parse_food_detail(self, food_data: Dict) -> FoodDetail:
         amino_acids = self.extract_amino_acids(food_data)
         is_complete, missing, quality_score = self.analyze_protein_completeness(amino_acids)
         
         fatty_acids = self.extract_fatty_acids(food_data)
         omega3_total, omega6_total, omega_ratio = self.calculate_omega_totals(fatty_acids)
+        
+        servings = self.extract_servings(food_data)
         
         return FoodDetail(
             fdc_id=str(food_data.get("fdcId", "")),
@@ -225,7 +344,8 @@ class FDCClient:
             protein_quality_score=quality_score,
             omega3_total=omega3_total,
             omega6_total=omega6_total,
-            omega_ratio=omega_ratio
+            omega_ratio=omega_ratio,
+            servings=servings
         )
 
 fdc_client = FDCClient()

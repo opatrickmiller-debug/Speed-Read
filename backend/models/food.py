@@ -15,6 +15,12 @@ class FattyAcid(BaseModel):
     is_essential: bool
     omega_type: Optional[int] = None  # 3 or 6 for omega classification
 
+class ServingSize(BaseModel):
+    """Represents a serving size option from USDA foodPortions"""
+    label: str          # e.g., "1 large egg", "1 cup"
+    grams: float        # Weight in grams
+    modifier: str = ""  # Original modifier from USDA (e.g., "large", "medium")
+
 class FoodSearchResult(BaseModel):
     fdc_id: str
     description: str
@@ -41,6 +47,7 @@ class FoodDetail(BaseModel):
     omega3_total: float = 0
     omega6_total: float = 0
     omega_ratio: Optional[str] = None  # e.g., "1:4" (omega3:omega6)
+    servings: List[ServingSize] = []   # Available serving options from USDA
 
 class FoodLogCreate(BaseModel):
     fdc_id: str
