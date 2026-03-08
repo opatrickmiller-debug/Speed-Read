@@ -96,6 +96,29 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
   - Autocomplete: ~0.7s cached vs ~1.9s uncached
   - Search: Cached results avoid re-fetching from USDA/OFF APIs
 
+### March 8, 2026 - Capacitor Mobile Build Preparation
+- **CONFIGURED**: Full Capacitor setup for native mobile builds
+  - App ID: `com.isotope.app`
+  - App Name: `Isotope`
+- **CAMERA PERMISSIONS**:
+  - Android: CAMERA, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, READ_MEDIA_IMAGES, VIBRATE
+  - iOS: NSCameraUsageDescription, NSPhotoLibraryUsageDescription, NSPhotoLibraryAddUsageDescription
+- **SPLASH SCREEN**:
+  - Dark theme (#050505 background)
+  - Centered logo with 2-second display
+  - Configured for both Android and iOS
+- **MOBILE RESPONSIVE**:
+  - Safe area insets for notched devices
+  - Touch-optimized CSS (no tap highlight, manipulation touch-action)
+  - 16px minimum font for inputs (prevents iOS zoom)
+- **CAPACITOR PLUGINS**: Camera, SplashScreen, StatusBar, Keyboard, Haptics, App
+- **BUILD SCRIPTS** (in package.json):
+  - `yarn build:mobile` - Build and sync all platforms
+  - `yarn build:android` - Build and sync Android only
+  - `yarn build:ios` - Build and sync iOS only
+  - `yarn cap:open:android` - Open in Android Studio
+  - `yarn cap:open:ios` - Open in Xcode
+
 ## What's Been Implemented
 
 ### March 7, 2026 - MyFitnessPal-Style Portion Selection UI

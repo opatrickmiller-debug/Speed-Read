@@ -5,11 +5,13 @@
   "dependencies": {
     "@capacitor/android": "6",
     "@capacitor/app": "6",
+    "@capacitor/camera": "^8.0.2",
     "@capacitor/cli": "6",
     "@capacitor/core": "6",
     "@capacitor/haptics": "6",
     "@capacitor/ios": "6",
     "@capacitor/keyboard": "6",
+    "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "6",
     "@ericblade/quagga2": "^1.12.1",
     "@hookform/resolvers": "^5.0.1",
@@ -76,7 +78,11 @@
     "cap:copy": "npx cap copy",
     "cap:open:ios": "npx cap open ios",
     "cap:open:android": "npx cap open android",
-    "build:mobile": "yarn build && npx cap sync"
+    "build:mobile": "yarn build && npx cap sync",
+    "build:android": "yarn build && npx cap sync android",
+    "build:ios": "yarn build && npx cap sync ios",
+    "build:android:release": "yarn build && npx cap sync android && cd android && ./gradlew assembleRelease",
+    "build:android:debug": "yarn build && npx cap sync android && cd android && ./gradlew assembleDebug"
   },
   "browserslist": {
     "production": [

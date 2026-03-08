@@ -16,8 +16,16 @@ export const Layout = ({ children }) => {
       {/* Mobile Nav */}
       <MobileNav />
       
-      {/* Main Content */}
-      <main className="md:ml-64 pb-20 md:pb-0">
+      {/* Main Content - with safe area padding for notched devices */}
+      <main 
+        className="md:ml-64 pb-20 md:pb-0"
+        style={{
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 5rem)',
+          paddingLeft: 'env(safe-area-inset-left)',
+          paddingRight: 'env(safe-area-inset-right)'
+        }}
+      >
         {theme === 'dark' && (
           <>
             <div className="hero-glow fixed inset-0 pointer-events-none" style={{ zIndex: -1 }} />

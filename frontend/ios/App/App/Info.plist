@@ -45,5 +45,15 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	
+	<!-- Camera permission for barcode scanning -->
+	<key>NSCameraUsageDescription</key>
+	<string>Isotope needs camera access to scan food barcodes for quick logging.</string>
+	
+	<!-- Photo library permissions -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Isotope needs photo library access to select food images.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Isotope needs permission to save photos to your library.</string>
 </dict>
 </plist>

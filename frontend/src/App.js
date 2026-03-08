@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { useState, useEffect } from "react";
+import { useCapacitor } from "./hooks/useCapacitor";
 
 // Pages
 import { Login } from "./pages/Login";
@@ -111,6 +112,9 @@ function AppRoutes() {
 }
 
 function App() {
+  // Initialize Capacitor plugins for native mobile
+  useCapacitor();
+  
   return (
     <ThemeProvider>
       <div className="App">
