@@ -119,6 +119,22 @@ Build a Keto-based nutrition tracker that tracks protein intake similar to exist
   - `yarn cap:open:android` - Open in Android Studio
   - `yarn cap:open:ios` - Open in Xcode
 
+### March 8, 2026 - Multi-Unit Portion System
+- **IMPLEMENTED**: Flexible portion unit selection for food logging
+- **Supported Units**:
+  - g (grams) - default
+  - oz (ounces) - 28.35g conversion
+  - lb (pounds) - 453.6g conversion
+  - kg (kilograms) - 1000g conversion
+  - cup - 240g conversion (approximate)
+  - tbsp (tablespoons) - 15g conversion
+  - tsp (teaspoons) - 5g conversion
+  - serving - 100g standard serving
+- **FoodDetails.jsx**: Full unit selector with quick amount buttons per unit type
+- **MealBuilder.jsx**: Unit selector per food item in meal
+- **Calculation**: User inputs amount in preferred unit → converted to grams → macros calculated from per-100g USDA data
+- **Example**: 2oz cheese → 56.7g → macros = per_100g × 0.567
+
 ## What's Been Implemented
 
 ### March 7, 2026 - MyFitnessPal-Style Portion Selection UI

@@ -22,6 +22,16 @@ import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
+// Unit conversion factors to grams
+const unitConversions = {
+  g: { factor: 1, label: 'g' },
+  oz: { factor: 28.35, label: 'oz' },
+  lb: { factor: 453.6, label: 'lb' },
+  cup: { factor: 240, label: 'cup' },
+  tbsp: { factor: 15, label: 'tbsp' },
+  tsp: { factor: 5, label: 'tsp' }
+};
+
 export const MealBuilder = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
@@ -90,12 +100,14 @@ export const MealBuilder = () => {
           protein: data.protein || food.protein || 0,
           fat: data.fat || food.fat || 0,
           carbs: data.carbs || food.carbs || 0,
-          portion: 100, // Default portion in grams
+          portionAmount: 100,
+          portionUnit: 'g'
         };
       } else {
         foodDetails = {
           ...food,
-          portion: 100
+          portionAmount: 100,
+          portionUnit: 'g'
         };
       }
       
@@ -106,7 +118,7 @@ export const MealBuilder = () => {
       toast.success(`Added ${foodDetails.description.split(',')[0]}`);
     } catch (err) {
       // Use search result data as fallback
-      setFoods([...foods, { ...food, portion: 100 }]);
+      setFoods([...foods, { ...food, portionAmount: 100, portionUnit: 'g' }]);
       setSearchQuery('');
       setShowSearch(false);
     }
@@ -117,16 +129,37 @@ export const MealBuilder = () => {
     setFoods(foods.filter((_, i) => i !== index));
   };
 
-  // Update portion
-  const updatePortion = (index, newPortion) => {
+  // Update portion amount
+  const updatePortionAmount = (index, newAmount) => {
     const updated = [...foods];
-    updated[index].portion = Math.max(1, parseFloat(newPortion) || 100);
+    updated[index].portionAmount = Math.max(0.1, parseFloat(newAmount) || 1);
     setFoods(updated);
+  };
+
+  // Update portion unit
+  const updatePortionUnit = (index, newUnit) => {
+    const updated = [...foods];
+    updated[index].portionUnit = newUnit;
+    // Set sensible default amounts per unit
+    if (newUnit === 'g') updated[index].portionAmount = 100;
+    else if (newUnit === 'oz') updated[index].portionAmount = 3;
+    else if (newUnit === 'lb') updated[index].portionAmount = 0.5;
+    else if (newUnit === 'cup') updated[index].portionAmount = 1;
+    else if (newUnit === 'tbsp') updated[index].portionAmount = 2;
+    else if (newUnit === 'tsp') updated[index].portionAmount = 1;
+    setFoods(updated);
+  };
+
+  // Get grams from portion
+  const getGrams = (food) => {
+    const conversion = unitConversions[food.portionUnit] || unitConversions.g;
+    return food.portionAmount * conversion.factor;
   };
 
   // Calculate totals
   const totals = foods.reduce((acc, food) => {
-    const multiplier = (food.portion || 100) / 100;
+    const grams = getGrams(food);
+    const multiplier = grams / 100;
     return {
       calories: acc.calories + (food.calories || 0) * multiplier,
       protein: acc.protein + (food.protein || 0) * multiplier,
@@ -148,17 +181,21 @@ export const MealBuilder = () => {
 
     setSaving(true);
     try {
-      const mealFoods = foods.map(food => ({
-        fdc_id: food.fdc_id,
-        description: food.description,
-        name: food.description,
-        serving_size: food.portion,
-        servings: 1,
-        calories: (food.calories || 0) * (food.portion / 100),
-        protein: (food.protein || 0) * (food.portion / 100),
-        fat: (food.fat || 0) * (food.portion / 100),
-        carbs: (food.carbs || 0) * (food.portion / 100),
-      }));
+      const mealFoods = foods.map(food => {
+        const grams = getGrams(food);
+        const multiplier = grams / 100;
+        return {
+          fdc_id: food.fdc_id,
+          description: food.description,
+          name: food.description,
+          serving_size: grams,
+          servings: 1,
+          calories: (food.calories || 0) * multiplier,
+          protein: (food.protein || 0) * multiplier,
+          fat: (food.fat || 0) * multiplier,
+          carbs: (food.carbs || 0) * multiplier,
+        };
+      });
 
       const res = await fetch(`${API_URL}/api/custom-meals`, {
         method: 'POST',
@@ -384,48 +421,72 @@ export const MealBuilder = () => {
                             : food.description}
                         </p>
                         
-                        {/* Portion Controls */}
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => updatePortion(index, food.portion - 25)}
-                            className={cn(
-                              "p-1 rounded-lg transition-colors",
-                              theme === 'dark' 
-                                ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' 
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            )}
-                          >
-                            <Minus className="w-4 h-4" />
-                          </button>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              value={food.portion}
-                              onChange={(e) => updatePortion(index, e.target.value)}
-                              data-testid={`portion-input-${index}`}
-                              className={cn(
-                                "w-16 text-center text-sm font-medium py-1 rounded-lg border",
-                                theme === 'dark' 
-                                  ? 'bg-zinc-800 border-zinc-700 text-white' 
-                                  : 'bg-gray-50 border-gray-200 text-gray-900'
-                              )}
-                            />
-                            <span className={cn(
-                              "text-sm",
-                              theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-                            )}>g</span>
+                        {/* Portion Controls with Unit Selection */}
+                        <div className="flex flex-col gap-2">
+                          {/* Unit selector */}
+                          <div className="flex flex-wrap gap-1">
+                            {Object.entries(unitConversions).map(([key, unit]) => (
+                              <button
+                                key={key}
+                                onClick={() => updatePortionUnit(index, key)}
+                                className={cn(
+                                  "px-2 py-0.5 rounded text-xs font-medium transition-colors",
+                                  food.portionUnit === key
+                                    ? 'bg-emerald-500 text-black'
+                                    : theme === 'dark'
+                                      ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                )}
+                              >
+                                {unit.label}
+                              </button>
+                            ))}
                           </div>
-                          <button
-                            onClick={() => updatePortion(index, food.portion + 25)}
-                            className={cn(
-                              "p-1 rounded-lg transition-colors",
-                              theme === 'dark' 
-                                ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' 
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            )}
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
+                          
+                          {/* Amount controls */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => updatePortionAmount(index, food.portionAmount - (food.portionUnit === 'g' ? 25 : 0.5))}
+                              className={cn(
+                                "p-1 rounded-lg transition-colors",
+                                theme === 'dark' 
+                                  ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' 
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              )}
+                            >
+                              <Minus className="w-4 h-4" />
+                            </button>
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                value={food.portionAmount}
+                                onChange={(e) => updatePortionAmount(index, e.target.value)}
+                                step={food.portionUnit === 'g' ? 10 : 0.25}
+                                data-testid={`portion-input-${index}`}
+                                className={cn(
+                                  "w-16 text-center text-sm font-medium py-1 rounded-lg border",
+                                  theme === 'dark' 
+                                    ? 'bg-zinc-800 border-zinc-700 text-white' 
+                                    : 'bg-gray-50 border-gray-200 text-gray-900'
+                                )}
+                              />
+                              <span className={cn(
+                                "text-sm min-w-[30px]",
+                                theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+                              )}>{unitConversions[food.portionUnit]?.label || 'g'}</span>
+                            </div>
+                            <button
+                              onClick={() => updatePortionAmount(index, food.portionAmount + (food.portionUnit === 'g' ? 25 : 0.5))}
+                              className={cn(
+                                "p-1 rounded-lg transition-colors",
+                                theme === 'dark' 
+                                  ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' 
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              )}
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
 
@@ -435,13 +496,13 @@ export const MealBuilder = () => {
                           "text-sm font-semibold",
                           theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'
                         )}>
-                          {((food.protein || 0) * food.portion / 100).toFixed(1)}g
+                          {((food.protein || 0) * getGrams(food) / 100).toFixed(1)}g
                         </p>
                         <p className={cn(
                           "text-xs",
                           theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
                         )}>
-                          {Math.round((food.calories || 0) * food.portion / 100)} cal
+                          {Math.round((food.calories || 0) * getGrams(food) / 100)} cal
                         </p>
                       </div>
 
