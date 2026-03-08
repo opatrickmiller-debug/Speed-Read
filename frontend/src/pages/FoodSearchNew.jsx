@@ -14,11 +14,14 @@ import {
   Clock,
   Star,
   Barcode,
-  ChevronDown,
   Coffee,
   Sun,
   Moon,
-  Cookie
+  Cookie,
+  Flame,
+  Beef,
+  Droplets,
+  Wheat
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
@@ -228,17 +231,24 @@ export const FoodSearch = () => {
         console.warn('Could not fetch food details for amino acids:', detailErr);
       }
       
+      // Handle both old format (calories_per_100g) and new format (calories)
+      const calories = food.calories ?? food.calories_per_100g ?? 0;
+      const protein = food.protein ?? food.protein_per_100g ?? 0;
+      const fat = food.fat ?? food.fat_per_100g ?? 0;
+      const carbs = food.carbs ?? food.carbs_per_100g ?? 0;
+      const fiber = food.fiber ?? food.fiber_per_100g ?? 0;
+      
       await logsApi.create({
         fdc_id: food.fdc_id,
         description: food.description,
         serving_size: food.serving_size || 100,
         serving_unit: food.serving_unit || 'g',
         servings: 1,
-        calories: food.calories_per_100g || food.calories || 0,
-        protein: food.protein_per_100g || food.protein || 0,
-        fat: food.fat_per_100g || food.fat || 0,
-        carbs: food.carbs_per_100g || food.carbs || 0,
-        fiber: food.fiber_per_100g || food.fiber || 0,
+        calories: calories,
+        protein: protein,
+        fat: fat,
+        carbs: carbs,
+        fiber: fiber,
         amino_acids: aminoAcids,
         fatty_acids: fattyAcids,
         meal_type: selectedMeal
@@ -286,72 +296,174 @@ export const FoodSearch = () => {
     inputRef.current?.focus();
   };
 
-  // Render food item with MyFitnessPal-style badges
-  const FoodItem = ({ food, showQuickLog = false }) => (
-    <div
-      onClick={() => handleSelectFood(food)}
-      className={cn(
-        "flex items-center gap-3 p-3 border-b last:border-0 transition-colors cursor-pointer",
-        theme === 'dark' ? 'border-white/5 active:bg-white/5' : 'border-gray-100 active:bg-gray-50'
-      )}
-    >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className={cn(
-            "font-medium truncate",
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>
-            {/* Show full description but truncate if too long */}
-            {food.description?.length > 40 
-              ? food.description.substring(0, 40) + '...'
-              : food.description}
-          </p>
-          {/* Verified checkmark badge (like MyFitnessPal green checkmark) */}
-          {food.is_verified && (
-            <svg className="w-4 h-4 text-emerald-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-          )}
+  // Loading skeleton for search results
+  const FoodItemSkeleton = () => (
+    <div className={cn(
+      "p-4 border-b last:border-0 animate-pulse",
+      theme === 'dark' ? 'border-white/5' : 'border-gray-100'
+    )}>
+      <div className="flex items-start gap-3">
+        <div className="flex-1">
+          <div className={cn(
+            "h-4 w-3/4 rounded mb-2",
+            theme === 'dark' ? 'bg-zinc-800' : 'bg-gray-200'
+          )} />
+          <div className={cn(
+            "h-3 w-1/2 rounded mb-3",
+            theme === 'dark' ? 'bg-zinc-800' : 'bg-gray-200'
+          )} />
+          <div className="flex gap-3">
+            {[1,2,3,4].map(i => (
+              <div key={i} className={cn(
+                "h-10 w-16 rounded-lg",
+                theme === 'dark' ? 'bg-zinc-800' : 'bg-gray-200'
+              )} />
+            ))}
+          </div>
         </div>
-        <div className="flex items-center gap-2 mt-0.5">
-          <p className={cn(
-            "text-xs",
-            theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-          )}>
-            {food.calories?.toFixed(0) || food.calories_per_100g?.toFixed(0) || '—'} cal • {food.protein?.toFixed(0) || food.protein_per_100g?.toFixed(0) || '—'}g protein
-          </p>
-          {/* Tier label */}
-          {food.tier_label && food.tier_label !== 'Community' && (
-            <span className={cn(
-              "text-[10px] px-1.5 py-0.5 rounded font-medium",
-              food.tier_label === 'Best Match' || food.tier_label === 'Your Food'
-                ? 'bg-emerald-500/20 text-emerald-600'
-                : 'bg-blue-500/20 text-blue-600'
-            )}>
-              {food.tier_label}
-            </span>
-          )}
-        </div>
+        <div className={cn(
+          "w-5 h-5 rounded",
+          theme === 'dark' ? 'bg-zinc-800' : 'bg-gray-200'
+        )} />
       </div>
-      {showQuickLog && (
-        <button
-          onClick={(e) => { e.stopPropagation(); handleQuickLog(food); }}
-          className={cn(
-            "p-2 rounded-full transition-colors",
-            theme === 'dark' 
-              ? 'bg-emerald-500/20 text-emerald-400 active:bg-emerald-500/30' 
-              : 'bg-emerald-100 text-emerald-600 active:bg-emerald-200'
-          )}
-        >
-          <Plus className="w-5 h-5" />
-        </button>
-      )}
-      <ChevronRight className={cn(
-        "w-5 h-5 flex-shrink-0",
-        theme === 'dark' ? 'text-zinc-600' : 'text-gray-400'
-      )} />
     </div>
   );
+
+  // Render food item card with macro summary
+  const FoodItem = ({ food, showQuickLog = false }) => {
+    // Handle both old format (calories_per_100g) and new format (calories)
+    const calories = food.calories ?? food.calories_per_100g ?? 0;
+    const protein = food.protein ?? food.protein_per_100g ?? 0;
+    const fat = food.fat ?? food.fat_per_100g ?? 0;
+    const carbs = food.carbs ?? food.carbs_per_100g ?? 0;
+    
+    return (
+      <div
+        onClick={() => handleSelectFood(food)}
+        data-testid={`food-item-${food.fdc_id}`}
+        className={cn(
+          "p-4 border-b last:border-0 transition-colors cursor-pointer",
+          theme === 'dark' ? 'border-white/5 active:bg-white/5' : 'border-gray-100 active:bg-gray-50'
+        )}
+      >
+        <div className="flex items-start gap-3">
+          <div className="flex-1 min-w-0">
+            {/* Food Description */}
+            <div className="flex items-center gap-2 mb-1">
+              <p className={cn(
+                "font-medium",
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              )}>
+                {food.description?.length > 50 
+                  ? food.description.substring(0, 50) + '...'
+                  : food.description}
+              </p>
+            </div>
+            
+            {/* Tier Label Badge */}
+            {food.tier_label && (
+              <span className={cn(
+                "inline-block text-[10px] px-2 py-0.5 rounded-full font-medium mb-3",
+                food.tier_label === 'Best Match' || food.tier_label === 'Your Food'
+                  ? 'bg-emerald-500/20 text-emerald-500'
+                  : food.tier_label === 'Verified'
+                    ? 'bg-blue-500/20 text-blue-500'
+                    : theme === 'dark'
+                      ? 'bg-zinc-700 text-zinc-400'
+                      : 'bg-gray-200 text-gray-600'
+              )}>
+                {food.tier_label}
+              </span>
+            )}
+            
+            {/* Macro Cards Row */}
+            <div className="flex gap-2 flex-wrap">
+              {/* Calories */}
+              <div className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs",
+                theme === 'dark' ? 'bg-orange-500/10' : 'bg-orange-50'
+              )}>
+                <Flame className="w-3.5 h-3.5 text-orange-500" />
+                <span className={cn(
+                  "font-semibold",
+                  theme === 'dark' ? 'text-orange-400' : 'text-orange-600'
+                )}>
+                  {Math.round(calories)}
+                </span>
+                <span className={theme === 'dark' ? 'text-orange-400/70' : 'text-orange-500/70'}>cal</span>
+              </div>
+              
+              {/* Protein */}
+              <div className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs",
+                theme === 'dark' ? 'bg-red-500/10' : 'bg-red-50'
+              )}>
+                <Beef className="w-3.5 h-3.5 text-red-500" />
+                <span className={cn(
+                  "font-semibold",
+                  theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                )}>
+                  {protein.toFixed(1)}g
+                </span>
+                <span className={theme === 'dark' ? 'text-red-400/70' : 'text-red-500/70'}>P</span>
+              </div>
+              
+              {/* Fat */}
+              <div className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs",
+                theme === 'dark' ? 'bg-yellow-500/10' : 'bg-yellow-50'
+              )}>
+                <Droplets className="w-3.5 h-3.5 text-yellow-500" />
+                <span className={cn(
+                  "font-semibold",
+                  theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600'
+                )}>
+                  {fat.toFixed(1)}g
+                </span>
+                <span className={theme === 'dark' ? 'text-yellow-400/70' : 'text-yellow-500/70'}>F</span>
+              </div>
+              
+              {/* Carbs */}
+              <div className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs",
+                theme === 'dark' ? 'bg-blue-500/10' : 'bg-blue-50'
+              )}>
+                <Wheat className="w-3.5 h-3.5 text-blue-500" />
+                <span className={cn(
+                  "font-semibold",
+                  theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                )}>
+                  {carbs.toFixed(1)}g
+                </span>
+                <span className={theme === 'dark' ? 'text-blue-400/70' : 'text-blue-500/70'}>C</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Quick Log Button */}
+          {showQuickLog && (
+            <button
+              onClick={(e) => { e.stopPropagation(); handleQuickLog(food); }}
+              data-testid={`quick-log-${food.fdc_id}`}
+              className={cn(
+                "p-2 rounded-full transition-colors flex-shrink-0",
+                theme === 'dark' 
+                  ? 'bg-emerald-500/20 text-emerald-400 active:bg-emerald-500/30' 
+                  : 'bg-emerald-100 text-emerald-600 active:bg-emerald-200'
+              )}
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          )}
+          
+          <ChevronRight className={cn(
+            "w-5 h-5 flex-shrink-0 mt-1",
+            theme === 'dark' ? 'text-zinc-600' : 'text-gray-400'
+          )} />
+        </div>
+      </div>
+    );
+  };
 
   return (
     <Layout>
@@ -482,29 +594,55 @@ export const FoodSearch = () => {
             theme === 'dark' ? 'bg-zinc-900/50' : 'bg-white'
           )}>
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
-              </div>
-            ) : results.length > 0 ? (
+              /* Loading Skeletons */
               <div>
                 <div className={cn(
                   "px-3 py-2 text-xs font-semibold uppercase tracking-wider",
                   theme === 'dark' ? 'text-zinc-500 bg-black/30' : 'text-gray-500 bg-gray-50'
                 )}>
-                  Search Results
+                  Searching...
                 </div>
-                {results.slice(0, 20).map((food, idx) => (
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <FoodItemSkeleton key={i} />
+                ))}
+              </div>
+            ) : results.length > 0 ? (
+              <div>
+                <div className={cn(
+                  "px-3 py-2 text-xs font-semibold uppercase tracking-wider flex justify-between items-center",
+                  theme === 'dark' ? 'text-zinc-500 bg-black/30' : 'text-gray-500 bg-gray-50'
+                )}>
+                  <span>Search Results</span>
+                  <span className={theme === 'dark' ? 'text-zinc-600' : 'text-gray-400'}>
+                    {results.length} found
+                  </span>
+                </div>
+                {results.slice(0, 25).map((food, idx) => (
                   <FoodItem key={food.fdc_id || idx} food={food} />
                 ))}
               </div>
             ) : (
+              /* No Results State */
               <div className="py-12 text-center">
-                <p className={theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'}>
-                  No results for "{query}"
+                <SearchIcon className={cn(
+                  "w-12 h-12 mx-auto mb-3",
+                  theme === 'dark' ? 'text-zinc-700' : 'text-gray-300'
+                )} />
+                <p className={cn(
+                  "font-medium mb-1",
+                  theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+                )}>
+                  No results found
+                </p>
+                <p className={cn(
+                  "text-sm mb-4",
+                  theme === 'dark' ? 'text-zinc-600' : 'text-gray-400'
+                )}>
+                  No foods match "{query}"
                 </p>
                 <button
                   onClick={() => navigate('/custom-foods')}
-                  className="mt-2 text-emerald-500 text-sm font-medium"
+                  className="text-emerald-500 text-sm font-medium hover:underline"
                 >
                   Create custom food
                 </button>
