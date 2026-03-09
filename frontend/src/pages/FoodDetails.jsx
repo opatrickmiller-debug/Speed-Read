@@ -667,7 +667,7 @@ export const FoodDetails = () => {
             </DialogHeader>
             
             <div className="space-y-5 pt-4">
-              {/* How much? - Two input modes */}
+              {/* How much? - Single input with unit selector */}
               <div>
                 <label className={cn(
                   "block text-sm font-medium mb-3",
@@ -676,84 +676,37 @@ export const FoodDetails = () => {
                   How much?
                 </label>
                 
-                {/* Direct gram input - always visible at top */}
-                <div className={cn(
-                  "flex items-center gap-2 p-3 rounded-lg mb-3",
-                  theme === 'dark' ? 'bg-zinc-800/50' : 'bg-gray-50'
-                )}>
-                  <Input
-                    type="number"
-                    value={portionUnit === 'g' ? portionAmount : ''}
-                    onChange={(e) => {
-                      setSelectedServing(null);
-                      setPortionUnit('g');
-                      setPortionAmount(parseFloat(e.target.value) || 0);
-                    }}
-                    placeholder="Enter grams"
-                    data-testid="gram-input"
-                    className={cn(
-                      "h-10 text-lg font-medium flex-1",
-                      theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-gray-200'
-                    )}
-                  />
-                  <span className={cn(
-                    "text-sm font-medium",
-                    theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
-                  )}>grams</span>
-                </div>
-                
-                <div className={cn(
-                  "text-center text-xs mb-3",
-                  theme === 'dark' ? 'text-zinc-500' : 'text-gray-400'
-                )}>— or select a serving size —</div>
-                
-                {/* Serving size selector */}
+                {/* Amount input + Unit selector */}
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
-                    value={portionUnit !== 'g' ? portionAmount : 1}
+                    value={portionAmount}
                     onChange={(e) => setPortionAmount(parseFloat(e.target.value) || 0)}
                     min={0.1}
-                    step={0.5}
+                    step={0.1}
+                    placeholder="Amount"
                     data-testid="portion-amount-input"
                     className={cn(
-                      "h-12 text-lg font-medium w-20 text-center",
-                      theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-gray-50 border-gray-200',
-                      portionUnit === 'g' && 'opacity-50'
+                      "h-12 text-lg font-medium w-24 text-center",
+                      theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-gray-50 border-gray-200'
                     )}
-                    disabled={portionUnit === 'g'}
                   />
                   
-                  <span className={cn(
-                    "text-sm",
-                    theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
-                  )}>
-                    ×
-                  </span>
-                  
-                  {/* Serving dropdown - includes USDA servings + standard units */}
+                  {/* Unit dropdown - USDA servings + standard units */}
                   <select
                     value={selectedServing ? `usda_${selectedServing.grams}` : portionUnit}
                     onChange={(e) => {
                       const val = e.target.value;
-                      if (val === 'g') {
-                        setSelectedServing(null);
-                        setPortionUnit('g');
-                        setPortionAmount(100); // Default to 100g
-                      } else if (val.startsWith('usda_')) {
-                        // USDA serving selected
+                      if (val.startsWith('usda_')) {
                         const grams = parseFloat(val.replace('usda_', ''));
                         const serving = food?.servings?.find(s => s.grams === grams);
                         if (serving) {
                           setSelectedServing(serving);
                           setPortionUnit('usda_serving');
-                          setPortionAmount(1);
                         }
                       } else {
-                        // Standard unit selected
                         setSelectedServing(null);
                         setPortionUnit(val);
-                        setPortionAmount(1);
                       }
                     }}
                     data-testid="serving-selector"
@@ -764,54 +717,53 @@ export const FoodDetails = () => {
                         : 'bg-gray-50 border-gray-200 text-gray-900'
                     )}
                   >
+                    {/* Standard Units - at top for easy access */}
+                    <optgroup label="Units">
+                      <option value="g">g (grams)</option>
+                      <option value="oz">oz (ounce)</option>
+                      <option value="lb">lb (pound)</option>
+                      <option value="cup">cup</option>
+                      <option value="tbsp">tbsp</option>
+                      <option value="tsp">tsp</option>
+                    </optgroup>
+                    
                     {/* USDA Servings */}
                     {food?.servings && food.servings.length > 0 && (
-                      <optgroup label="Servings">
+                      <optgroup label="Serving Sizes">
                         {food.servings.map((serving, idx) => (
                           <option key={`usda_${idx}`} value={`usda_${serving.grams}`}>
-                            {serving.description || `${serving.grams}g`}
+                            {serving.description || `${serving.grams}g serving`}
                           </option>
                         ))}
                       </optgroup>
                     )}
-                    
-                    {/* Standard Units */}
-                    <optgroup label="Units">
-                      <option value="oz">1 oz (28g)</option>
-                      <option value="lb">1 lb (454g)</option>
-                      <option value="cup">1 cup (240g)</option>
-                      <option value="tbsp">1 tbsp (15g)</option>
-                      <option value="tsp">1 tsp (5g)</option>
-                    </optgroup>
                   </select>
                 </div>
                 
-                {/* Quick amount buttons - only show when not in gram mode */}
-                {portionUnit !== 'g' && (
-                  <div className="flex items-center gap-2 mt-3">
-                    <span className={cn(
-                      "text-xs",
-                      theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
-                    )}>Quick:</span>
-                    {[0.5, 1, 2, 3].map(amt => (
-                      <button
-                        key={amt}
-                        onClick={() => setPortionAmount(amt)}
-                        data-testid={`quick-${amt}`}
-                        className={cn(
-                          "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                          portionAmount === amt
-                            ? 'bg-emerald-500 text-black'
-                            : theme === 'dark'
-                              ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        )}
-                      >
-                        {amt === 0.5 ? '½' : amt}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {/* Quick amount buttons */}
+                <div className="flex items-center gap-2 mt-3">
+                  <span className={cn(
+                    "text-xs",
+                    theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'
+                  )}>Quick:</span>
+                  {[0.5, 1, 2, 3].map(amt => (
+                    <button
+                      key={amt}
+                      onClick={() => setPortionAmount(amt)}
+                      data-testid={`quick-${amt}`}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                        portionAmount === amt
+                          ? 'bg-emerald-500 text-black'
+                          : theme === 'dark'
+                            ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      )}
+                    >
+                      {amt === 0.5 ? '½' : amt}
+                    </button>
+                  ))}
+                </div>
               </div>
               
               {/* Total = Xg */}
