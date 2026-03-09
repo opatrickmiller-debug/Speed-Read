@@ -15,17 +15,27 @@ logger = logging.getLogger(__name__)
 
 # Import cache module
 from core.cache import init_cache, close_cache, cache
+from core.database import ensure_indexes
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events - startup and shutdown"""
     # Startup
     logger.info("Starting up application...")
+    
+    # Initialize Redis cache
     redis_connected = await init_cache()
     if redis_connected:
         logger.info("Redis cache initialized successfully")
     else:
         logger.warning("Redis not available - running without caching")
+    
+    # Ensure MongoDB indexes
+    try:
+        await ensure_indexes()
+        logger.info("MongoDB indexes ensured")
+    except Exception as e:
+        logger.warning(f"Could not ensure indexes: {e}")
     
     yield
     
