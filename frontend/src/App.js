@@ -117,7 +117,7 @@ function App() {
   
   return (
     <ThemeProvider>
-      <div className="App" style={{ height: 'auto', minHeight: '100vh', overflow: 'visible' }}>
+      <div className="App">
         <BrowserRouter>
           <AuthProvider>
             <AppRoutes />

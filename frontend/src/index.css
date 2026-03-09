@@ -34,10 +34,15 @@
     box-sizing: border-box;
 }
 
+/* CRITICAL: Scrolling fix - html and body must allow scrolling */
 html {
     background-color: #050505;
-    height: auto;
+    height: auto !important;
     min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: scroll !important;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
 }
 
 body {
@@ -46,17 +51,30 @@ body {
     -moz-osx-font-smoothing: grayscale;
     background-color: #050505;
     color: #FAFAFA;
-    min-height: 100vh;
-    min-height: 100dvh;
-    height: auto;
+    height: auto !important;
+    min-height: 100%;
     overflow-x: hidden;
     overflow-y: scroll !important;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: auto;
+    touch-action: pan-y pan-x;
     
     /* Safe area padding for notched devices */
     padding-top: var(--safe-area-inset-top);
     padding-left: var(--safe-area-inset-left);
     padding-right: var(--safe-area-inset-right);
+}
+
+#root {
+    height: auto !important;
+    min-height: 100vh;
+    overflow: visible !important;
+}
+
+.App {
+    height: auto !important;
+    min-height: 100vh;
+    overflow: visible !important;
 }
 
 /* Allow text selection in input fields and text areas */
@@ -118,241 +136,44 @@ code {
     background-image: 
         linear-gradient(to right, rgba(128, 128, 128, 0.07) 1px, transparent 1px),
         linear-gradient(to bottom, rgba(128, 128, 128, 0.07) 1px, transparent 1px);
-    background-size: 24px 24px;
+    background-size: 50px 50px;
 }
 
-/* Hero gradient */
+/* Hero glow effect */
 .hero-glow {
-    background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.15) 0%, transparent 60%);
+    background: radial-gradient(
+        ellipse 80% 50% at 50% -20%,
+        rgba(16, 185, 129, 0.15),
+        transparent 50%
+    );
 }
 
-/* Noise texture overlay */
-.noise-overlay::after {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    opacity: 0.03;
-    pointer-events: none;
-    z-index: 9999;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+/* Touch optimization - only for buttons, NOT body */
+button, a, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
 }
 
-/* Animation keyframes */
-@keyframes pulse-glow {
-    0%, 100% {
-        box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
-    }
-    50% {
-        box-shadow: 0 0 40px rgba(16, 185, 129, 0.6);
-    }
+/* Prevent text selection on buttons */
+button {
+    -webkit-user-select: none;
+    user-select: none;
 }
 
-@keyframes float {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-10px);
-    }
+/* Fixed elements should respect safe areas */
+.fixed-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.fixed-top {
+    padding-top: env(safe-area-inset-top);
 }
 
-.animate-pulse-glow {
-    animation: pulse-glow 2s ease-in-out infinite;
-}
-
-.animate-float {
-    animation: float 3s ease-in-out infinite;
-}
-
-.animate-fade-in {
-    animation: fadeIn 0.5s ease-out forwards;
-}
-
-/* Stagger animations */
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
-.stagger-4 { animation-delay: 0.4s; }
-.stagger-5 { animation-delay: 0.5s; }
-
-@layer base {
-    :root {
-        --background: 0 0% 2%;
-        --foreground: 0 0% 98%;
-        --card: 0 0% 5%;
-        --card-foreground: 0 0% 98%;
-        --popover: 0 0% 5%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 160 84% 39%;
-        --primary-foreground: 0 0% 2%;
-        --secondary: 0 0% 10%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 0 0% 10%;
-        --muted-foreground: 0 0% 64%;
-        --accent: 0 0% 10%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 350 89% 60%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 12%;
-        --input: 0 0% 12%;
-        --ring: 160 84% 39%;
-        --radius: 0.75rem;
-    }
-}
-
-@layer base {
-    * {
-        @apply border-border;
-    }
-    body {
-        @apply bg-background text-foreground;
-    }
-}
-
-/* Recharts customization */
-.recharts-default-tooltip {
-    background: #18181B !important;
-    border: 1px solid #27272A !important;
-    border-radius: 12px !important;
-}
-
-.recharts-tooltip-label {
-    color: #FAFAFA !important;
-}
-
-.recharts-polar-grid-angle line,
-.recharts-polar-grid-concentric circle {
-    stroke: #27272A !important;
-}
-
-.recharts-polar-angle-axis-tick-value {
-    fill: #A1A1AA !important;
-    font-size: 11px !important;
-}
-
-/* Quagga barcode scanner styles */
-#scanner-container video,
-#scanner-container canvas {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-}
-
-#scanner-container canvas.drawingBuffer {
-    display: none !important;
-}
-
-/* Mobile responsive utilities */
+/* Mobile keyboard handling */
 @media (max-width: 768px) {
-    .hide-mobile {
-        display: none !important;
+    input, textarea, select {
+        font-size: 16px;
     }
 }
-
-@media (min-width: 769px) {
-    .hide-desktop {
-        display: none !important;
-    }
-}
-
-/* Safe area insets for iOS */
-.safe-area-inset-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-.safe-area-inset-top {
-    padding-top: env(safe-area-inset-top, 0px);
-}
-
-/* Better touch targets on mobile */
-@media (max-width: 768px) {
-    button, 
-    a,
-    [role="button"] {
-        min-height: 44px;
-    }
-    
-    input,
-    select,
-    textarea {
-        font-size: 16px !important; /* Prevent iOS zoom on focus */
-    }
-}
-
-/* Slide in animation for mobile menu */
-@keyframes slideInFromBottom {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.animate-in.slide-in-from-bottom-4 {
-    animation: slideInFromBottom 0.2s ease-out forwards;
-}
-
-/* Mobile-friendly card spacing */
-@media (max-width: 768px) {
-    .p-6 {
-        padding: 1rem;
-    }
-    
-    .p-8 {
-        padding: 1.25rem;
-    }
-    
-    .gap-6 {
-        gap: 1rem;
-    }
-}
-
-/* Ensure proper overflow handling - IMPORTANT: These override earlier rules */
-html, body {
-    height: auto !important;
-    min-height: 100% !important;
-    max-height: none !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-}
-
-#root {
-    height: auto !important;
-    min-height: 100vh;
-    min-height: 100dvh;
-    max-height: none !important;
-    overflow: visible !important;
-}
-
-.App {
-    height: auto !important;
-    min-height: 100vh;
-    min-height: 100dvh;
-    max-height: none !important;
-    overflow: visible !important;
-}
-
 
 /* Quagga2 barcode scanner styling */
 #scanner-container {
@@ -380,4 +201,11 @@ html, body {
 
 #scanner-container canvas.drawingBuffer {
     display: none !important;
+}
+
+/* Light theme overrides */
+.light {
+    --bg-default: #F9FAFB;
+    --bg-surface: #FFFFFF;
+    --bg-surface-hover: #F3F4F6;
 }
