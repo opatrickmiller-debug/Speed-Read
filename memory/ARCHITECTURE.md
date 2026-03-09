@@ -6,7 +6,54 @@ For rules on **how to safely modify the system**, see `/memory/AI_ENGINEERING_RU
 
 ---
 
-## System Overview
+## Core Principles
+
+The app is organized around four distinct concerns:
+
+1. **Canonical Food Data**
+2. **Serving Conversion**
+3. **Nutrition Calculation**
+4. **User Activity / Logs**
+
+These concerns must remain separated.
+
+### Non-Negotiable Rules
+
+- Food nutrition is stored canonically **per 100g**.
+- Serving units are only **gram conversion definitions**.
+- Nutrition calculations must happen in **one backend engine**.
+- Logged foods must be stored as **immutable nutrition snapshots**.
+- Search/ranking logic must remain separate from nutrition calculation logic.
+- All food sources must be normalized into one internal schema before use.
+
+---
+
+## Architecture Overview
+
+```
+External Sources
+  ├── USDA
+  ├── Open Food Facts
+  └── User-Created Foods
+          │
+          ▼
+   Food Normalization Layer
+          │
+          ▼
+   Canonical Food Storage
+          │
+          ├── Search / Ranking
+          ├── Food Details
+          ├── Serving Conversion
+          └── Nutrition Engine
+                     │
+                     ▼
+              User Food Logs
+```
+
+---
+
+## System Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
