@@ -13,6 +13,7 @@ from core.security import get_current_user
 from models.stored_food import StoredFoodCreate, StoredFoodUpdate
 from services.nutrition_calculator import NutritionCalculator
 from services.fdc_client import fdc_client
+from services.food_normalizer import normalizer
 
 router = APIRouter(prefix="/stored-foods", tags=["Stored Foods"])
 
@@ -28,43 +29,20 @@ async def get_food_hybrid(food_id: str) -> Optional[dict]:
     # 1. Check local MongoDB first
     local_food = await db.foods.find_one({"_id": food_id})
     if local_food:
-        return {
-            "id": local_food["_id"],
-            "name": local_food["name"],
-            "nutrition": local_food.get("nutrition", {}),
-            "amino_acids": local_food.get("amino_acids", {}),
-            "fatty_acids": local_food.get("fatty_acids", {}),
-            "base_amount": local_food.get("base_amount", 100),
-            "servings": local_food.get("servings", []),
-            "source": "local"
-        }
+        normalized = normalizer.from_stored(local_food)
+        result = normalized.to_calculator_format()
+        result["source"] = "local"
+        return result
     
     # 2. Fallback to USDA
     usda_raw = await fdc_client.get_food_details(food_id)
     if usda_raw:
-        food_detail = fdc_client.parse_food_detail(usda_raw)
         amino_acids = fdc_client.extract_amino_acids(usda_raw)
         fatty_acids = fdc_client.extract_fatty_acids(usda_raw)
-        
-        return {
-            "id": food_detail.fdc_id,
-            "name": food_detail.description,
-            "nutrition": {
-                "calories": food_detail.calories,
-                "protein": food_detail.protein,
-                "fat": food_detail.fat,
-                "carbs": food_detail.carbs,
-                "fiber": food_detail.fiber
-            },
-            "amino_acids": {aa.name: aa.value for aa in amino_acids},
-            "fatty_acids": {fa.name: fa.value for fa in fatty_acids},
-            "base_amount": 100,
-            "servings": [
-                {"unit": s.unit, "description": s.description, "grams": s.grams}
-                for s in food_detail.servings
-            ],
-            "source": "usda"
-        }
+        normalized = normalizer.from_usda(usda_raw, amino_acids, fatty_acids)
+        result = normalized.to_calculator_format()
+        result["source"] = "usda"
+        return result
     
     return None
 
