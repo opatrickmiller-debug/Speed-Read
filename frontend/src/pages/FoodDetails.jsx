@@ -90,7 +90,7 @@ export const FoodDetails = () => {
 
   // Get serving label (e.g., "1 large egg (50g)")
   const getServingLabel = () => {
-    if (selectedServing) return selectedServing.label;
+    if (selectedServing) return selectedServing.description || `${selectedServing.grams}g`;
     const weight = getServingWeight();
     if (food?.serving_description) {
       return `${food.serving_description} (${weight}g)`;
@@ -730,7 +730,7 @@ export const FoodDetails = () => {
                       <optgroup label="Servings">
                         {food.servings.map((serving, idx) => (
                           <option key={`usda_${idx}`} value={`usda_${serving.grams}`}>
-                            {serving.label}
+                            {serving.description || `${serving.grams}g`}
                           </option>
                         ))}
                       </optgroup>
