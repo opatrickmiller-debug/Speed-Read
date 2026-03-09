@@ -362,7 +362,7 @@ export const FoodDetails = () => {
   return (
     <Layout>
       <div className={cn(
-        "min-h-screen pb-24",
+        "min-h-screen pb-40",
         theme === 'dark' ? 'bg-zinc-950' : 'bg-gray-50'
       )}>
         {/* Header */}
@@ -635,38 +635,28 @@ export const FoodDetails = () => {
 
         {/* Fixed Log Food Buttons */}
         <div className={cn(
-          "fixed bottom-0 left-0 right-0 p-4 border-t",
+          "fixed bottom-20 md:bottom-0 left-0 right-0 p-4 border-t z-40",
           theme === 'dark' ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-gray-200'
         )}>
-          <div className="max-w-2xl mx-auto space-y-2">
+          <div className="max-w-2xl mx-auto">
             {/* Quick 1-Tap Log Button */}
             <button
               onClick={handleQuickLog}
               disabled={quickLogging}
               data-testid="quick-log-btn"
               className={cn(
-                "w-full flex items-center justify-center gap-2 font-bold py-3 rounded-xl transition-colors",
+                "w-full flex items-center justify-center gap-2 font-bold py-4 rounded-xl transition-colors text-lg",
                 theme === 'dark' 
-                  ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30'
-                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200'
+                  ? 'bg-emerald-500 hover:bg-emerald-400 text-black'
+                  : 'bg-emerald-500 hover:bg-emerald-400 text-white'
               )}
             >
               {quickLogging ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
-                <Plus className="w-4 h-4" />
+                <Plus className="w-5 h-5" />
               )}
-              Log 1 Serving ({getServingWeight()}g)
-            </button>
-            
-            {/* Custom Portion Button */}
-            <button
-              onClick={() => setLogModalOpen(true)}
-              data-testid="log-food-btn"
-              className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-4 rounded-xl transition-colors text-lg"
-            >
-              <Plus className="w-5 h-5" />
-              Log Custom Portion
+              Add
             </button>
           </div>
         </div>
