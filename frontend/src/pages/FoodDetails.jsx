@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { Input } from '../components/ui/input';
 
 export const FoodDetails = () => {
   const { fdcId } = useParams();
@@ -678,17 +677,20 @@ export const FoodDetails = () => {
                 
                 {/* Amount input + Unit selector */}
                 <div className="flex items-center gap-2">
-                  <Input
+                  <input
                     type="number"
                     value={portionAmount}
                     onChange={(e) => setPortionAmount(parseFloat(e.target.value) || 0)}
                     min={0.1}
                     step={0.1}
-                    placeholder="Amount"
+                    placeholder="0"
+                    inputMode="decimal"
                     data-testid="portion-amount-input"
                     className={cn(
-                      "h-12 text-lg font-medium w-24 text-center",
-                      theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-gray-50 border-gray-200'
+                      "h-12 text-lg font-medium w-24 text-center rounded-lg border",
+                      theme === 'dark' 
+                        ? 'bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
                     )}
                   />
                   
