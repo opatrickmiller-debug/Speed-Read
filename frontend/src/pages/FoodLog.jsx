@@ -398,16 +398,17 @@ export const FoodLog = () => {
                           </p>
                         </div>
                         
-                        {/* Delete Button */}
+                        {/* Delete Button - Always visible on mobile */}
                         <button
                           onClick={() => handleDelete(log.id)}
                           disabled={deleting === log.id}
                           data-testid={`delete-${log.id}`}
                           className={cn(
-                            "p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100",
+                            "p-2 rounded-lg transition-all",
+                            "md:opacity-0 md:group-hover:opacity-100",
                             theme === 'dark' 
-                              ? 'text-zinc-600 hover:text-red-400 hover:bg-red-500/10' 
-                              : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                              ? 'text-red-400 hover:bg-red-500/10' 
+                              : 'text-red-500 hover:bg-red-50'
                           )}
                         >
                           {deleting === log.id ? (
