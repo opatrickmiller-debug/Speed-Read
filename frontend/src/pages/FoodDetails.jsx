@@ -639,11 +639,10 @@ export const FoodDetails = () => {
           theme === 'dark' ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-gray-200'
         )}>
           <div className="max-w-2xl mx-auto">
-            {/* Quick 1-Tap Log Button */}
+            {/* Add Button - Opens portion selection modal */}
             <button
-              onClick={handleQuickLog}
-              disabled={quickLogging}
-              data-testid="quick-log-btn"
+              onClick={() => setLogModalOpen(true)}
+              data-testid="log-food-btn"
               className={cn(
                 "w-full flex items-center justify-center gap-2 font-bold py-4 rounded-xl transition-colors text-lg",
                 theme === 'dark' 
@@ -651,11 +650,7 @@ export const FoodDetails = () => {
                   : 'bg-emerald-500 hover:bg-emerald-400 text-white'
               )}
             >
-              {quickLogging ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Plus className="w-5 h-5" />
-              )}
+              <Plus className="w-5 h-5" />
               Add
             </button>
           </div>
