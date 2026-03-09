@@ -1,352 +1,501 @@
-# AI Engineering Rules for Keto Nutrition Tracker
+# AI Engineering Rules
 
-> **Role**: Principal Software Architect responsible for maintaining system-wide integrity.
+This document defines the required workflow for any AI agent making changes in this repository.
 
----
-
-## Pre-Implementation Checklist
-
-### 1. Repository Scan
-Before implementing ANY change, perform a full repository scan:
-
-```bash
-# Understand the architecture
-find /app/backend -name "*.py" | head -30
-find /app/frontend/src -name "*.jsx" | head -30
-
-# Check for existing patterns
-grep -rn "PATTERN" /app/backend /app/frontend/src
-```
-
-### 2. Build Dependency Graph
-
-For every requested change, map the impact across:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    DEPENDENCY GRAPH                              │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  MongoDB Schema                                                  │
-│       ↓                                                          │
-│  Pydantic Models (/backend/models/)                             │
-│       ↓                                                          │
-│  Services (/backend/services/)                                  │
-│       ↓                                                          │
-│  API Routes (/backend/routes/)                                  │
-│       ↓                                                          │
-│  API Client (/frontend/src/lib/api.js)                         │
-│       ↓                                                          │
-│  React Pages (/frontend/src/pages/)                            │
-│       ↓                                                          │
-│  Components (/frontend/src/components/)                        │
-│       ↓                                                          │
-│  Charts & Visualizations                                        │
-│       ↓                                                          │
-│  User Workflows                                                  │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 3. Identify ALL Affected Files
-
-**NEVER modify a single file in isolation.**
-
-Use this checklist:
-
-```markdown
-## Change: [Description]
-
-### Backend Files
-- [ ] /backend/models/[model].py
-- [ ] /backend/services/[service].py
-- [ ] /backend/routes/[route].py
-- [ ] /backend/core/database.py (if schema change)
-
-### Frontend Files
-- [ ] /frontend/src/lib/api.js
-- [ ] /frontend/src/pages/[Page].jsx
-- [ ] /frontend/src/components/[Component].jsx
-
-### Tests
-- [ ] /backend/tests/test_[feature].py
-- [ ] /frontend/src/tests/[Feature].test.jsx
-```
+These rules are mandatory for all backend, frontend, data model, API, search, nutrition, and logging changes.
 
 ---
 
-## Implementation Plan Template
+## Purpose
 
-Before writing code, create this plan:
+This file does **not** define product architecture.  
+It defines **how changes must be made safely**.
 
-```markdown
-## Implementation Plan
+Use this together with:
 
-### 1. Change Summary
-- What: [Brief description]
-- Why: [Business reason]
-- Risk: [Low/Medium/High]
+- `/memory/ARCHITECTURE.md`
 
-### 2. Affected Layers
-| Layer | File(s) | Changes |
-|-------|---------|---------|
-| MongoDB | - | [Schema changes] |
-| Models | /models/X.py | [Field additions/removals] |
-| Services | /services/X.py | [Logic changes] |
-| Routes | /routes/X.py | [Endpoint changes] |
-| API Client | api.js | [New methods] |
-| Pages | Page.jsx | [UI changes] |
-| Components | Component.jsx | [Prop changes] |
+### Difference
 
-### 3. Migration Required?
-- [ ] Database migration needed
-- [ ] Data backfill required
-- [ ] Breaking API change
-
-### 4. Rollback Plan
-[How to revert if something goes wrong]
-```
+- `ARCHITECTURE.md` = what the system should look like
+- `AI_ENGINEERING_RULES.md` = how to safely modify the system
 
 ---
 
-## Consistency Rules
+## Core Rule
 
-### MongoDB ↔ Pydantic ↔ API ↔ Frontend
+Never modify a file in isolation without checking the entire dependency chain first.
 
-**All layers MUST match:**
-
-```python
-# MongoDB Document
-{
-    "_id": ObjectId,
-    "user_id": str,
-    "food_name": str,        # Field name
-    "calories": float        # Field type
-}
-
-# Pydantic Model
-class FoodLog(BaseModel):
-    id: str
-    user_id: str
-    food_name: str           # MUST match MongoDB
-    calories: float          # MUST match MongoDB
-
-# API Response
-{
-    "id": "...",
-    "user_id": "...",
-    "food_name": "...",      # MUST match Pydantic
-    "calories": 150.0        # MUST match Pydantic
-}
-
-# Frontend Usage
-const { food_name, calories } = response;  // MUST match API
-```
-
-### Naming Conventions
-
-| Layer | Convention | Example |
-|-------|------------|---------|
-| MongoDB | snake_case | `user_id`, `food_name` |
-| Pydantic | snake_case | `user_id`, `food_name` |
-| API Response | snake_case | `user_id`, `food_name` |
-| Frontend JS | camelCase | `userId`, `foodName` |
-| React Props | camelCase | `userId`, `foodName` |
+Any meaningful code change must be treated as a **system change**, not a local edit.
 
 ---
 
-## Post-Implementation Checklist
+## Required Workflow for Every Significant Change
 
-### 1. Search for Outdated References
+For any non-trivial feature, refactor, schema change, API change, or calculation change, the AI agent must follow this workflow:
 
-```bash
-# Search for old field names
-grep -rn "OLD_FIELD_NAME" /app/backend /app/frontend/src
+### Step 1 — Repository Scan
 
-# Search for broken imports
-grep -rn "from.*OLD_MODULE" /app/backend /app/frontend/src
+Before editing code, scan the repository and identify all potentially impacted layers.
 
-# Search for old API endpoints
-grep -rn "OLD_ENDPOINT" /app/frontend/src
-```
+At minimum, inspect:
 
-### 2. Validate API Contracts
+#### Backend
+- routes
+- services
+- models/schemas
+- database access
+- cache logic
+- auth/security logic
 
-```bash
-# Test endpoint responses match frontend expectations
-curl -s API_URL/endpoint | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-required_fields = ['field1', 'field2', 'field3']
-missing = [f for f in required_fields if f not in d]
-if missing:
-    print(f'MISSING FIELDS: {missing}')
-    sys.exit(1)
-print('✅ All fields present')
-"
-```
+#### Frontend
+- API client
+- React pages
+- shared components
+- charts/visualizations
+- context/state usage
+- utility functions
 
-### 3. Feature Validation Checklist
-
-After ANY change, verify these features still work:
-
-| Feature | Test Method | Endpoint(s) |
-|---------|-------------|-------------|
-| ✅ Food Search | Manual + curl | `GET /api/foods/search` |
-| ✅ Food Details | Manual + curl | `GET /api/foods/{id}` |
-| ✅ Nutrition Calculation | curl | `POST /api/foods/calculate` |
-| ✅ Food Logging | curl | `POST /api/logs` |
-| ✅ Meal Builder | Screenshot | `/meal-builder` |
-| ✅ Barcode Scanning | Manual | `GET /api/barcode/{code}` |
-| ✅ Custom Foods | curl | `GET/POST /api/custom-foods` |
-| ✅ Stats & Trends | curl | `GET /api/stats/daily` |
-| ✅ Nutrition Charts | Screenshot | `/food/{id}` |
+#### Data
+- MongoDB collections
+- Pydantic models
+- API response contracts
+- cached payloads
 
 ---
 
-## Change Summary Template
+### Step 2 — Dependency Mapping
 
-After implementing, provide this summary:
+Before making edits, identify:
 
-```markdown
-## Change Summary
+- which files import or call the affected code
+- which API endpoints are impacted
+- which services depend on the change
+- which frontend pages/components consume the changed data
+- which charts or visualizations use the changed fields
+- which collections or indexes are affected
 
-### Files Changed
-| File | Change Type | Reason |
-|------|-------------|--------|
-| /path/to/file.py | Modified | [Reason] |
-| /path/to/file.jsx | Created | [Reason] |
-
-### Migrations Required
-- [ ] MongoDB index: `db.collection.create_index(...)`
-- [ ] Data backfill: [Script path]
-- [ ] Schema migration: [Description]
-
-### API Changes
-| Endpoint | Change | Breaking? |
-|----------|--------|-----------|
-| `GET /api/x` | Added field `y` | No |
-| `POST /api/z` | Removed field `w` | Yes |
-
-### Potential Risks
-1. [Risk description and mitigation]
-2. [Risk description and mitigation]
-
-### Testing Done
-- [x] Backend lint passed
-- [x] Frontend build passed
-- [x] API endpoints tested
-- [x] UI screenshot verified
-```
+The AI must think through the full dependency graph before implementation.
 
 ---
 
-## Critical Data Models Reference
+### Step 3 — Impact List
 
-### ServingSize (Canonical)
-```python
-class ServingSize(BaseModel):
-    unit: str                # "g", "oz", "cup", "large_egg"
-    description: Optional[str]  # "1 large egg (50g)"
-    grams: float             # 50.0
-```
+Before writing code, produce an internal checklist of all files likely to require updates.
 
-### FoodDetail (Canonical)
-```python
-class FoodDetail(BaseModel):
-    fdc_id: str
-    description: str
-    calories: float
-    protein: float
-    fat: float
-    carbs: float
-    fiber: float
-    servings: List[ServingSize]
-    amino_acids: List[AminoAcid]
-    fatty_acids: List[FattyAcid]
-```
+This includes direct and indirect dependencies.
 
-### NutritionCalculator Format
-```python
-{
-    "name": "Egg",
-    "nutrition": {"calories": 155, "protein": 13, "fat": 11, "carbs": 1.1},
-    "amino_acids": {"lysine": 0.9, "methionine": 0.4},
-    "fatty_acids": {"omega3": 0.05, "omega6": 1.2},
-    "base_amount": 100,
-    "servings": [
-        {"unit": "egg", "description": "1 large egg", "grams": 50},
-        {"unit": "g", "description": "1 gram", "grams": 1}
-    ]
-}
-```
+Examples:
+- if a schema changes, update models, routes, frontend usage, charts, and tests
+- if an endpoint changes, update API client and all consuming pages
+- if nutrition math changes, update all consumers of nutrition outputs
 
 ---
 
-## MongoDB Collections Reference
+### Step 4 — Plan Before Edit
 
-| Collection | Primary Key | Indexes |
-|------------|-------------|---------|
-| `users` | `id` | `email` (unique), `id` (unique) |
-| `food_logs` | `id` | `user_id + logged_at`, `fdc_id` |
-| `foods` | `_id` | `name` (text) |
-| `favorites` | `id` | `user_id`, `user_id + fdc_id` (unique) |
-| `custom_meals` | `id` | `user_id`, `is_public` |
-| `custom_foods` | `id` | `user_id` |
-| `food_popularity` | `food_id` | `count`, `food_id` (unique) |
+Before changing code, define:
 
----
+- what will change
+- why it will change
+- which files must be updated
+- what must remain backward compatible
+- what might break if not updated everywhere
 
-## API Endpoints Reference
-
-### Auth
-- `POST /api/auth/register` - Create account
-- `POST /api/auth/login` - Login
-- `GET /api/auth/me` - Current user
-- `PUT /api/auth/settings` - Update settings
-
-### Foods
-- `GET /api/foods/search?q=` - Search foods
-- `GET /api/foods/autocomplete?q=` - Fast suggestions
-- `GET /api/foods/{fdc_id}` - Food details
-- `POST /api/foods/calculate` - Calculate nutrition
-- `GET /api/foods/categories` - Food categories
-- `GET /api/foods/recent` - Recent foods
-
-### Logs
-- `GET /api/logs?date=` - Get logs by date
-- `POST /api/logs` - Log food
-- `POST /api/logs/quick` - Quick log
-- `DELETE /api/logs/{id}` - Delete log
-
-### Stats
-- `GET /api/stats/daily?date=` - Daily stats
-- `GET /api/stats/weekly` - Weekly stats
-- `GET /api/nutrition-score` - Nutrition score
+Do not start by editing random files opportunistically.
 
 ---
 
-## Quick Commands
+### Step 5 — Implement Across the Full Stack
 
-```bash
-# Lint backend
-cd /app/backend && ruff check .
+When implementing, update all necessary layers consistently.
 
-# Lint frontend
-cd /app/frontend && yarn lint
+#### Backend
+- schemas/models
+- repositories
+- services
+- routes
+- validators
+- caching logic if needed
 
-# Build frontend
-cd /app/frontend && yarn build
+#### Frontend
+- API client
+- page-level consumers
+- reusable components
+- chart data adapters
+- related utility functions
 
-# Test API endpoint
-API_URL=$(grep REACT_APP_BACKEND_URL /app/frontend/.env | cut -d '=' -f2)
-curl -s "$API_URL/api/endpoint"
-
-# Restart services
-sudo supervisorctl restart backend
-sudo supervisorctl restart frontend
-```
+#### Data/Contracts
+- Mongo document shape
+- API response shape
+- component prop expectations
+- derived chart inputs
 
 ---
 
-*Last Updated: March 2026*
+### Step 6 — Repo-Wide Verification Pass
+
+After implementation, search the repository for:
+
+- old field names
+- deprecated endpoint paths
+- stale imports
+- outdated response shape assumptions
+- duplicated old logic
+- broken references
+- mismatched naming conventions
+
+Fix all affected occurrences.
+
+---
+
+### Step 7 — Regression Check
+
+After code changes, verify that related workflows still logically function.
+
+At minimum, check these flows when relevant:
+
+- food search
+- autocomplete
+- food details
+- serving selection
+- nutrition calculation
+- food logging
+- custom foods
+- meal builder
+- meal library
+- barcode lookup
+- nutrition score
+- keto score
+- amino acid chart
+- fatty acid chart
+- dashboard stats
+- trends/stats queries
+
+---
+
+## Mandatory Change Rules
+
+### 1. Never Change One Layer Only
+
+If a field, schema, endpoint, or data shape changes, the AI must update every dependent layer.
+
+Examples:
+- backend model only = not enough
+- route response only = not enough
+- frontend usage only = not enough
+
+All affected layers must be aligned.
+
+---
+
+### 2. Do Not Duplicate Business Logic
+
+If logic already exists in a service, do not recreate it elsewhere.
+
+This is especially important for:
+
+- nutrition calculation
+- serving conversion
+- scoring logic
+- search ranking
+- food normalization
+
+If logic is duplicated, consolidate it into the appropriate service layer.
+
+---
+
+### 3. Keep Routes Thin
+
+Routes should:
+- validate input
+- call services
+- return responses
+
+Routes should not become the primary place for:
+- calculation logic
+- normalization logic
+- search ranking logic
+- database orchestration
+- repeated business rules
+
+If a route is becoming large, extract service/repository logic.
+
+---
+
+### 4. Frontend Must Not Reimplement Backend Rules
+
+Frontend code may display options and render responses.
+
+Frontend code must not become the source of truth for:
+- nutrition calculations
+- serving conversions
+- canonical food normalization
+- business-critical scoring logic
+
+If business logic is duplicated in frontend and backend, move the source of truth to backend.
+
+---
+
+### 5. Preserve Contract Stability
+
+Any API change must consider:
+- current frontend consumers
+- cached payloads
+- old route assumptions
+- chart inputs
+- historical data expectations
+
+Prefer backward-compatible additions over breaking renames.
+
+If a breaking change is unavoidable, update all consumers in the same change.
+
+---
+
+## Special Rules for Nutrition Data
+
+Any change affecting food or nutrition behavior must remain compatible with:
+
+- canonical food schema
+- serving schema
+- nutrition engine output
+- immutable food log schema
+- foods routes
+- stored foods routes
+- frontend food details views
+- meal builder
+- dashboard summaries
+- AminoAcidRadar
+- FattyAcidChart
+- NutritionScore
+- keto score calculations
+
+### Nutrition-Specific Requirements
+
+- per-100g nutrition remains canonical
+- serving units remain gram conversions
+- nutrition calculation remains centralized
+- historical food logs remain immutable snapshots
+- search logic stays separate from nutrition logic
+
+---
+
+## Special Rules for Data Model Changes
+
+If changing a model, schema, or Mongo document shape, the AI must check:
+
+- Pydantic models
+- repository queries
+- route serialization
+- frontend assumptions
+- log snapshots
+- tests/fixtures
+- indexes
+- seed/population scripts
+- caching keys or payloads
+
+No schema change is complete until all affected consumers are updated.
+
+---
+
+## Special Rules for Search Changes
+
+If changing food search, autocomplete, ranking, or popularity logic, the AI must verify:
+
+- search API routes
+- search service
+- popularity tracking
+- local food search behavior
+- USDA/OpenFoodFacts fallback behavior
+- frontend search result rendering
+- result ordering assumptions
+- caching behavior
+
+Search ranking logic must remain separate from nutrition calculation logic.
+
+---
+
+## Special Rules for Logging Changes
+
+If changing food logging behavior, the AI must verify:
+
+- nutrition is calculated server-side
+- grams are stored explicitly
+- nutrition snapshots are stored at log time
+- meal type handling remains correct
+- stats aggregation still works
+- historical logs remain stable
+
+Never redesign logging in a way that makes old logs silently change when food definitions change.
+
+---
+
+## File Size / Complexity Rules
+
+When a file becomes too large or has mixed responsibilities, prefer extraction.
+
+### Heuristics
+
+Strongly consider refactoring if a file:
+- exceeds ~400–500 lines
+- mixes UI, data fetching, and modal logic
+- handles multiple unrelated responsibilities
+- contains repeated inline transformation logic
+
+Typical extractions:
+- hooks
+- service helpers
+- presentation components
+- repositories
+- data adapters
+
+---
+
+## Naming and Consistency Rules
+
+Use consistent naming across layers.
+
+Avoid mixing formats like:
+- `fdc_id`
+- `fdcId`
+- `food_id`
+
+Choose a consistent convention per layer and map explicitly where necessary.
+
+When changing naming:
+- update all layers
+- do not leave mixed naming unless there is an intentional adapter boundary
+
+---
+
+## Performance Rules
+
+AI agents should consider performance whenever changing hot paths.
+
+### Hot Paths
+- search
+- autocomplete
+- food details
+- logging
+- daily stats
+- trend queries
+- nutrition calculations
+
+### Required Checks
+- can this query use an index?
+- is this response larger than necessary?
+- is this logic duplicated repeatedly?
+- should this be cached?
+- is this work being done in the route instead of a reusable service?
+
+Do not add premature complexity, but do not ignore obvious bottlenecks.
+
+---
+
+## Security Rules
+
+When changing backend code, always check for:
+
+- missing auth requirements
+- missing authorization checks
+- permissive CORS assumptions
+- hardcoded secrets
+- unsafe input handling
+- missing validation
+- unbounded query behavior
+- unbounded payload size
+
+Never introduce a new route without considering:
+- who can access it
+- what data it returns
+- whether it should be rate limited
+
+---
+
+## Testing Rules
+
+For meaningful changes, update or add tests where practical.
+
+At minimum, the AI should consider whether the change affects:
+
+- model validation
+- service outputs
+- API response contracts
+- frontend rendering assumptions
+- user workflows
+
+If no test is added, the AI should still perform a logical regression pass over affected flows.
+
+---
+
+## Documentation Rules
+
+When significant architecture, schema, or workflow changes are made, update the relevant memory/docs files.
+
+Examples:
+- `ARCHITECTURE.md`
+- setup docs
+- API docs
+- seed script docs
+- environment/config docs
+
+Documentation should evolve with the system.
+
+---
+
+## Preferred Decision Order
+
+When implementing a change, prefer this order of thinking:
+
+1. architecture/invariants
+2. data contracts
+3. backend services
+4. routes
+5. frontend API usage
+6. UI rendering
+7. caching/performance
+8. regression check
+
+This prevents UI-first hacks that break system integrity.
+
+---
+
+## Definition of Done
+
+A change is only complete when:
+
+1. all affected layers are updated
+2. old references are removed or migrated
+3. data contracts are aligned
+4. related flows still work
+5. no obvious stale logic remains
+6. architecture rules are still respected
+
+Code that "works in one file" is not done.
+
+---
+
+## Short Operational Version
+
+For every important change, the AI must:
+
+1. scan the repo
+2. map dependencies
+3. update all impacted layers
+4. search for stale references
+5. verify related workflows
+6. preserve architecture invariants
+
+---
+
+## One-Line Instruction for Agents
+
+If the user wants a simple instruction to reference this file, use:
+
+> Follow `/memory/ARCHITECTURE.md` and `/memory/AI_ENGINEERING_RULES.md` before implementing any significant change.
+
+---
+
+## Final Rule
+
+If unsure whether a change affects more than one layer, assume that it does and inspect the repository before editing.

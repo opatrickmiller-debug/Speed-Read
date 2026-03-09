@@ -3,8 +3,9 @@
 ## Original Problem Statement
 Build a sophisticated Keto-based nutrition tracker with focus on detailed protein and amino acid tracking.
 
-## Architecture Guidelines
-See `/app/memory/AI_ENGINEERING_RULES.md` for system-wide integrity rules.
+## Reference Documents
+- **Architecture**: `/app/memory/ARCHITECTURE.md` - System design and data models
+- **Engineering Rules**: `/app/memory/AI_ENGINEERING_RULES.md` - How to safely modify the system
 
 ## Core Features
 - Keto Meal Builder with custom meal saving
