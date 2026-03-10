@@ -8,7 +8,7 @@ Centralizes food data normalization from multiple sources:
 - Stored Foods (local MongoDB)
 
 All food data flows through this normalizer to ensure consistent structure
-across the application.
+across the application. Output conforms to CanonicalFood schema.
 
 Usage:
     from services.food_normalizer import normalizer
@@ -27,9 +27,17 @@ Usage:
 """
 
 import logging
+import re
 from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, field, asdict
-from models.food import ServingSize, AminoAcid, FattyAcid
+from dataclasses import dataclass, field
+from models.food import AminoAcid, FattyAcid
+from models.canonical_food import (
+    CanonicalFood, 
+    ServingSize, 
+    FoodSource,
+    normalize_food_name,
+    calculate_quality_score
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +45,10 @@ logger = logging.getLogger(__name__)
 @dataclass
 class NormalizedFood:
     """
-    Canonical food structure used throughout the application.
-    All food sources are normalized to this format.
+    Normalized food structure - bridges raw data to CanonicalFood.
+    
+    This is an intermediate representation used during normalization.
+    For storage/API, convert to CanonicalFood.
     """
     id: str
     name: str
@@ -57,18 +67,52 @@ class NormalizedFood:
     
     # Serving options
     servings: List[Dict] = field(default_factory=list)
+    default_serving_unit: str = "g"
     
     # Optional metadata
     brand: Optional[str] = None
     category: Optional[str] = None
     data_type: Optional[str] = None
     barcode: Optional[str] = None
+    is_branded: bool = False
+    
+    # Quality indicators
+    quality_score: float = 0.0
+    popularity_score: float = 0.0
+    is_verified: bool = False
     
     # For NutritionCalculator compatibility
     base_amount: float = 100.0
     
+    def to_canonical(self) -> CanonicalFood:
+        """Convert to CanonicalFood model for storage."""
+        return CanonicalFood(
+            _id=self.id,
+            name=self.name,
+            normalized_name=normalize_food_name(self.name),
+            source=FoodSource(self.source) if self.source in ["usda", "off", "custom", "local"] else FoodSource.LOCAL,
+            brand=self.brand,
+            is_branded=self.is_branded,
+            nutrients_per_100g={
+                "calories": self.calories,
+                "protein": self.protein,
+                "fat": self.fat,
+                "carbs": self.carbs,
+                "fiber": self.fiber
+            },
+            amino_acids_per_100g=self.amino_acids,
+            fatty_acids_per_100g=self.fatty_acids,
+            default_serving_unit=self.default_serving_unit,
+            servings=[ServingSize(**s) for s in self.servings],
+            quality_score=self.quality_score,
+            popularity_score=self.popularity_score,
+            is_verified=self.is_verified,
+            category=self.category,
+            barcode=self.barcode
+        )
+    
     def to_dict(self) -> Dict:
-        """Convert to dictionary for API responses."""
+        """Convert to dictionary for API responses (backward compatible)."""
         return {
             "id": self.id,
             "fdc_id": self.id,  # Alias for compatibility
@@ -80,13 +124,27 @@ class NormalizedFood:
             "fat": self.fat,
             "carbs": self.carbs,
             "fiber": self.fiber,
+            "nutrients_per_100g": {
+                "calories": self.calories,
+                "protein": self.protein,
+                "fat": self.fat,
+                "carbs": self.carbs,
+                "fiber": self.fiber
+            },
             "amino_acids": self.amino_acids,
             "fatty_acids": self.fatty_acids,
+            "amino_acids_per_100g": self.amino_acids,
+            "fatty_acids_per_100g": self.fatty_acids,
             "servings": self.servings,
+            "default_serving_unit": self.default_serving_unit,
             "brand": self.brand,
+            "is_branded": self.is_branded,
             "category": self.category,
             "data_type": self.data_type,
             "barcode": self.barcode,
+            "quality_score": self.quality_score,
+            "popularity_score": self.popularity_score,
+            "is_verified": self.is_verified,
             "base_amount": self.base_amount
         }
     
@@ -157,13 +215,15 @@ class FoodNormalizer:
         description = raw_data.get("description", "Unknown Food")
         data_type = raw_data.get("dataType", "")
         brand = raw_data.get("brandOwner") or raw_data.get("brandName")
+        is_branded = data_type.lower() == "branded" or brand is not None
         
         # Extract macros
         nutrients = raw_data.get("foodNutrients", [])
         macros = self._extract_usda_macros(nutrients)
         
-        # Extract servings
+        # Extract servings and determine default
         servings = self._extract_usda_servings(raw_data)
+        default_unit = self._determine_default_serving(servings, description)
         
         # Convert amino/fatty acids to dict format
         aa_dict = {}
@@ -174,8 +234,11 @@ class FoodNormalizer:
         if fatty_acids:
             fa_dict = {fa.name: fa.value for fa in fatty_acids}
         
+        # Calculate quality score
+        quality = self._calculate_usda_quality(macros, aa_dict, fa_dict, servings)
+        
         return NormalizedFood(
-            id=fdc_id,
+            id=f"usda_{fdc_id}",
             name=description,
             source="usda",
             calories=macros.get("calories", 0),
@@ -186,8 +249,12 @@ class FoodNormalizer:
             amino_acids=aa_dict,
             fatty_acids=fa_dict,
             servings=servings,
+            default_serving_unit=default_unit,
             brand=brand,
-            data_type=data_type
+            is_branded=is_branded,
+            data_type=data_type,
+            quality_score=quality,
+            is_verified=True  # USDA data is considered verified
         )
     
     def from_off(self, product: Dict) -> NormalizedFood:
